@@ -44,7 +44,8 @@ export const useJarvisStore = create<JarvisStore>((set) => ({
   setSystemStatus: (status) => set((s) => ({ systemStatus: { ...s.systemStatus, ...status } })),
   settings: {
     wakeName: 'Jarvis',
-    voice: 'Neural English (Male)',
+    voice: 'daniel',
+    voiceId: 'onwK4e9ZLuTAKqWW03F9',
     startOnBoot: true,
     alwaysListening: true,
     pushToTalk: false,
