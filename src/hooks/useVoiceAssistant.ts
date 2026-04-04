@@ -119,10 +119,10 @@ export function useVoiceAssistant() {
         type: 'voice',
       });
 
-      await speakWithElevenLabs(response, settings.voiceId);
+      await speakWithElevenLabs(response, settings.voiceId, settings.outputDeviceId || undefined);
       setState('idle');
     },
-    [setState, addCommand, settings.voiceId]
+    [setState, addCommand, settings.voiceId, settings.outputDeviceId]
   );
 
   const startListening = useCallback(() => {
@@ -145,6 +145,35 @@ export function useVoiceAssistant() {
     recognition.lang = navigator.language || 'en-US';
     recognition.maxAlternatives = 5;
     recognitionRef.current = recognition;
+
+    // If a specific input device is selected, get a stream from it
+    // and pass the audio track to recognition.start()
+    const inputId = settings.inputDeviceId;
+    const startWithDevice = async () => {
+      if (inputId) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: { deviceId: { exact: inputId } },
+          });
+          const audioTrack = stream.getAudioTracks()[0];
+          if (audioTrack && typeof recognition.start === 'function') {
+            try {
+              recognition.start(audioTrack);
+            } catch {
+              // Fallback: browser may not support audioTrack param
+              recognition.start();
+            }
+          } else {
+            recognition.start();
+          }
+        } catch (e) {
+          console.warn('Failed to use selected mic device, using default:', e);
+          recognition.start();
+        }
+      } else {
+        recognition.start();
+      }
+    };
 
     recognition.onresult = async (event: any) => {
       const last = event.results[event.results.length - 1];
@@ -204,19 +233,19 @@ export function useVoiceAssistant() {
       if (isListeningRef.current) {
         setTimeout(() => {
           try {
-            recognition.start();
+            startWithDevice();
           } catch {}
         }, 100);
       }
     };
 
     try {
-      recognition.start();
+      startWithDevice();
       isListeningRef.current = true;
     } catch (e) {
       console.warn('Failed to start recognition:', e);
     }
-  }, [settings.wakeName, setState, processCommand]);
+  }, [settings.wakeName, settings.inputDeviceId, setState, processCommand]);
 
   const stopListening = useCallback(() => {
     isListeningRef.current = false;
@@ -229,8 +258,8 @@ export function useVoiceAssistant() {
   }, [setState]);
 
   const previewVoice = useCallback(async (voiceId: string) => {
-    await speakWithElevenLabs('At your service. How can I help you today?', voiceId);
-  }, []);
+    await speakWithElevenLabs('At your service. How can I help you today?', voiceId, settings.outputDeviceId || undefined);
+  }, [settings.outputDeviceId]);
 
   useEffect(() => {
     speechSynthesis.getVoices();
