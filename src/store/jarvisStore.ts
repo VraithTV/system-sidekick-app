@@ -1,6 +1,19 @@
 import { create } from 'zustand';
 import type { AssistantState, Command, AppShortcut, Routine, Clip, SystemStatus, JarvisSettings } from '@/types/jarvis';
 
+const APPS_KEY = 'jarvis_apps';
+
+function loadApps(): AppShortcut[] {
+  try {
+    const raw = localStorage.getItem(APPS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function saveApps(apps: AppShortcut[]) {
+  try { localStorage.setItem(APPS_KEY, JSON.stringify(apps)); } catch {}
+}
+
 interface JarvisStore {
   state: AssistantState;
   setState: (s: AssistantState) => void;
@@ -8,6 +21,8 @@ interface JarvisStore {
   addCommand: (cmd: Command) => void;
   apps: AppShortcut[];
   addApp: (app: AppShortcut) => void;
+  removeApp: (id: string) => void;
+  setApps: (apps: AppShortcut[]) => void;
   routines: Routine[];
   addRoutine: (routine: Routine) => void;
   clips: Clip[];
@@ -25,8 +40,18 @@ export const useJarvisStore = create<JarvisStore>((set) => ({
   setState: (s) => set({ state: s }),
   commands: [],
   addCommand: (cmd) => set((s) => ({ commands: [cmd, ...s.commands].slice(0, 50) })),
-  apps: [],
-  addApp: (app) => set((s) => ({ apps: [...s.apps, app] })),
+  apps: loadApps(),
+  addApp: (app) => set((s) => {
+    const apps = [...s.apps, app];
+    saveApps(apps);
+    return { apps };
+  }),
+  removeApp: (id) => set((s) => {
+    const apps = s.apps.filter((a) => a.id !== id);
+    saveApps(apps);
+    return { apps };
+  }),
+  setApps: (apps) => { saveApps(apps); set({ apps }); },
   routines: [],
   addRoutine: (routine) => set((s) => ({ routines: [...s.routines, routine] })),
   clips: [],
