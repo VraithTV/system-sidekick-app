@@ -165,7 +165,7 @@ const OutputStep = ({ onNext }: { onNext: () => void }) => {
         ))}
       </div>
       <button
-        onClick={onNext}
+        onClick={() => { playClick(); onNext(); }}
         className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
       >
         Continue <ChevronRight className="w-4 h-4" />
