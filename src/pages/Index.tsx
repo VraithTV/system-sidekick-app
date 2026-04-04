@@ -1,5 +1,6 @@
 import { Sidebar } from '@/components/jarvis/Sidebar';
 import { TitleBar } from '@/components/jarvis/TitleBar';
+import { OnboardingWizard, useOnboarding } from '@/components/jarvis/OnboardingWizard';
 import { DashboardView } from '@/components/jarvis/views/DashboardView';
 import { AppsView } from '@/components/jarvis/views/AppsView';
 import { ClipsView } from '@/components/jarvis/views/ClipsView';
@@ -19,7 +20,12 @@ const views: Record<string, React.ComponentType> = {
 
 const Index = () => {
   const { activeView } = useJarvisStore();
+  const { complete, finish } = useOnboarding();
   const View = views[activeView] || DashboardView;
+
+  if (!complete) {
+    return <OnboardingWizard onComplete={finish} />;
+  }
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
