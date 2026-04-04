@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { supabase } from '@/integrations/supabase/client';
 import { matchWakeWord } from '@/lib/fuzzyWake';
+import { startUtteranceCapture } from '@/lib/captureUtterance';
 
 let elevenLabsRetryAfter = 0;
 
@@ -99,10 +100,11 @@ async function getAIResponse(text: string): Promise<string> {
 }
 
 export function useVoiceAssistant() {
-  const { setState, addCommand, settings } = useJarvisStore();
+  const { setState, addCommand, settings, setSystemStatus } = useJarvisStore();
   const recognitionRef = useRef<any>(null);
   const isListeningRef = useRef(false);
   const wakeWordHeard = useRef(false);
+  const captureStopRef = useRef<(() => void) | null>(null);
 
   const processCommand = useCallback(
     async (text: string) => {
@@ -126,136 +128,103 @@ export function useVoiceAssistant() {
   );
 
   const startListening = useCallback(() => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.warn('Speech recognition not supported in this browser');
-      return;
-    }
+    isListeningRef.current = true;
+    setState('listening');
+    setSystemStatus({ micActive: true });
 
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {}
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    recognition.lang = navigator.language || 'en-US';
-    recognition.maxAlternatives = 5;
-    recognitionRef.current = recognition;
-
-    // If a specific input device is selected, get a stream from it
-    // and pass the audio track to recognition.start()
-    const inputId = settings.inputDeviceId;
-    const startWithDevice = async () => {
-      if (inputId) {
+    const runCaptureLoop = async () => {
+      while (isListeningRef.current) {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: { deviceId: { exact: inputId } },
+          const controller = await startUtteranceCapture({
+            deviceId: settings.inputDeviceId || undefined,
+            maxDurationMs: wakeWordHeard.current ? 9000 : 7000,
+            silenceDurationMs: wakeWordHeard.current ? 900 : 1200,
+            levelThreshold: 8,
           });
-          const audioTrack = stream.getAudioTracks()[0];
-          if (audioTrack && typeof recognition.start === 'function') {
-            try {
-              recognition.start(audioTrack);
-            } catch {
-              // Fallback: browser may not support audioTrack param
-              recognition.start();
-            }
-          } else {
-            recognition.start();
+          captureStopRef.current = controller.stop;
+          const blob = await controller.promise;
+          captureStopRef.current = null;
+
+          if (!blob || blob.size < 4000 || !isListeningRef.current) {
+            continue;
           }
-        } catch (e) {
-          console.warn('Failed to use selected mic device, using default:', e);
-          recognition.start();
-        }
-      } else {
-        recognition.start();
-      }
-    };
 
-    recognition.onresult = async (event: any) => {
-      const last = event.results[event.results.length - 1];
-      if (!last.isFinal) return;
+          const formData = new FormData();
+          formData.append('audio', new File([blob], 'utterance.webm', { type: blob.type || 'audio/webm' }));
 
-      const transcripts = Array.from(last)
-        .map((alternative: any) => alternative.transcript?.trim())
-        .filter(Boolean) as string[];
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-transcribe`,
+            {
+              method: 'POST',
+              headers: {
+                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              },
+              body: formData,
+            }
+          );
 
-      if (!wakeWordHeard.current) {
-        const wakeMatch = transcripts
-          .map((transcript) => ({
-            transcript,
-            result: matchWakeWord(
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.warn('Transcription failed:', errorText);
+            continue;
+          }
+
+          const data = await response.json();
+          const transcript = typeof data?.text === 'string' ? data.text.trim() : '';
+          if (!transcript) continue;
+
+          if (!wakeWordHeard.current) {
+            const wakeMatch = matchWakeWord(
               transcript,
               settings.wakeName,
               settings.wakeAliases,
               settings.wakeSensitivity
-            ),
-          }))
-          .find(({ result }) => result.matched);
+            );
 
-        if (wakeMatch) {
-          if (wakeMatch.result.command && wakeMatch.result.command.length > 2) {
-            await processCommand(wakeMatch.result.command);
-          } else {
+            if (!wakeMatch.matched) {
+              continue;
+            }
+
+            if (wakeMatch.command && wakeMatch.command.length > 2) {
+              await processCommand(wakeMatch.command);
+              wakeWordHeard.current = false;
+              if (isListeningRef.current) setState('listening');
+              continue;
+            }
+
             wakeWordHeard.current = true;
             setState('listening');
-            setTimeout(() => {
-              if (wakeWordHeard.current) {
-                wakeWordHeard.current = false;
-                setState('idle');
-              }
-            }, 10000);
+            continue;
           }
+
+          wakeWordHeard.current = false;
+          await processCommand(transcript.toLowerCase());
+          if (isListeningRef.current) setState('listening');
+        } catch (error) {
+          console.warn('Voice capture loop error:', error);
+          wakeWordHeard.current = false;
+          if (!isListeningRef.current) break;
         }
-      } else {
-        wakeWordHeard.current = false;
-        const bestCommand = transcripts.sort((a, b) => b.length - a.length)[0] ?? '';
-        if (bestCommand) await processCommand(bestCommand.toLowerCase());
-        else setState('idle');
       }
     };
 
-    recognition.onerror = (event: any) => {
-      console.warn('Speech recognition error:', event.error);
-      if (event.error === 'not-allowed') {
-        setState('idle');
-        return;
-      }
-      setTimeout(() => {
-        if (isListeningRef.current) startListening();
-      }, 1000);
-    };
-
-    recognition.onend = () => {
-      if (isListeningRef.current) {
-        setTimeout(() => {
-          try {
-            startWithDevice();
-          } catch {}
-        }, 100);
-      }
-    };
-
-    try {
-      startWithDevice();
-      isListeningRef.current = true;
-    } catch (e) {
-      console.warn('Failed to start recognition:', e);
-    }
-  }, [settings.wakeName, settings.inputDeviceId, setState, processCommand]);
+    runCaptureLoop();
+  }, [settings.inputDeviceId, settings.wakeAliases, settings.wakeName, settings.wakeSensitivity, setState, setSystemStatus, processCommand]);
 
   const stopListening = useCallback(() => {
     isListeningRef.current = false;
+    wakeWordHeard.current = false;
+    captureStopRef.current?.();
+    captureStopRef.current = null;
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
       } catch {}
     }
+    setSystemStatus({ micActive: false });
     setState('idle');
-  }, [setState]);
+  }, [setState, setSystemStatus]);
 
   const previewVoice = useCallback(async (voiceId: string) => {
     await speakWithElevenLabs('At your service. How can I help you today?', voiceId, settings.outputDeviceId || undefined);
