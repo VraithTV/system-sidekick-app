@@ -88,7 +88,7 @@ const MicStep = ({ onNext }: { onNext: () => void }) => {
         {inputs.map((d) => (
           <button
             key={d.deviceId}
-            onClick={() => updateSettings({ inputDeviceId: d.deviceId })}
+            onClick={() => { playTick(); updateSettings({ inputDeviceId: d.deviceId }); }}
             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
               settings.inputDeviceId === d.deviceId
                 ? 'bg-primary/10 border border-primary/25'
