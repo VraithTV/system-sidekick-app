@@ -138,26 +138,34 @@ export function useVoiceAssistant() {
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = false;
-    recognition.lang = 'en-US';
+    recognition.lang = navigator.language || 'en-US';
+    recognition.maxAlternatives = 5;
     recognitionRef.current = recognition;
 
     recognition.onresult = async (event: any) => {
       const last = event.results[event.results.length - 1];
       if (!last.isFinal) return;
 
-      const transcript = last[0].transcript.trim();
+      const transcripts = Array.from(last)
+        .map((alternative: any) => alternative.transcript?.trim())
+        .filter(Boolean) as string[];
 
       if (!wakeWordHeard.current) {
-        const result = matchWakeWord(
-          transcript,
-          settings.wakeName,
-          settings.wakeAliases,
-          settings.wakeSensitivity
-        );
+        const wakeMatch = transcripts
+          .map((transcript) => ({
+            transcript,
+            result: matchWakeWord(
+              transcript,
+              settings.wakeName,
+              settings.wakeAliases,
+              settings.wakeSensitivity
+            ),
+          }))
+          .find(({ result }) => result.matched);
 
-        if (result.matched) {
-          if (result.command && result.command.length > 2) {
-            await processCommand(result.command);
+        if (wakeMatch) {
+          if (wakeMatch.result.command && wakeMatch.result.command.length > 2) {
+            await processCommand(wakeMatch.result.command);
           } else {
             wakeWordHeard.current = true;
             setState('listening');
@@ -171,7 +179,9 @@ export function useVoiceAssistant() {
         }
       } else {
         wakeWordHeard.current = false;
-        await processCommand(transcript.toLowerCase());
+        const bestCommand = transcripts.sort((a, b) => b.length - a.length)[0] ?? '';
+        if (bestCommand) await processCommand(bestCommand.toLowerCase());
+        else setState('idle');
       }
     };
 
