@@ -211,7 +211,7 @@ const AppsStep = ({ onNext }: { onNext: () => void }) => {
           return (
           <button
             key={app.id}
-            onClick={() => toggle(app.id)}
+            onClick={() => { playTick(); toggle(app.id); }}
             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
               selected.has(app.id)
                 ? 'bg-primary/10 border border-primary/25'
