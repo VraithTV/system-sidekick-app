@@ -5,9 +5,9 @@ import { matchWakeWord } from '@/lib/fuzzyWake';
 
 let elevenLabsRetryAfter = 0;
 
-async function speakWithElevenLabs(text: string, voiceId: string): Promise<void> {
+async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId?: string): Promise<void> {
   if (Date.now() < elevenLabsRetryAfter) {
-    return speakBrowser(text);
+    return speakBrowser(text, outputDeviceId);
   }
 
   try {
@@ -32,7 +32,7 @@ async function speakWithElevenLabs(text: string, voiceId: string): Promise<void>
         elevenLabsRetryAfter = Date.now() + 5 * 60 * 1000;
       }
 
-      return speakBrowser(text);
+      return speakBrowser(text, outputDeviceId);
     }
 
     elevenLabsRetryAfter = 0;
@@ -40,6 +40,10 @@ async function speakWithElevenLabs(text: string, voiceId: string): Promise<void>
     const audioBlob = await response.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
     const audio = new Audio(audioUrl);
+    // Route to selected output device if supported
+    if (outputDeviceId && typeof (audio as any).setSinkId === 'function') {
+      try { await (audio as any).setSinkId(outputDeviceId); } catch {}
+    }
 
     return new Promise((resolve) => {
       audio.onended = () => {
@@ -48,23 +52,23 @@ async function speakWithElevenLabs(text: string, voiceId: string): Promise<void>
       };
       audio.onerror = async () => {
         URL.revokeObjectURL(audioUrl);
-        await speakBrowser(text);
+        await speakBrowser(text, outputDeviceId);
         resolve();
       };
       audio.play().catch(async () => {
         URL.revokeObjectURL(audioUrl);
-        await speakBrowser(text);
+        await speakBrowser(text, outputDeviceId);
         resolve();
       });
     });
   } catch (e) {
     console.warn('ElevenLabs error, falling back:', e);
     elevenLabsRetryAfter = Date.now() + 5 * 60 * 1000;
-    return speakBrowser(text);
+    return speakBrowser(text, outputDeviceId);
   }
 }
 
-function speakBrowser(text: string): Promise<void> {
+function speakBrowser(text: string, _outputDeviceId?: string): Promise<void> {
   return new Promise((resolve) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.95;
