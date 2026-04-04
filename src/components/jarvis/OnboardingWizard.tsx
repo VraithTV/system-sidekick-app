@@ -7,6 +7,7 @@ import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { commonApps, toAppShortcut } from '@/lib/commonApps';
 import { getAppIcon } from '@/components/jarvis/AppIcons';
 import { Mic, Volume2, Play, ChevronRight, Check, AppWindow } from 'lucide-react';
+import { playClick, playTick } from '@/lib/sounds';
 
 const ONBOARDING_KEY = 'jarvis_onboarding_complete';
 
