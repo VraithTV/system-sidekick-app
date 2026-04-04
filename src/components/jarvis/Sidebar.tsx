@@ -1,6 +1,6 @@
 import { useJarvisStore } from '@/store/jarvisStore';
 import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Activity } from 'lucide-react';
-import { JarvisLogo } from './JarvisLogo';
+import jarvisIcon from '@/assets/jarvis-icon.png';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
