@@ -214,7 +214,7 @@ export function useVoiceAssistant() {
 
           wakeWordHeard.current = false;
           await processCommand(transcript.toLowerCase());
-          if (isListeningRef.current) setState('listening');
+          if (isListeningRef.current) setState('standby');
         } catch (error) {
           console.warn('[Jarvis] Voice capture loop error:', error);
           wakeWordHeard.current = false;
