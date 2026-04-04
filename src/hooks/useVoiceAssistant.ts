@@ -141,6 +141,9 @@ export function useVoiceAssistant() {
 
       const response = await getAIResponse(text);
 
+      // Actually launch the app if the user asked to open one
+      tryLaunchApp(text, response);
+
       setState('speaking');
       addCommand({
         id: Date.now().toString(),
