@@ -13,33 +13,44 @@ export const Sidebar = () => {
   const { activeView, setActiveView, settings, systemStatus } = useJarvisStore();
 
   return (
-    <aside className="w-[52px] h-screen bg-[hsl(220,22%,7%)] border-r border-border/50 flex flex-col items-center py-3 shrink-0">
+    <aside className="w-14 h-screen bg-[hsl(222,26%,5%)] border-r border-[hsl(222,15%,10%)] flex flex-col items-center py-2.5 shrink-0">
       {/* Logo */}
-      <div className="mb-6 w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-        <span className="font-display text-[10px] text-primary font-bold">{settings.wakeName[0]}</span>
+      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/15 flex items-center justify-center mb-5 glow-border">
+        <span className="font-display text-xs text-primary font-semibold glow-text">
+          {settings.wakeName[0]}
+        </span>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 flex flex-col items-center gap-1">
+      <nav className="flex-1 flex flex-col items-center gap-0.5">
         {navItems.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setActiveView(id)}
             title={label}
-            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-150 ${
+            className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 group relative ${
               activeView === id
-                ? 'bg-primary/15 text-primary'
-                : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-[hsl(222,20%,9%)]'
             }`}
           >
-            <Icon className="w-[18px] h-[18px]" />
+            {activeView === id && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 bg-primary rounded-r-full" />
+            )}
+            <Icon className="w-[17px] h-[17px]" strokeWidth={activeView === id ? 2 : 1.5} />
           </button>
         ))}
       </nav>
 
-      {/* Status dot */}
-      <div className="mt-auto" title={systemStatus.micActive ? 'Mic active' : 'Mic off'}>
-        <Circle className={`w-2.5 h-2.5 ${systemStatus.micActive ? 'text-success fill-success' : 'text-muted-foreground/30 fill-muted-foreground/30'}`} />
+      {/* Bottom status */}
+      <div className="flex flex-col items-center gap-2">
+        <div title={systemStatus.micActive ? 'Microphone active' : 'Microphone off'} className="relative">
+          <Circle className={`w-2 h-2 ${
+            systemStatus.micActive
+              ? 'text-success fill-success drop-shadow-[0_0_4px_hsl(var(--success)/0.5)]'
+              : 'text-muted-foreground/20 fill-muted-foreground/20'
+          }`} />
+        </div>
       </div>
     </aside>
   );
