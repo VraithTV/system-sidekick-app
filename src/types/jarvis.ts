@@ -64,4 +64,6 @@ export interface JarvisSettings {
   clipFolder: string;
   obsWebsocketUrl: string;
   obsWebsocketPassword: string;
+  inputDeviceId: string;
+  outputDeviceId: string;
 }
