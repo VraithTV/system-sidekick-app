@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "build:electron": "vite build && npx electron-builder --win",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -17,7 +18,18 @@
     "appId": "com.jarvis.ai",
     "productName": "Jarvis AI BETA",
     "directories": {
-      "output": "electron-release"
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/jarvis-icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Jarvis AI"
     }
   },
   "dependencies": {
