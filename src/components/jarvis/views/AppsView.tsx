@@ -1,25 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { commonApps, toAppShortcut, type CommonApp } from '@/lib/commonApps';
+import { getAppIcon } from '@/components/jarvis/AppIcons';
 import { AppWindow, Plus, Trash2, X } from 'lucide-react';
+import type { AppShortcut } from '@/types/jarvis';
+
+const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 export const AppsView = () => {
-  const { apps, addApp, removeApp } = useJarvisStore();
+  const { apps, addApp, removeApp, setApps } = useJarvisStore();
   const [showAdd, setShowAdd] = useState(false);
+  const [detectedApps, setDetectedApps] = useState<CommonApp[]>([]);
+  const [scanned, setScanned] = useState(false);
 
-  // Apps not yet added
-  const availableApps = commonApps.filter(
-    (ca) => !apps.some((a) => a.id === ca.id)
-  );
+  // Auto-scan via Electron on mount
+  useEffect(() => {
+    if (isElectron && (window as any).electronAPI.scanApps) {
+      (window as any).electronAPI.scanApps().then((found: AppShortcut[]) => {
+        // Map scanned results back to CommonApp format for the "add" panel
+        const mapped = found
+          .filter((f) => !apps.some((a) => a.id === f.id))
+          .map((f) => {
+            const known = commonApps.find((c) => c.id === f.id);
+            if (known) return known;
+            return {
+              id: f.id,
+              name: f.name,
+              path: '',
+              aliases: f.aliases,
+              icon: f.icon || '',
+              launchCmd: '',
+            } as CommonApp;
+          });
+        setDetectedApps(mapped);
+        setScanned(true);
+      });
+    } else {
+      // Fallback: use commonApps list
+      setDetectedApps(commonApps.filter((ca) => !apps.some((a) => a.id === ca.id)));
+      setScanned(true);
+    }
+  }, [apps]);
 
   const handleAdd = (ca: CommonApp) => {
     addApp(toAppShortcut(ca));
   };
 
-  const handleLaunch = (app: typeof apps[0]) => {
-    const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+  const handleLaunch = (app: AppShortcut) => {
     if (isElectron) {
-      (window as any).electronAPI.openApp(app.name.toLowerCase());
+      (window as any).electronAPI.openApp(app.id);
     }
   };
 
@@ -40,21 +69,28 @@ export const AppsView = () => {
         {/* Add app panel */}
         {showAdd && (
           <div className="mb-6 p-4 rounded-xl bg-card border border-border">
-            <p className="text-[11px] text-muted-foreground font-mono mb-3 tracking-wide">AVAILABLE APPS</p>
-            {availableApps.length === 0 ? (
-              <p className="text-xs text-muted-foreground/50">All common apps have been added</p>
+            <p className="text-[11px] text-muted-foreground font-mono mb-3 tracking-wide">
+              {isElectron ? 'DETECTED ON YOUR PC' : 'AVAILABLE APPS'}
+            </p>
+            {detectedApps.length === 0 ? (
+              <p className="text-xs text-muted-foreground/50">
+                {scanned ? 'All detected apps have been added' : 'Scanning...'}
+              </p>
             ) : (
               <div className="grid grid-cols-2 xl:grid-cols-3 gap-2">
-                {availableApps.map((ca) => (
-                  <button
-                    key={ca.id}
-                    onClick={() => handleAdd(ca)}
-                    className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all text-left"
-                  >
-                    <span className="text-lg">{ca.icon}</span>
-                    <p className="text-[12px] text-foreground/80 truncate">{ca.name}</p>
-                  </button>
-                ))}
+                {detectedApps.map((ca) => {
+                  const Icon = getAppIcon(ca.id);
+                  return (
+                    <button
+                      key={ca.id}
+                      onClick={() => handleAdd(ca)}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all text-left"
+                    >
+                      <Icon size={22} />
+                      <p className="text-[12px] text-foreground/80 truncate">{ca.name}</p>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -72,26 +108,29 @@ export const AppsView = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
-            {apps.map((app) => (
-              <div
-                key={app.id}
-                className="bg-card rounded-xl p-4 flex items-center gap-3 border border-border hover:border-primary/20 transition-colors group cursor-pointer"
-                onClick={() => handleLaunch(app)}
-              >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-lg">
-                  {app.icon || <AppWindow className="w-5 h-5 text-primary/60" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] text-foreground/85 truncate">{app.name}</p>
-                </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); removeApp(app.id); }}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+            {apps.map((app) => {
+              const Icon = getAppIcon(app.id);
+              return (
+                <div
+                  key={app.id}
+                  className="bg-card rounded-xl p-4 flex items-center gap-3 border border-border hover:border-primary/20 transition-colors group cursor-pointer"
+                  onClick={() => handleLaunch(app)}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
+                  <div className="w-10 h-10 rounded-lg bg-muted/30 flex items-center justify-center shrink-0">
+                    <Icon size={24} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] text-foreground/85 truncate">{app.name}</p>
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeApp(app.id); }}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
