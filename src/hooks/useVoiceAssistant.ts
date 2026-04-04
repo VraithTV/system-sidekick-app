@@ -3,6 +3,7 @@ import { useJarvisStore } from '@/store/jarvisStore';
 import { supabase } from '@/integrations/supabase/client';
 import { matchWakeWord } from '@/lib/fuzzyWake';
 import { startUtteranceCapture } from '@/lib/captureUtterance';
+import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 
 let elevenLabsRetryAfter = 0;
 
