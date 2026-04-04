@@ -135,7 +135,7 @@ const OutputStep = ({ onNext }: { onNext: () => void }) => {
           </p>
         )}
         <button
-          onClick={() => updateSettings({ outputDeviceId: '' })}
+          onClick={() => { playTick(); updateSettings({ outputDeviceId: '' }); }}
           className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
             !settings.outputDeviceId
               ? 'bg-primary/10 border border-primary/25'
