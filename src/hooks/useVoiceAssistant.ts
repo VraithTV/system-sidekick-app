@@ -122,29 +122,39 @@ export function useVoiceAssistant() {
       const last = event.results[event.results.length - 1];
       if (!last.isFinal) return;
 
-      const transcript = last[0].transcript.trim().toLowerCase();
+      const transcript = last[0].transcript.trim();
+      const lower = transcript.toLowerCase();
       const wakeName = settings.wakeName.toLowerCase();
 
+      // Strip common prefixes like "hey", "hi", "ok", "yo" before the wake word
+      const prefixPattern = new RegExp(
+        `^(?:hey|hi|hello|ok|okay|yo)?[,\\s]*${wakeName}[,\\s]*(.*)$`,
+        'i'
+      );
+      const match = lower.match(prefixPattern);
+
       if (!wakeWordHeard.current) {
-        if (transcript.includes(wakeName)) {
-          wakeWordHeard.current = true;
-          const afterWake = transcript.split(wakeName).pop()?.trim();
-          if (afterWake && afterWake.length > 2) {
-            wakeWordHeard.current = false;
-            await processCommand(afterWake);
+        if (match) {
+          const commandAfter = match[1]?.trim();
+          if (commandAfter && commandAfter.length > 2) {
+            // Full command in one breath: "Hey Jarvis, open Chrome"
+            await processCommand(commandAfter);
           } else {
+            // Just the wake word: "Hey Jarvis" — wait for next utterance
+            wakeWordHeard.current = true;
             setState('listening');
             setTimeout(() => {
               if (wakeWordHeard.current) {
                 wakeWordHeard.current = false;
                 setState('idle');
               }
-            }, 8000);
+            }, 10000);
           }
         }
       } else {
+        // Wake word already heard, this is the command
         wakeWordHeard.current = false;
-        await processCommand(transcript);
+        await processCommand(lower);
       }
     };
 
