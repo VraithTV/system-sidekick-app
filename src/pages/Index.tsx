@@ -20,22 +20,8 @@ const Index = () => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {/* Fake title bar for desktop app feel */}
-      <div className="absolute top-0 left-0 right-0 h-8 bg-[hsl(222,28%,4%)] border-b border-[hsl(222,15%,8%)] flex items-center px-3 z-50 titlebar-drag">
-        <div className="flex gap-1.5 titlebar-no-drag">
-          <div className="w-2.5 h-2.5 rounded-full bg-destructive/60 hover:bg-destructive transition-colors cursor-pointer" />
-          <div className="w-2.5 h-2.5 rounded-full bg-warning/60 hover:bg-warning transition-colors cursor-pointer" />
-          <div className="w-2.5 h-2.5 rounded-full bg-success/60 hover:bg-success transition-colors cursor-pointer" />
-        </div>
-        <p className="flex-1 text-center text-[9px] font-mono text-muted-foreground/20 tracking-widest uppercase">
-          {useJarvisStore.getState().settings.wakeName} AI
-        </p>
-      </div>
-
-      <div className="flex w-full pt-8">
-        <Sidebar />
-        <View />
-      </div>
+      <Sidebar />
+      <View />
     </div>
   );
 };
