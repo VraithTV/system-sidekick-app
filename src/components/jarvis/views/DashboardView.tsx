@@ -55,13 +55,6 @@ export const DashboardView = () => {
             : `Try: "${settings.wakeName}, open Chrome" · "${settings.wakeName}, what's the weather?"`}
         </p>
 
-        {/* New tab hint */}
-        {!micOn && (
-          <div className="mt-6 flex items-center gap-2 rounded-full border border-border px-5 py-2 text-[11px] text-muted-foreground/50 font-mono">
-            <ExternalLink className="h-3 w-3" />
-            Voice works best when opened in a new tab
-          </div>
-        )}
       </div>
 
       {/* Command log */}
