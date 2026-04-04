@@ -1,5 +1,5 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { Minus, Plus, Play } from 'lucide-react';
+import { Minus, Plus, Play, X } from 'lucide-react';
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useState } from 'react';
