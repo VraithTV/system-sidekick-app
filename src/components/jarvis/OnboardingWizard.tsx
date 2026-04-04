@@ -222,10 +222,7 @@ const AppsStep = ({ onNext }: { onNext: () => void }) => {
               {selected.has(app.id) && <Check className="w-3 h-3" />}
             </div>
             <span className="text-base mr-2">{app.icon}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] text-foreground/85">{app.name}</p>
-              <p className="text-[9px] text-muted-foreground font-mono truncate">{app.path}</p>
-            </div>
+            <p className="text-[13px] text-foreground/85">{app.name}</p>
           </button>
         ))}
       </div>

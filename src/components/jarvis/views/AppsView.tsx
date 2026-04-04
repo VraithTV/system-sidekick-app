@@ -52,10 +52,7 @@ export const AppsView = () => {
                     className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all text-left"
                   >
                     <span className="text-lg">{ca.icon}</span>
-                    <div className="min-w-0">
-                      <p className="text-[12px] text-foreground/80 truncate">{ca.name}</p>
-                      <p className="text-[9px] text-muted-foreground font-mono truncate">{ca.path}</p>
-                    </div>
+                    <p className="text-[12px] text-foreground/80 truncate">{ca.name}</p>
                   </button>
                 ))}
               </div>
@@ -86,7 +83,6 @@ export const AppsView = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] text-foreground/85 truncate">{app.name}</p>
-                  <p className="text-[10px] text-muted-foreground font-mono truncate">{app.path}</p>
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); removeApp(app.id); }}
