@@ -131,14 +131,14 @@ export function useVoiceAssistant() {
       });
 
       await speakWithElevenLabs(response, settings.voiceId, settings.outputDeviceId || undefined);
-      setState('idle');
+      setState('standby');
     },
     [setState, addCommand, settings.voiceId, settings.outputDeviceId]
   );
 
   const startListening = useCallback(() => {
     isListeningRef.current = true;
-    setState('listening');
+    setState('standby');
     setSystemStatus({ micActive: true });
 
     const runCaptureLoop = async () => {
@@ -203,7 +203,7 @@ export function useVoiceAssistant() {
             if (wakeMatch.command && wakeMatch.command.length > 2) {
               await processCommand(wakeMatch.command);
               wakeWordHeard.current = false;
-              if (isListeningRef.current) setState('listening');
+              if (isListeningRef.current) setState('standby');
               continue;
             }
 
@@ -214,7 +214,7 @@ export function useVoiceAssistant() {
 
           wakeWordHeard.current = false;
           await processCommand(transcript.toLowerCase());
-          if (isListeningRef.current) setState('listening');
+          if (isListeningRef.current) setState('standby');
         } catch (error) {
           console.warn('[Jarvis] Voice capture loop error:', error);
           wakeWordHeard.current = false;

@@ -1,4 +1,4 @@
-export type AssistantState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'executing';
+export type AssistantState = 'idle' | 'standby' | 'listening' | 'thinking' | 'speaking' | 'executing';
 
 export interface Command {
   id: string;
