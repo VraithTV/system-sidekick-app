@@ -229,7 +229,6 @@ const AppsStep = ({ onNext }: { onNext: () => void }) => {
           </button>
           );
         })}
-        ))}
       </div>
       <button
         onClick={handleContinue}
