@@ -4,7 +4,8 @@ import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
-import { Mic, Volume2, Play, ChevronRight, Check } from 'lucide-react';
+import { commonApps, toAppShortcut } from '@/lib/commonApps';
+import { Mic, Volume2, Play, ChevronRight, Check, AppWindow } from 'lucide-react';
 
 const ONBOARDING_KEY = 'jarvis_onboarding_complete';
 
@@ -171,7 +172,74 @@ const OutputStep = ({ onNext }: { onNext: () => void }) => {
   );
 };
 
-// ── Step 3: Voice Selection ──
+// ── Step 3: App Selection ──
+const AppsStep = ({ onNext }: { onNext: () => void }) => {
+  const { setApps } = useJarvisStore();
+  const [selected, setSelected] = useState<Set<string>>(new Set(['chrome', 'spotify', 'discord', 'obs']));
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleContinue = () => {
+    const apps = commonApps
+      .filter((a) => selected.has(a.id))
+      .map(toAppShortcut);
+    setApps(apps);
+    onNext();
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full animate-fade-in-up">
+      <div className="w-16 h-16 rounded-full border border-primary/25 flex items-center justify-center bg-primary/5 mb-6">
+        <AppWindow className="w-7 h-7 text-primary" />
+      </div>
+      <h2 className="font-display text-lg tracking-[0.12em] text-foreground mb-2">Choose Your Apps</h2>
+      <p className="text-xs text-muted-foreground mb-6 text-center max-w-xs">
+        Select apps you'd like Jarvis to open by voice. Paths are auto-detected for Windows. You can add more later.
+      </p>
+      <div className="w-full max-w-sm space-y-1.5 mb-8 max-h-[300px] overflow-y-auto pr-1">
+        {commonApps.map((app) => (
+          <button
+            key={app.id}
+            onClick={() => toggle(app.id)}
+            className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
+              selected.has(app.id)
+                ? 'bg-primary/10 border border-primary/25'
+                : 'hover:bg-muted border border-transparent'
+            }`}
+          >
+            <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border transition-colors ${
+              selected.has(app.id)
+                ? 'bg-primary border-primary text-primary-foreground'
+                : 'border-muted-foreground/30'
+            }`}>
+              {selected.has(app.id) && <Check className="w-3 h-3" />}
+            </div>
+            <span className="text-base mr-2">{app.icon}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] text-foreground/85">{app.name}</p>
+              <p className="text-[9px] text-muted-foreground font-mono truncate">{app.path}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={handleContinue}
+        className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
+      >
+        Continue <ChevronRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
+
+// ── Step 4: Voice Selection ──
 const VoiceStep = ({ onNext }: { onNext: () => void }) => {
   const { settings, updateSettings } = useJarvisStore();
   const { previewVoice } = useVoiceAssistant();
@@ -234,7 +302,7 @@ const VoiceStep = ({ onNext }: { onNext: () => void }) => {
 // ── Main Wizard ──
 export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
-  const totalSteps = 4;
+  const totalSteps = 5;
 
   const next = () => {
     if (step < totalSteps - 1) setStep(step + 1);
@@ -253,7 +321,8 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
           {step === 0 && <WelcomeStep onNext={next} />}
           {step === 1 && <MicStep onNext={next} />}
           {step === 2 && <OutputStep onNext={next} />}
-          {step === 3 && <VoiceStep onNext={next} />}
+          {step === 3 && <AppsStep onNext={next} />}
+          {step === 4 && <VoiceStep onNext={next} />}
         </div>
 
         {/* Step dots */}
