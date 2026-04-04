@@ -15,10 +15,10 @@ export const Sidebar = () => {
   const { activeView, setActiveView, systemStatus } = useJarvisStore();
 
   return (
-    <aside className="w-52 h-screen bg-card border-r border-border flex flex-col shrink-0 select-none titlebar-drag">
-      {/* Logo header */}
-      <div className="flex items-center gap-2.5 px-4 h-14 border-b border-border/40">
-        <img src={jarvisIcon} alt="Jarvis" className="w-8 h-8 shrink-0" />
+    <aside className="w-52 h-screen bg-card border-r border-border flex flex-col shrink-0 select-none">
+      {/* Logo header — draggable region */}
+      <div className="flex items-center gap-2.5 px-4 h-14 border-b border-border/40 titlebar-drag">
+        <img src={jarvisIcon} alt="Jarvis" className="w-8 h-8 shrink-0 object-contain" />
         <div>
           <p className="font-display text-[10px] tracking-[0.15em] text-foreground/70">JARVIS</p>
           <p className="font-mono text-[8px] text-muted-foreground/40 tracking-wider">v1.0</p>
