@@ -205,7 +205,9 @@ const AppsStep = ({ onNext }: { onNext: () => void }) => {
         Select apps you'd like Jarvis to open by voice. Paths are auto-detected for Windows. You can add more later.
       </p>
       <div className="w-full max-w-sm space-y-1.5 mb-8 max-h-[300px] overflow-y-auto pr-1">
-        {commonApps.map((app) => (
+        {commonApps.map((app) => {
+          const Icon = getAppIcon(app.id);
+          return (
           <button
             key={app.id}
             onClick={() => toggle(app.id)}
@@ -222,9 +224,11 @@ const AppsStep = ({ onNext }: { onNext: () => void }) => {
             }`}>
               {selected.has(app.id) && <Check className="w-3 h-3" />}
             </div>
-            <span className="text-base mr-2">{app.icon}</span>
+            <Icon size={20} className="shrink-0" />
             <p className="text-[13px] text-foreground/85">{app.name}</p>
           </button>
+          );
+        })}
         ))}
       </div>
       <button
