@@ -1,4 +1,5 @@
 import { Sidebar } from '@/components/jarvis/Sidebar';
+import { TitleBar } from '@/components/jarvis/TitleBar';
 import { DashboardView } from '@/components/jarvis/views/DashboardView';
 import { AppsView } from '@/components/jarvis/views/AppsView';
 import { ClipsView } from '@/components/jarvis/views/ClipsView';
@@ -21,9 +22,12 @@ const Index = () => {
   const View = views[activeView] || DashboardView;
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      <Sidebar />
-      <View />
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
+      <TitleBar />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar />
+        <View />
+      </div>
     </div>
   );
 };
