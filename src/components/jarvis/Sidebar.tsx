@@ -1,12 +1,11 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { LayoutDashboard, AppWindow, Film, Zap, Settings, Monitor } from 'lucide-react';
+import { LayoutDashboard, AppWindow, Film, Zap, Settings } from 'lucide-react';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'apps', label: 'Applications', icon: AppWindow },
   { id: 'clips', label: 'Clips', icon: Film },
   { id: 'routines', label: 'Routines', icon: Zap },
-  { id: 'obs', label: 'OBS Control', icon: Monitor },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
