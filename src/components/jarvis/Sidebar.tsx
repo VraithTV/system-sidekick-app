@@ -40,7 +40,7 @@ export const Sidebar = () => {
               <div className="absolute left-0 top-1/2 h-6 w-[2.5px] -translate-y-1/2 rounded-r-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.4)]" />
             )}
             <Icon className="h-[18px] w-[18px]" strokeWidth={activeView === id ? 2 : 1.5} />
-            <span className="text-[7px] font-mono tracking-wide opacity-60">{label.slice(0, 5)}</span>
+            <span className="text-[7px] font-mono tracking-wide opacity-60">{label}</span>
           </button>
         ))}
       </nav>
