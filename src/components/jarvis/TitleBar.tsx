@@ -14,9 +14,7 @@ export const TitleBar = () => {
     api.onMaximizedChange(setMaximized);
   }, []);
 
-  if (!isElectron) return null;
-
-  const api = (window as any).electronAPI;
+  const api = isElectron ? (window as any).electronAPI : null;
 
   return (
     <div className="titlebar-drag flex items-center justify-between h-9 bg-card border-b border-border/40 px-3 shrink-0 select-none z-50">
@@ -28,27 +26,29 @@ export const TitleBar = () => {
         </span>
       </div>
 
-      {/* Right — window controls */}
-      <div className="flex items-center gap-px titlebar-no-drag">
-        <button
-          onClick={() => api.minimize()}
-          className="w-8 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded transition-colors"
-        >
-          <Minus className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={() => api.maximize()}
-          className="w-8 h-7 flex items-center justify-center hover:bg-muted/60 rounded transition-colors"
-        >
-          <img src={jarvisLogo} alt="" className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={() => api.close()}
-          className="w-8 h-7 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/15 rounded transition-colors"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
+      {/* Right — window controls (Electron only) */}
+      {isElectron && api && (
+        <div className="flex items-center gap-px titlebar-no-drag">
+          <button
+            onClick={() => api.minimize()}
+            className="w-8 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded transition-colors"
+          >
+            <Minus className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => api.maximize()}
+            className="w-8 h-7 flex items-center justify-center hover:bg-muted/60 rounded transition-colors"
+          >
+            <img src={jarvisLogo} alt="" className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => api.close()}
+            className="w-8 h-7 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/15 rounded transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
