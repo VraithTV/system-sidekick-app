@@ -2,6 +2,7 @@ import { useJarvisStore } from '@/store/jarvisStore';
 
 const stateAnimations: Record<string, string> = {
   idle: 'animate-orb-idle',
+  standby: 'animate-orb-idle',
   listening: 'animate-orb-listening',
   thinking: 'animate-orb-thinking',
   speaking: 'animate-orb-speaking',
@@ -9,7 +10,8 @@ const stateAnimations: Record<string, string> = {
 };
 
 const stateLabels: Record<string, string> = {
-  idle: 'STANDBY',
+  idle: 'OFFLINE',
+  standby: 'STANDBY',
   listening: 'LISTENING',
   thinking: 'PROCESSING',
   speaking: 'RESPONDING',
@@ -42,8 +44,8 @@ export const AssistantOrb = () => {
         <div
           className={`relative w-40 h-40 rounded-full ${stateAnimations[state]} flex items-center justify-center`}
           style={{
-            background: `radial-gradient(circle at 38% 32%, hsl(var(--primary) / 0.4), hsl(var(--primary) / 0.12) 55%, hsl(var(--background)) 100%)`,
-            boxShadow: `0 0 80px hsl(var(--primary) / 0.25), 0 0 160px hsl(var(--primary) / 0.08)`,
+            background: `radial-gradient(circle at 38% 32%, hsl(var(--primary) / ${state === 'standby' ? '0.25' : '0.4'}), hsl(var(--primary) / 0.12) 55%, hsl(var(--background)) 100%)`,
+            boxShadow: `0 0 80px hsl(var(--primary) / ${state === 'standby' ? '0.15' : '0.25'}), 0 0 160px hsl(var(--primary) / 0.08)`,
           }}
         >
           <div className="absolute inset-[3px] rounded-full border-2 border-primary/15" />
@@ -53,7 +55,7 @@ export const AssistantOrb = () => {
           <div
             className="relative w-[72px] h-[72px] rounded-full"
             style={{
-              background: 'radial-gradient(circle, hsl(var(--primary) / 0.85), hsl(var(--primary) / 0.2) 58%, transparent 100%)',
+              background: `radial-gradient(circle, hsl(var(--primary) / ${state === 'standby' ? '0.5' : '0.85'}), hsl(var(--primary) / 0.2) 58%, transparent 100%)`,
               boxShadow: '0 0 50px hsl(var(--primary) / 0.35), 0 0 100px hsl(var(--primary) / 0.12)',
             }}
           />
@@ -66,6 +68,11 @@ export const AssistantOrb = () => {
               />
             </div>
           )}
+
+          {/* Standby pulse ring */}
+          {state === 'standby' && (
+            <div className="absolute inset-0 rounded-full border border-primary/20 animate-ping" style={{ animationDuration: '3s' }} />
+          )}
         </div>
       </div>
 
@@ -75,7 +82,7 @@ export const AssistantOrb = () => {
           <div
             key={i}
             className={`w-[3px] rounded-full ${
-              state === 'listening' || state === 'speaking' ? 'bg-primary' : 'bg-primary/40'
+              state === 'listening' || state === 'speaking' ? 'bg-primary' : state === 'standby' ? 'bg-primary/30' : 'bg-primary/40'
             }`}
             style={{
               height: state === 'listening' || state === 'speaking'
