@@ -3,6 +3,7 @@ import { useJarvisStore } from '@/store/jarvisStore';
 import { supabase } from '@/integrations/supabase/client';
 import { matchWakeWord } from '@/lib/fuzzyWake';
 import { startUtteranceCapture } from '@/lib/captureUtterance';
+import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 
 let elevenLabsRetryAfter = 0;
 
@@ -88,10 +89,18 @@ function speakBrowser(text: string, _outputDeviceId?: string): Promise<void> {
 
 async function getAIResponse(text: string): Promise<string> {
   try {
+    const memories = formatMemoriesForPrompt();
     const { data, error } = await supabase.functions.invoke('jarvis-chat', {
-      body: { message: text },
+      body: { message: text, memories },
     });
     if (error) throw error;
+
+    // Store any new memories the AI extracted
+    if (data?.newMemories && Array.isArray(data.newMemories) && data.newMemories.length > 0) {
+      addMemories(data.newMemories);
+      console.log('[Jarvis] New memories saved:', data.newMemories);
+    }
+
     return data?.reply || "I didn't catch that. Could you say it again?";
   } catch (e) {
     console.error('AI response error:', e);
