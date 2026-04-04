@@ -6,7 +6,7 @@ import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { Mic, MicOff } from 'lucide-react';
 
 export const DashboardView = () => {
-  const { commands, settings, setSystemStatus } = useJarvisStore();
+  const { commands, settings, setSystemStatus, state } = useJarvisStore();
   const { startListening, stopListening } = useVoiceAssistant();
   const [micOn, setMicOn] = useState(false);
 
@@ -21,6 +21,16 @@ export const DashboardView = () => {
       setSystemStatus({ micActive: true });
     }
   };
+
+  const stateLabel = (() => {
+    if (!micOn) return null;
+    switch (state) {
+      case 'thinking': return '🧠 Processing…';
+      case 'speaking': return '🔊 Speaking…';
+      case 'listening': return 'Waiting for wake word…';
+      default: return 'Waiting for wake word…';
+    }
+  })();
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center relative bg-background overflow-hidden">
@@ -39,19 +49,26 @@ export const DashboardView = () => {
               : 'text-primary border border-primary/25 hover:bg-primary/8 hover:border-primary/40'
           }`}
         >
-          {micOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+          {micOn ? <Mic className="h-4 w-4 animate-pulse" /> : <MicOff className="h-4 w-4" />}
           {micOn ? 'Listening…' : 'Enable Microphone'}
         </button>
 
+        {/* Status indicator */}
+        {micOn && stateLabel && (
+          <p className="mt-4 text-center text-sm text-primary/80 font-mono animate-pulse">
+            {stateLabel}
+          </p>
+        )}
+
         {/* Helper text */}
-        <p className="mt-5 text-center text-sm text-foreground/50">
+        <p className="mt-3 text-center text-sm text-foreground/50">
           {micOn
             ? `Say "${settings.wakeName}" followed by a command`
             : 'Tap the button above to start talking to ' + settings.wakeName}
         </p>
         <p className="mt-1.5 text-center font-mono text-[11px] text-muted-foreground/40">
           {micOn
-            ? 'Waiting for wake word…'
+            ? `Try: "Hey ${settings.wakeName}, what time is it?"`
             : `Try: "${settings.wakeName}, open Chrome" · "${settings.wakeName}, what's the weather?"`}
         </p>
 
