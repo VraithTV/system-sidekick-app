@@ -113,6 +113,7 @@ export function useVoiceAssistant() {
   const recognitionRef = useRef<any>(null);
   const isListeningRef = useRef(false);
   const wakeWordHeard = useRef(false);
+  const conversationActive = useRef(false);
   const captureStopRef = useRef<(() => void) | null>(null);
 
   const processCommand = useCallback(
