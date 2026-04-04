@@ -53,6 +53,8 @@ export interface VoiceOption {
 
 export interface JarvisSettings {
   wakeName: string;
+  wakeAliases: string[];
+  wakeSensitivity: number;
   voice: string;
   voiceId: string;
   startOnBoot: boolean;
