@@ -113,6 +113,7 @@ export function useVoiceAssistant() {
   const recognitionRef = useRef<any>(null);
   const isListeningRef = useRef(false);
   const wakeWordHeard = useRef(false);
+  const conversationActive = useRef(false);
   const captureStopRef = useRef<(() => void) | null>(null);
 
   const processCommand = useCallback(
@@ -131,7 +132,20 @@ export function useVoiceAssistant() {
       });
 
       await speakWithElevenLabs(response, settings.voiceId, settings.outputDeviceId || undefined);
-      setState('standby');
+
+      // If the response ends with a question mark, stay in conversation mode
+      // so the user doesn't need the wake word for their reply
+      const isQuestion = response.trim().endsWith('?');
+      if (isQuestion) {
+        conversationActive.current = true;
+        wakeWordHeard.current = true; // skip wake word for next capture
+        setState('listening');
+        console.log('[Jarvis] Response was a question — staying in conversation mode');
+      } else {
+        conversationActive.current = false;
+        wakeWordHeard.current = false;
+        setState('standby');
+      }
     },
     [setState, addCommand, settings.voiceId, settings.outputDeviceId]
   );
