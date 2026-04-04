@@ -263,7 +263,7 @@ const VoiceStep = ({ onNext }: { onNext: () => void }) => {
         {voiceOptions.map((v) => (
           <button
             key={v.id}
-            onClick={() => updateSettings({ voice: v.id, voiceId: v.elevenLabsId })}
+            onClick={() => { playTick(); updateSettings({ voice: v.id, voiceId: v.elevenLabsId }); }}
             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
               settings.voice === v.id
                 ? 'bg-primary/10 border border-primary/25'
