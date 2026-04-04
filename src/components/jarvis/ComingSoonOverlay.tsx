@@ -3,11 +3,11 @@ import { Construction } from 'lucide-react';
 export const ComingSoonOverlay = ({ title }: { title: string }) => (
   <div className="flex-1 relative overflow-hidden bg-background">
     {/* Blurred placeholder content */}
-    <div className="p-8 blur-sm opacity-30 pointer-events-none select-none">
+    <div className="p-8 blur-sm opacity-20 pointer-events-none select-none">
       <h2 className="font-display text-sm text-primary tracking-[0.15em] mb-8">{title}</h2>
-      <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 xl:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="bg-card rounded-xl p-6 border border-border h-24" />
+          <div key={i} className="bg-card p-6 border border-border/30 h-24" />
         ))}
       </div>
     </div>
