@@ -7,6 +7,7 @@ import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { commonApps, toAppShortcut } from '@/lib/commonApps';
 import { getAppIcon } from '@/components/jarvis/AppIcons';
 import { Mic, Volume2, Play, ChevronRight, Check, AppWindow } from 'lucide-react';
+import { playClick, playTick } from '@/lib/sounds';
 
 const ONBOARDING_KEY = 'jarvis_onboarding_complete';
 
@@ -54,7 +55,7 @@ const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
     <p className="text-sm text-muted-foreground mb-1">Your intelligent desktop assistant</p>
     <span className="text-[10px] font-mono text-primary/50 tracking-widest mb-10">BETA</span>
     <button
-      onClick={onNext}
+      onClick={() => { playClick(); onNext(); }}
       className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 hover:border-primary/50 hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)] transition-all duration-300"
     >
       Get Started <ChevronRight className="w-4 h-4" />
@@ -87,7 +88,7 @@ const MicStep = ({ onNext }: { onNext: () => void }) => {
         {inputs.map((d) => (
           <button
             key={d.deviceId}
-            onClick={() => updateSettings({ inputDeviceId: d.deviceId })}
+            onClick={() => { playTick(); updateSettings({ inputDeviceId: d.deviceId }); }}
             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
               settings.inputDeviceId === d.deviceId
                 ? 'bg-primary/10 border border-primary/25'
@@ -102,7 +103,7 @@ const MicStep = ({ onNext }: { onNext: () => void }) => {
         ))}
       </div>
       <button
-        onClick={onNext}
+        onClick={() => { playClick(); onNext(); }}
         className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
       >
         {inputs.length === 0 ? 'Skip' : 'Continue'} <ChevronRight className="w-4 h-4" />
@@ -134,7 +135,7 @@ const OutputStep = ({ onNext }: { onNext: () => void }) => {
           </p>
         )}
         <button
-          onClick={() => updateSettings({ outputDeviceId: '' })}
+          onClick={() => { playTick(); updateSettings({ outputDeviceId: '' }); }}
           className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
             !settings.outputDeviceId
               ? 'bg-primary/10 border border-primary/25'
@@ -149,7 +150,7 @@ const OutputStep = ({ onNext }: { onNext: () => void }) => {
         {outputs.map((d) => (
           <button
             key={d.deviceId}
-            onClick={() => updateSettings({ outputDeviceId: d.deviceId })}
+            onClick={() => { playTick(); updateSettings({ outputDeviceId: d.deviceId }); }}
             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
               settings.outputDeviceId === d.deviceId
                 ? 'bg-primary/10 border border-primary/25'
@@ -164,7 +165,7 @@ const OutputStep = ({ onNext }: { onNext: () => void }) => {
         ))}
       </div>
       <button
-        onClick={onNext}
+        onClick={() => { playClick(); onNext(); }}
         className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
       >
         Continue <ChevronRight className="w-4 h-4" />
@@ -210,7 +211,7 @@ const AppsStep = ({ onNext }: { onNext: () => void }) => {
           return (
           <button
             key={app.id}
-            onClick={() => toggle(app.id)}
+            onClick={() => { playTick(); toggle(app.id); }}
             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
               selected.has(app.id)
                 ? 'bg-primary/10 border border-primary/25'
@@ -231,7 +232,7 @@ const AppsStep = ({ onNext }: { onNext: () => void }) => {
         })}
       </div>
       <button
-        onClick={handleContinue}
+        onClick={() => { playClick(); handleContinue(); }}
         className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
       >
         Continue <ChevronRight className="w-4 h-4" />
@@ -262,7 +263,7 @@ const VoiceStep = ({ onNext }: { onNext: () => void }) => {
         {voiceOptions.map((v) => (
           <button
             key={v.id}
-            onClick={() => updateSettings({ voice: v.id, voiceId: v.elevenLabsId })}
+            onClick={() => { playTick(); updateSettings({ voice: v.id, voiceId: v.elevenLabsId }); }}
             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
               settings.voice === v.id
                 ? 'bg-primary/10 border border-primary/25'
@@ -291,7 +292,7 @@ const VoiceStep = ({ onNext }: { onNext: () => void }) => {
         ))}
       </div>
       <button
-        onClick={onNext}
+        onClick={() => { playClick(); onNext(); }}
         className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
       >
         Finish Setup <Check className="w-4 h-4" />
