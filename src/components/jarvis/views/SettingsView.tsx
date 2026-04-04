@@ -1,24 +1,18 @@
 import { useJarvisStore } from '@/store/jarvisStore';
 import { Volume2, Minus, Plus, Mic, Radio, Folder, Link, Keyboard, Play } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { voiceOptions, getVoiceById } from '@/lib/voices';
+import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useState } from 'react';
 
-const SectionHeader = ({ icon: Icon, title }: { icon: any; title: string }) => (
-  <div className="flex items-center gap-2 mb-4">
-    <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center">
-      <Icon className="w-3.5 h-3.5 text-primary" />
-    </div>
-    <h3 className="font-display text-xs tracking-[0.2em] text-primary uppercase">{title}</h3>
-  </div>
+const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+  <h3 className="font-display text-[10px] tracking-[0.2em] text-muted-foreground/50 uppercase mb-3">{children}</h3>
 );
 
-const SettingRow = ({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) => (
-  <div className="flex items-center justify-between py-3 border-b border-border/30 last:border-0">
-    <div className="flex-1 min-w-0 mr-4">
-      <p className="text-sm text-foreground font-medium">{label}</p>
-      {description && <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{description}</p>}
+const Row = ({ label, desc, children }: { label: string; desc?: string; children: React.ReactNode }) => (
+  <div className="flex items-center justify-between py-2.5 border-b border-border/20 last:border-0">
+    <div className="mr-4">
+      <p className="text-xs text-foreground">{label}</p>
+      {desc && <p className="text-[9px] text-muted-foreground/40 font-mono mt-0.5">{desc}</p>}
     </div>
     <div className="shrink-0">{children}</div>
   </div>
@@ -27,16 +21,23 @@ const SettingRow = ({ label, description, children }: { label: string; descripti
 const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
   <button
     onClick={onChange}
-    className={`w-11 h-6 rounded-full transition-all duration-200 relative ${
-      checked ? 'bg-primary shadow-[0_0_10px_hsl(var(--primary)/0.3)]' : 'bg-muted'
+    className={`w-9 h-5 rounded-full transition-all relative ${
+      checked ? 'bg-primary' : 'bg-muted'
     }`}
   >
-    <div
-      className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-200 ${
-        checked ? 'left-[24px] bg-primary-foreground' : 'left-1 bg-muted-foreground'
-      }`}
-    />
+    <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${
+      checked ? 'left-[18px] bg-primary-foreground' : 'left-0.5 bg-muted-foreground/60'
+    }`} />
   </button>
+);
+
+const InputField = ({ value, onChange, className = 'w-36', ...props }: any) => (
+  <input
+    value={value}
+    onChange={onChange}
+    className={`${className} bg-secondary/50 text-xs text-foreground px-2.5 py-1.5 rounded-md border border-border/30 font-mono text-right outline-none focus:border-primary/50 transition-colors`}
+    {...props}
+  />
 );
 
 const clipDurations = [15, 30, 45, 60, 90, 120];
@@ -46,176 +47,138 @@ export const SettingsView = () => {
   const { previewVoice } = useVoiceAssistant();
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
 
-  const adjustClipDuration = (direction: 'up' | 'down') => {
-    const currentIndex = clipDurations.indexOf(settings.clipDuration);
-    if (direction === 'up' && currentIndex < clipDurations.length - 1) {
-      updateSettings({ clipDuration: clipDurations[currentIndex + 1] });
-    } else if (direction === 'down' && currentIndex > 0) {
-      updateSettings({ clipDuration: clipDurations[currentIndex - 1] });
-    } else if (currentIndex === -1) {
-      updateSettings({ clipDuration: 30 });
-    }
+  const adjustClip = (dir: 'up' | 'down') => {
+    const i = clipDurations.indexOf(settings.clipDuration);
+    if (dir === 'up' && i < clipDurations.length - 1) updateSettings({ clipDuration: clipDurations[i + 1] });
+    else if (dir === 'down' && i > 0) updateSettings({ clipDuration: clipDurations[i - 1] });
+    else if (i === -1) updateSettings({ clipDuration: 30 });
   };
 
-  const handlePreviewVoice = async (voiceId: string, elevenLabsId: string) => {
-    setPreviewingVoice(voiceId);
+  const handlePreview = async (id: string, elevenLabsId: string) => {
+    setPreviewingVoice(id);
     await previewVoice(elevenLabsId);
     setPreviewingVoice(null);
   };
 
-  const handleSelectVoice = (voice: typeof voiceOptions[0]) => {
-    updateSettings({ voice: voice.id, voiceId: voice.elevenLabsId });
-  };
-
   return (
-    <div className="flex-1 p-6 overflow-y-auto">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div>
-          <h2 className="font-display text-lg text-primary glow-text tracking-wider">SETTINGS</h2>
-          <p className="text-xs text-muted-foreground font-mono mt-1">Configure your assistant</p>
-        </div>
+    <div className="flex-1 p-5 overflow-y-auto">
+      <h2 className="font-display text-sm text-primary glow-text tracking-wider mb-5">SETTINGS</h2>
 
-        {/* General */}
-        <div className="glass rounded-xl p-5">
-          <SectionHeader icon={Radio} title="General" />
-          <SettingRow label="Wake Word" description="The name to activate your assistant">
-            <input
-              value={settings.wakeName}
-              onChange={(e) => updateSettings({ wakeName: e.target.value })}
-              className="w-32 bg-secondary/80 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 font-mono text-right outline-none focus:border-primary transition-colors"
-            />
-          </SettingRow>
-          <SettingRow label="Start on Boot" description="Launch when Windows starts">
-            <Toggle checked={settings.startOnBoot} onChange={() => updateSettings({ startOnBoot: !settings.startOnBoot })} />
-          </SettingRow>
-        </div>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        {/* Left column */}
+        <div className="space-y-4">
+          {/* General */}
+          <div className="glass rounded-lg p-4">
+            <SectionLabel>General</SectionLabel>
+            <Row label="Wake Word" desc="Activation name">
+              <InputField value={settings.wakeName} onChange={(e: any) => updateSettings({ wakeName: e.target.value })} className="w-28" />
+            </Row>
+            <Row label="Start on Boot" desc="Auto-launch with Windows">
+              <Toggle checked={settings.startOnBoot} onChange={() => updateSettings({ startOnBoot: !settings.startOnBoot })} />
+            </Row>
+          </div>
 
-        {/* Voice Selection */}
-        <div className="glass rounded-xl p-5">
-          <SectionHeader icon={Volume2} title="Voice" />
-          <p className="text-xs text-muted-foreground font-mono mb-4">Choose how your assistant sounds</p>
-          <div className="grid gap-2">
-            {voiceOptions.map((voice) => (
-              <button
-                key={voice.id}
-                onClick={() => handleSelectVoice(voice)}
-                className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 text-left ${
-                  settings.voice === voice.id
-                    ? 'border-primary/50 bg-primary/5 shadow-[0_0_15px_hsl(var(--primary)/0.1)]'
-                    : 'border-border/30 bg-secondary/30 hover:bg-secondary/50 hover:border-border/50'
-                }`}
-              >
-                <div className={`w-2 h-2 rounded-full shrink-0 ${
-                  settings.voice === voice.id ? 'bg-primary shadow-[0_0_6px_hsl(var(--primary)/0.5)]' : 'bg-muted-foreground/30'
-                }`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{voice.label}</p>
-                  <p className="text-[10px] text-muted-foreground font-mono truncate">{voice.description}</p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-primary/60 hover:text-primary hover:bg-primary/10 shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePreviewVoice(voice.id, voice.elevenLabsId);
-                  }}
-                  disabled={previewingVoice !== null}
-                >
-                  {previewingVoice === voice.id ? (
-                    <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Play className="w-3.5 h-3.5" />
-                  )}
-                </Button>
-              </button>
-            ))}
+          {/* Voice & Input */}
+          <div className="glass rounded-lg p-4">
+            <SectionLabel>Voice & Input</SectionLabel>
+            <Row label="Always Listening" desc="Keep mic active for wake word">
+              <Toggle checked={settings.alwaysListening} onChange={() => updateSettings({ alwaysListening: !settings.alwaysListening })} />
+            </Row>
+            <Row label="Push to Talk" desc="Hold hotkey to speak">
+              <Toggle checked={settings.pushToTalk} onChange={() => updateSettings({ pushToTalk: !settings.pushToTalk })} />
+            </Row>
+          </div>
+
+          {/* Clipping */}
+          <div className="glass rounded-lg p-4">
+            <SectionLabel>Clipping</SectionLabel>
+            <Row label="Clip Duration" desc="Replay buffer length">
+              <div className="flex items-center gap-0.5">
+                <button onClick={() => adjustClip('down')} className="w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 flex items-center justify-center transition-colors">
+                  <Minus className="w-3 h-3" />
+                </button>
+                <span className="w-12 text-center text-xs font-mono text-foreground bg-secondary/50 rounded-md py-1.5 border border-border/30">
+                  {settings.clipDuration}s
+                </span>
+                <button onClick={() => adjustClip('up')} className="w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 flex items-center justify-center transition-colors">
+                  <Plus className="w-3 h-3" />
+                </button>
+              </div>
+            </Row>
+            <Row label="Save Folder" desc="Clip storage path">
+              <InputField value={settings.clipFolder} onChange={(e: any) => updateSettings({ clipFolder: e.target.value })} className="w-48" />
+            </Row>
+          </div>
+
+          {/* OBS */}
+          <div className="glass rounded-lg p-4">
+            <SectionLabel>OBS Connection</SectionLabel>
+            <Row label="WebSocket URL">
+              <InputField value={settings.obsWebsocketUrl} onChange={(e: any) => updateSettings({ obsWebsocketUrl: e.target.value })} className="w-40" />
+            </Row>
+            <Row label="Password">
+              <InputField type="password" value={settings.obsWebsocketPassword} onChange={(e: any) => updateSettings({ obsWebsocketPassword: e.target.value })} className="w-40" placeholder="••••••••" />
+            </Row>
           </div>
         </div>
 
-        {/* Voice & Input */}
-        <div className="glass rounded-xl p-5">
-          <SectionHeader icon={Mic} title="Voice & Input" />
-          <SettingRow label="Always Listening" description="Keep microphone active for wake word">
-            <Toggle checked={settings.alwaysListening} onChange={() => updateSettings({ alwaysListening: !settings.alwaysListening })} />
-          </SettingRow>
-          <SettingRow label="Push to Talk" description="Hold hotkey to activate voice input">
-            <Toggle checked={settings.pushToTalk} onChange={() => updateSettings({ pushToTalk: !settings.pushToTalk })} />
-          </SettingRow>
-        </div>
-
-        {/* Clipping */}
-        <div className="glass rounded-xl p-5">
-          <SectionHeader icon={Folder} title="Clipping" />
-          <SettingRow label="Clip Duration" description="Default replay buffer length">
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg"
-                onClick={() => adjustClipDuration('down')}
-              >
-                <Minus className="w-3 h-3" />
-              </Button>
-              <span className="w-14 text-center text-sm font-mono text-foreground bg-secondary/80 rounded-lg px-2 py-2 border border-border/50">
-                {settings.clipDuration}s
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg"
-                onClick={() => adjustClipDuration('up')}
-              >
-                <Plus className="w-3 h-3" />
-              </Button>
+        {/* Right column */}
+        <div className="space-y-4">
+          {/* Voice Selection */}
+          <div className="glass rounded-lg p-4">
+            <SectionLabel>Voice</SectionLabel>
+            <div className="space-y-1">
+              {voiceOptions.map((voice) => (
+                <button
+                  key={voice.id}
+                  onClick={() => updateSettings({ voice: voice.id, voiceId: voice.elevenLabsId })}
+                  className={`w-full flex items-center gap-2.5 p-2.5 rounded-md transition-all text-left ${
+                    settings.voice === voice.id
+                      ? 'bg-primary/10 border border-primary/25'
+                      : 'hover:bg-secondary/40 border border-transparent'
+                  }`}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    settings.voice === voice.id ? 'bg-primary' : 'bg-muted-foreground/20'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-foreground">{voice.label}</p>
+                    <p className="text-[9px] text-muted-foreground/40 font-mono truncate">{voice.description}</p>
+                  </div>
+                  <button
+                    className="w-7 h-7 rounded-md text-primary/40 hover:text-primary hover:bg-primary/10 flex items-center justify-center transition-colors shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePreview(voice.id, voice.elevenLabsId);
+                    }}
+                    disabled={previewingVoice !== null}
+                  >
+                    {previewingVoice === voice.id ? (
+                      <div className="w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Play className="w-3 h-3" />
+                    )}
+                  </button>
+                </button>
+              ))}
             </div>
-          </SettingRow>
-          <SettingRow label="Save Folder" description="Where clips are stored">
-            <input
-              value={settings.clipFolder}
-              onChange={(e) => updateSettings({ clipFolder: e.target.value })}
-              className="w-56 bg-secondary/80 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 font-mono text-right outline-none focus:border-primary transition-colors"
-            />
-          </SettingRow>
-        </div>
+          </div>
 
-        {/* OBS Connection */}
-        <div className="glass rounded-xl p-5">
-          <SectionHeader icon={Link} title="OBS Connection" />
-          <SettingRow label="WebSocket URL" description="OBS WebSocket server address">
-            <input
-              value={settings.obsWebsocketUrl}
-              onChange={(e) => updateSettings({ obsWebsocketUrl: e.target.value })}
-              className="w-48 bg-secondary/80 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 font-mono text-right outline-none focus:border-primary transition-colors"
-            />
-          </SettingRow>
-          <SettingRow label="Password" description="OBS WebSocket password (if set)">
-            <input
-              type="password"
-              value={settings.obsWebsocketPassword}
-              onChange={(e) => updateSettings({ obsWebsocketPassword: e.target.value })}
-              className="w-48 bg-secondary/80 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 font-mono text-right outline-none focus:border-primary transition-colors"
-              placeholder="••••••••"
-            />
-          </SettingRow>
-        </div>
-
-        {/* Hotkeys */}
-        <div className="glass rounded-xl p-5">
-          <SectionHeader icon={Keyboard} title="Hotkeys" />
-          {[
-            { label: 'Clip Last 30s', key: 'Ctrl + Shift + C' },
-            { label: 'Toggle Recording', key: 'Ctrl + Shift + R' },
-            { label: 'Toggle Mic', key: 'Ctrl + Shift + M' },
-            { label: 'Push to Talk', key: 'Ctrl + Space' },
-            { label: 'Show/Hide UI', key: 'Ctrl + Shift + J' },
-          ].map(({ label, key }) => (
-            <SettingRow key={label} label={label}>
-              <kbd className="text-[11px] font-mono px-3 py-1.5 bg-secondary/80 rounded-lg border border-border/50 text-muted-foreground tracking-wide">
-                {key}
-              </kbd>
-            </SettingRow>
-          ))}
+          {/* Hotkeys */}
+          <div className="glass rounded-lg p-4">
+            <SectionLabel>Hotkeys</SectionLabel>
+            {[
+              { label: 'Clip Last 30s', key: 'Ctrl+Shift+C' },
+              { label: 'Toggle Rec', key: 'Ctrl+Shift+R' },
+              { label: 'Toggle Mic', key: 'Ctrl+Shift+M' },
+              { label: 'Push to Talk', key: 'Ctrl+Space' },
+              { label: 'Show/Hide', key: 'Ctrl+Shift+J' },
+            ].map(({ label, key }) => (
+              <Row key={label} label={label}>
+                <kbd className="text-[10px] font-mono px-2 py-1 bg-secondary/50 rounded border border-border/30 text-muted-foreground/60">{key}</kbd>
+              </Row>
+            ))}
+          </div>
         </div>
       </div>
     </div>

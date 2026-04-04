@@ -1,49 +1,45 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { LayoutDashboard, AppWindow, Film, Zap, Settings } from 'lucide-react';
+import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle } from 'lucide-react';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'apps', label: 'Applications', icon: AppWindow },
+  { id: 'apps', label: 'Apps', icon: AppWindow },
   { id: 'clips', label: 'Clips', icon: Film },
   { id: 'routines', label: 'Routines', icon: Zap },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
 export const Sidebar = () => {
-  const { activeView, setActiveView, settings } = useJarvisStore();
+  const { activeView, setActiveView, settings, systemStatus } = useJarvisStore();
 
   return (
-    <aside className="w-16 lg:w-56 h-screen bg-card/50 border-r border-border flex flex-col py-4 shrink-0">
-      <div className="px-3 lg:px-4 mb-8">
-        <h1 className="font-display text-sm lg:text-lg text-primary glow-text tracking-wider hidden lg:block">
-          {settings.wakeName.toUpperCase()}
-        </h1>
-        <span className="font-display text-primary glow-text text-lg lg:hidden block text-center">J</span>
-        <p className="text-[10px] text-muted-foreground font-mono hidden lg:block">AI Desktop Assistant</p>
+    <aside className="w-[52px] h-screen bg-[hsl(220,22%,7%)] border-r border-border/50 flex flex-col items-center py-3 shrink-0">
+      {/* Logo */}
+      <div className="mb-6 w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+        <span className="font-display text-[10px] text-primary font-bold">{settings.wakeName[0]}</span>
       </div>
 
-      <nav className="flex-1 space-y-1 px-2">
+      {/* Nav */}
+      <nav className="flex-1 flex flex-col items-center gap-1">
         {navItems.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setActiveView(id)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-mono transition-all duration-200 ${
+            title={label}
+            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-150 ${
               activeView === id
-                ? 'bg-primary/10 text-primary border border-primary/20'
-                : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                ? 'bg-primary/15 text-primary'
+                : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
             }`}
           >
-            <Icon className="w-4 h-4 shrink-0" />
-            <span className="hidden lg:block">{label}</span>
+            <Icon className="w-[18px] h-[18px]" />
           </button>
         ))}
       </nav>
 
-      <div className="px-3 lg:px-4 mt-auto">
-        <div className="glass rounded-md p-2 text-center">
-          <div className="w-2 h-2 rounded-full bg-success mx-auto mb-1" />
-          <span className="text-[10px] text-muted-foreground font-mono hidden lg:block">System Online</span>
-        </div>
+      {/* Status dot */}
+      <div className="mt-auto" title={systemStatus.micActive ? 'Mic active' : 'Mic off'}>
+        <Circle className={`w-2.5 h-2.5 ${systemStatus.micActive ? 'text-success fill-success' : 'text-muted-foreground/30 fill-muted-foreground/30'}`} />
       </div>
     </aside>
   );
