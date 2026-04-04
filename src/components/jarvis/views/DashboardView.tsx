@@ -34,21 +34,21 @@ export const DashboardView = () => {
 
           <button
             onClick={toggleMic}
-            className={`mt-10 flex items-center gap-2.5 px-6 py-3 rounded-full font-mono text-xs tracking-wide transition-all duration-300 ${
+            className={`mt-12 flex items-center gap-2.5 px-7 py-3.5 rounded-full font-mono text-sm tracking-wide transition-all duration-300 ${
               micOn
-                ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_24px_hsl(var(--primary)/0.12)]'
-                : 'bg-secondary text-muted-foreground border border-border hover:text-foreground hover:border-muted-foreground/20'
+                ? 'bg-primary/20 text-primary border-2 border-primary/40 shadow-[0_0_30px_hsl(var(--primary)/0.2)]'
+                : 'bg-secondary text-foreground/70 border-2 border-border hover:text-foreground hover:border-primary/30 hover:bg-secondary/80'
             }`}
           >
             {micOn ? (
-              <Mic className="w-3.5 h-3.5 animate-pulse" />
+              <Mic className="w-4 h-4 animate-pulse" />
             ) : (
-              <MicOff className="w-3.5 h-3.5" />
+              <MicOff className="w-4 h-4" />
             )}
             {micOn ? `Listening for "${settings.wakeName}"` : 'Enable Microphone'}
           </button>
 
-          <p className="mt-3 text-muted-foreground/60 font-mono text-[10px] tracking-wide">
+          <p className="mt-4 text-foreground/40 font-mono text-xs tracking-wide">
             {micOn
               ? `Say "${settings.wakeName}" followed by a command`
               : 'Click to activate voice control'}
