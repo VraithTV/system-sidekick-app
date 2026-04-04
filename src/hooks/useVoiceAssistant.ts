@@ -138,7 +138,7 @@ export function useVoiceAssistant() {
 
   const startListening = useCallback(() => {
     isListeningRef.current = true;
-    setState('listening');
+    setState('standby');
     setSystemStatus({ micActive: true });
 
     const runCaptureLoop = async () => {
