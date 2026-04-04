@@ -4,6 +4,7 @@ import { AppsView } from '@/components/jarvis/views/AppsView';
 import { ClipsView } from '@/components/jarvis/views/ClipsView';
 import { RoutinesView } from '@/components/jarvis/views/RoutinesView';
 import { SettingsView } from '@/components/jarvis/views/SettingsView';
+import { SystemView } from '@/components/jarvis/views/SystemView';
 import { useJarvisStore } from '@/store/jarvisStore';
 
 const views: Record<string, React.ComponentType> = {
@@ -11,6 +12,7 @@ const views: Record<string, React.ComponentType> = {
   apps: AppsView,
   clips: ClipsView,
   routines: RoutinesView,
+  system: SystemView,
   settings: SettingsView,
 };
 
