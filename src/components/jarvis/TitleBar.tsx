@@ -40,7 +40,7 @@ export const TitleBar = () => {
           onClick={() => api.maximize()}
           className="w-8 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded transition-colors"
         >
-          {maximized ? <Copy className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+          <JarvisLogo size={12} className="text-primary" />
         </button>
         <button
           onClick={() => api.close()}
