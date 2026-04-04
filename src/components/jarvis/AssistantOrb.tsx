@@ -1,13 +1,5 @@
 import { useJarvisStore } from '@/store/jarvisStore';
 
-const stateColors: Record<string, string> = {
-  idle: 'from-primary/30 via-primary/10 to-transparent',
-  listening: 'from-success/40 via-success/15 to-transparent',
-  thinking: 'from-[hsl(260,60%,55%)]/40 via-primary/15 to-transparent',
-  speaking: 'from-primary/50 via-primary/20 to-transparent',
-  executing: 'from-warning/40 via-warning/15 to-transparent',
-};
-
 const stateAnimations: Record<string, string> = {
   idle: 'animate-orb-idle',
   listening: 'animate-orb-listening',
@@ -28,13 +20,13 @@ export const AssistantOrb = () => {
   const { state } = useJarvisStore();
 
   return (
-    <div className="flex flex-col items-center gap-5">
+    <div className="flex flex-col items-center gap-6">
       {/* Orb container */}
       <div className="relative">
-        {/* Outer rings */}
-        <div className="absolute inset-[-28px] rounded-full border border-primary/[0.06] animate-ring-rotate" />
-        <div className="absolute inset-[-44px] rounded-full border border-primary/[0.04] animate-ring-rotate-reverse" />
-        <div className="absolute inset-[-60px] rounded-full border border-primary/[0.02] animate-ring-pulse" />
+        {/* Outer rings - much more visible */}
+        <div className="absolute inset-[-30px] rounded-full border border-primary/20 animate-ring-rotate" />
+        <div className="absolute inset-[-48px] rounded-full border border-primary/10 animate-ring-rotate-reverse" />
+        <div className="absolute inset-[-64px] rounded-full border border-primary/[0.06] animate-ring-pulse" />
 
         {/* Ring tick marks */}
         {Array.from({ length: 24 }).map((_, i) => (
@@ -46,24 +38,27 @@ export const AssistantOrb = () => {
               animationDuration: '20s',
             }}
           >
-            <div className="absolute top-[-28px] left-1/2 -translate-x-1/2 w-px h-1.5 bg-primary/10" />
+            <div className="absolute top-[-30px] left-1/2 -translate-x-1/2 w-px h-2 bg-primary/25" />
           </div>
         ))}
 
         {/* Orb */}
         <div
-          className={`relative w-28 h-28 rounded-full bg-gradient-radial ${stateColors[state]} ${stateAnimations[state]} flex items-center justify-center`}
-          style={{ background: `radial-gradient(circle at 40% 35%, hsl(var(--primary) / 0.15), hsl(var(--background)) 70%)` }}
+          className={`relative w-32 h-32 rounded-full ${stateAnimations[state]} flex items-center justify-center`}
+          style={{
+            background: `radial-gradient(circle at 40% 35%, hsl(var(--primary) / 0.35), hsl(var(--primary) / 0.08) 60%, hsl(var(--background)) 100%)`,
+            boxShadow: `0 0 60px hsl(var(--primary) / 0.2), 0 0 120px hsl(var(--primary) / 0.08)`,
+          }}
         >
-          {/* Inner glass */}
-          <div className="absolute inset-[3px] rounded-full bg-gradient-to-br from-background/90 via-background/70 to-background/90 border border-primary/[0.08]" />
+          {/* Inner glass border */}
+          <div className="absolute inset-[3px] rounded-full border border-primary/15 bg-gradient-to-br from-primary/[0.06] via-transparent to-primary/[0.03]" />
 
-          {/* Core glow */}
+          {/* Core glow - brighter */}
           <div
-            className={`relative w-12 h-12 rounded-full transition-all duration-700`}
+            className="relative w-14 h-14 rounded-full transition-all duration-700"
             style={{
-              background: `radial-gradient(circle, hsl(var(--primary) / 0.4), hsl(var(--primary) / 0.05) 70%)`,
-              boxShadow: `0 0 30px hsl(var(--primary) / 0.15)`,
+              background: `radial-gradient(circle, hsl(var(--primary) / 0.7), hsl(var(--primary) / 0.15) 60%, transparent 100%)`,
+              boxShadow: `0 0 40px hsl(var(--primary) / 0.3), 0 0 80px hsl(var(--primary) / 0.1)`,
             }}
           />
 
@@ -71,7 +66,7 @@ export const AssistantOrb = () => {
           {(state === 'listening' || state === 'thinking') && (
             <div className="absolute inset-0 rounded-full overflow-hidden">
               <div
-                className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent"
+                className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent"
                 style={{
                   animation: 'scan-line 2s ease-in-out infinite',
                   top: '0',
@@ -82,24 +77,24 @@ export const AssistantOrb = () => {
         </div>
       </div>
 
-      {/* Waveform */}
-      <div className="flex items-center gap-[3px] h-6">
+      {/* Waveform - more visible */}
+      <div className="flex items-center gap-[3px] h-7">
         {Array.from({ length: 16 }).map((_, i) => (
           <div
             key={i}
             className={`w-[2px] rounded-full transition-all duration-100 ${
               state === 'listening' || state === 'speaking'
-                ? 'bg-primary/70'
+                ? 'bg-primary'
                 : state === 'thinking'
-                ? 'bg-[hsl(260,60%,55%)]/40'
-                : 'bg-muted-foreground/15'
+                ? 'bg-primary/50'
+                : 'bg-primary/25'
             }`}
             style={{
               height: state === 'listening' || state === 'speaking'
-                ? `${Math.random() * 20 + 3}px`
+                ? `${Math.random() * 20 + 4}px`
                 : state === 'thinking'
                 ? `${Math.sin(i * 0.5) * 8 + 6}px`
-                : '3px',
+                : '4px',
               animation: (state === 'listening' || state === 'speaking')
                 ? `waveform ${0.25 + Math.random() * 0.35}s ease-in-out infinite alternate`
                 : 'none',
@@ -110,7 +105,7 @@ export const AssistantOrb = () => {
       </div>
 
       {/* Status label */}
-      <span className="font-display text-[10px] tracking-[0.35em] text-primary/70 glow-text">
+      <span className="font-display text-[11px] tracking-[0.3em] text-primary glow-text">
         {stateLabels[state]}
       </span>
     </div>

@@ -48,7 +48,7 @@ export const DashboardView = () => {
             {micOn ? `Listening for "${settings.wakeName}"` : 'Enable Microphone'}
           </button>
 
-          <p className="mt-3 text-muted-foreground/30 font-mono text-[10px] tracking-wide">
+          <p className="mt-3 text-muted-foreground/60 font-mono text-[10px] tracking-wide">
             {micOn
               ? `Say "${settings.wakeName}" followed by a command`
               : 'Click to activate voice control'}
