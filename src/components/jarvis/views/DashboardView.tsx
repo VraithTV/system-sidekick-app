@@ -4,7 +4,7 @@ import { CommandHistory } from '../CommandHistory';
 import { StatusPanel } from '../StatusPanel';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, ExternalLink } from 'lucide-react';
 
 export const DashboardView = () => {
   const { commands, settings, setSystemStatus } = useJarvisStore();
@@ -24,61 +24,59 @@ export const DashboardView = () => {
   };
 
   return (
-    <div className="flex flex-1 overflow-hidden bg-background">
-      <div className="relative flex flex-1 overflow-hidden">
-        <div className="absolute inset-0 grid-bg opacity-80" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.10)_0%,transparent_38%),linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--background))_100%)]" />
+    <div className="flex-1 flex overflow-hidden">
+      {/* Center */}
+      <div className="flex-1 flex flex-col items-center justify-center relative bg-background">
+        {/* Subtle radial glow behind orb */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.06)_0%,transparent_50%)]" />
 
-        <div className="relative flex w-full items-center justify-center px-8 py-10">
-          <div className="w-full max-w-[820px] rounded-[2rem] border border-border bg-card/95 p-10 shadow-[0_30px_90px_hsl(var(--background)/0.6)] backdrop-blur-xl">
-            <div className="mb-10 flex items-start justify-between gap-6 border-b border-border pb-6">
-              <div>
-                <p className="font-display text-[10px] tracking-[0.35em] text-primary/80">VOICE CONSOLE</p>
-                <h2 className="mt-3 text-2xl font-medium text-foreground">Desktop command center</h2>
-                <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                  Trigger commands, previews, and responses from a focused desktop workspace.
-                </p>
-              </div>
+        <div className="relative flex flex-col items-center">
+          <AssistantOrb />
 
-              <div className="rounded-full border border-border bg-secondary px-4 py-2 font-mono text-[11px] text-foreground/60">
-                {settings.wakeName} ready
-              </div>
+          {/* Mic button */}
+          <button
+            onClick={toggleMic}
+            className={`mt-10 flex items-center gap-3 rounded-full px-8 py-3.5 font-display text-xs tracking-[0.18em] uppercase transition-all duration-300 ${
+              micOn
+                ? 'bg-primary/15 text-primary border border-primary/30 shadow-[0_0_28px_hsl(var(--primary)/0.15)]'
+                : 'text-primary border border-primary/25 hover:bg-primary/8 hover:border-primary/40'
+            }`}
+          >
+            {micOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+            {micOn ? 'Listening…' : 'Enable Microphone'}
+          </button>
+
+          {/* Helper text */}
+          <p className="mt-5 text-center text-sm text-foreground/50">
+            {micOn
+              ? `Say "${settings.wakeName}" followed by a command`
+              : 'Tap the button above to start talking to ' + settings.wakeName}
+          </p>
+          <p className="mt-1.5 text-center font-mono text-[11px] text-muted-foreground/40">
+            {micOn
+              ? 'Waiting for wake word…'
+              : `Try: "${settings.wakeName}, open Chrome" · "${settings.wakeName}, what's the weather?"`}
+          </p>
+
+          {/* New tab hint */}
+          {!micOn && (
+            <div className="mt-6 flex items-center gap-2 rounded-full border border-border px-5 py-2 text-[11px] text-muted-foreground/50 font-mono">
+              <ExternalLink className="h-3 w-3" />
+              Voice works best when opened in a new tab
             </div>
-
-            <div className="flex flex-col items-center">
-              <AssistantOrb />
-
-              <button
-                onClick={toggleMic}
-                className={`mt-12 flex items-center gap-2.5 rounded-full px-7 py-3.5 font-mono text-sm tracking-wide transition-all duration-300 ${
-                  micOn
-                    ? 'bg-primary text-primary-foreground shadow-[0_0_32px_hsl(var(--primary)/0.28)]'
-                    : 'bg-secondary text-foreground border border-border hover:border-primary/25 hover:text-foreground'
-                }`}
-              >
-                {micOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-                {micOn ? `Listening for "${settings.wakeName}"` : 'Enable Microphone'}
-              </button>
-
-              <p className="mt-4 text-center font-mono text-[11px] tracking-wide text-foreground/55">
-                {micOn
-                  ? `Say "${settings.wakeName}" followed by a command`
-                  : 'Click to activate voice control'}
-              </p>
-            </div>
-          </div>
+          )}
         </div>
 
+        {/* Command log */}
         {commands.length > 0 && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center px-8">
-            <div className="pointer-events-auto w-full max-w-[820px]">
-              <CommandHistory />
-            </div>
+          <div className="absolute bottom-5 left-5 right-5">
+            <CommandHistory />
           </div>
         )}
       </div>
 
-      <div className="w-60 border-l border-border bg-card p-5">
+      {/* Right status panel */}
+      <div className="w-60 border-l border-border bg-card p-5 flex flex-col">
         <StatusPanel />
       </div>
     </div>
