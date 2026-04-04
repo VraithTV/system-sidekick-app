@@ -1,5 +1,5 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Minus, Square, X } from 'lucide-react';
+import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Activity } from 'lucide-react';
 import { JarvisLogo } from './JarvisLogo';
 
 const navItems = [
@@ -7,6 +7,7 @@ const navItems = [
   { id: 'apps', label: 'Apps', icon: AppWindow },
   { id: 'clips', label: 'Clips', icon: Film },
   { id: 'routines', label: 'Routines', icon: Zap },
+  { id: 'system', label: 'System', icon: Activity },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -14,33 +15,25 @@ export const Sidebar = () => {
   const { activeView, setActiveView, systemStatus } = useJarvisStore();
 
   return (
-    <aside className="w-52 h-screen bg-card flex flex-col shrink-0 select-none">
-      {/* Title bar — desktop window chrome */}
-      <div className="flex items-center justify-between h-9 px-3 bg-background/80 border-b border-border/60">
-        <div className="flex items-center gap-2">
-          <JarvisLogo size={14} />
-          <span className="font-display text-[10px] tracking-[0.15em] text-foreground/60">JARVIS</span>
+    <aside className="w-52 h-screen bg-card border-r border-border flex flex-col shrink-0 select-none">
+      {/* Logo header */}
+      <div className="flex items-center gap-2.5 px-4 h-14 border-b border-border/40">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/8 text-primary shrink-0">
+          <JarvisLogo size={18} />
         </div>
-        <div className="flex items-center">
-          <button className="w-8 h-8 flex items-center justify-center text-muted-foreground/40 hover:text-foreground/60 hover:bg-muted/50 transition-colors">
-            <Minus className="w-3 h-3" />
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center text-muted-foreground/40 hover:text-foreground/60 hover:bg-muted/50 transition-colors">
-            <Square className="w-2.5 h-2.5" />
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center text-muted-foreground/40 hover:text-foreground/60 hover:bg-destructive/80 hover:text-destructive-foreground transition-colors">
-            <X className="w-3 h-3" />
-          </button>
+        <div>
+          <p className="font-display text-[10px] tracking-[0.15em] text-foreground/70">JARVIS</p>
+          <p className="font-mono text-[8px] text-muted-foreground/40 tracking-wider">v1.0</p>
         </div>
       </div>
 
       {/* Nav items */}
-      <nav className="flex-1 flex flex-col py-2 px-2 gap-px overflow-y-auto">
+      <nav className="flex-1 flex flex-col py-3 px-2 gap-px overflow-y-auto">
         {navItems.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setActiveView(id)}
-            className={`relative flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded transition-all duration-150 text-left group ${
+            className={`relative flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded transition-all duration-150 text-left ${
               activeView === id
                 ? 'bg-primary/12 text-primary'
                 : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground/80'
@@ -70,7 +63,7 @@ export const Sidebar = () => {
               {systemStatus.micActive ? 'MIC ON' : 'MIC OFF'}
             </span>
           </div>
-          <span className="text-[9px] font-mono text-muted-foreground/30">v1.0</span>
+          <span className="text-[9px] font-mono text-muted-foreground/30">ONLINE</span>
         </div>
       </div>
     </aside>
