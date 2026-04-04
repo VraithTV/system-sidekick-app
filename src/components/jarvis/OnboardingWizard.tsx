@@ -55,7 +55,7 @@ const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
     <p className="text-sm text-muted-foreground mb-1">Your intelligent desktop assistant</p>
     <span className="text-[10px] font-mono text-primary/50 tracking-widest mb-10">BETA</span>
     <button
-      onClick={onNext}
+      onClick={() => { playClick(); onNext(); }}
       className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 hover:border-primary/50 hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)] transition-all duration-300"
     >
       Get Started <ChevronRight className="w-4 h-4" />
