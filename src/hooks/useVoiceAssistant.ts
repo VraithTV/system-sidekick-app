@@ -2,20 +2,58 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { supabase } from '@/integrations/supabase/client';
 
-function speak(text: string): Promise<void> {
+async function speakWithElevenLabs(text: string, voiceId: string): Promise<void> {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ text, voiceId }),
+      }
+    );
+
+    if (!response.ok) {
+      console.warn('ElevenLabs TTS failed, falling back to browser TTS');
+      return speakBrowser(text);
+    }
+
+    const audioBlob = await response.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    
+    return new Promise((resolve) => {
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        resolve();
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(audioUrl);
+        resolve();
+      };
+      audio.play().catch(() => resolve());
+    });
+  } catch (e) {
+    console.warn('ElevenLabs error, falling back:', e);
+    return speakBrowser(text);
+  }
+}
+
+function speakBrowser(text: string): Promise<void> {
   return new Promise((resolve) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.95;
     utterance.pitch = 0.9;
     utterance.volume = 1;
-
     const voices = speechSynthesis.getVoices();
     const preferred =
       voices.find((v) => v.name.includes('Google') && v.lang.startsWith('en')) ||
-      voices.find((v) => v.lang.startsWith('en-') && v.name.includes('Male')) ||
       voices.find((v) => v.lang.startsWith('en'));
     if (preferred) utterance.voice = preferred;
-
     utterance.onend = () => resolve();
     utterance.onerror = () => resolve();
     speechSynthesis.speak(utterance);
@@ -56,24 +94,22 @@ export function useVoiceAssistant() {
         type: 'voice',
       });
 
-      await speak(response);
+      await speakWithElevenLabs(response, settings.voiceId);
       setState('idle');
     },
-    [setState, addCommand]
+    [setState, addCommand, settings.voiceId]
   );
 
   const startListening = useCallback(() => {
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      console.warn('Speech recognition not supported');
+      console.warn('Speech recognition not supported in this browser');
       return;
     }
 
     if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {}
+      try { recognitionRef.current.stop(); } catch {}
     }
 
     const recognition = new SpeechRecognition();
@@ -126,9 +162,7 @@ export function useVoiceAssistant() {
     recognition.onend = () => {
       if (isListeningRef.current) {
         setTimeout(() => {
-          try {
-            recognition.start();
-          } catch {}
+          try { recognition.start(); } catch {}
         }, 100);
       }
     };
@@ -144,17 +178,19 @@ export function useVoiceAssistant() {
   const stopListening = useCallback(() => {
     isListeningRef.current = false;
     if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {}
+      try { recognitionRef.current.stop(); } catch {}
     }
     setState('idle');
   }, [setState]);
+
+  const previewVoice = useCallback(async (voiceId: string) => {
+    await speakWithElevenLabs('At your service. How can I help you today?', voiceId);
+  }, []);
 
   useEffect(() => {
     speechSynthesis.getVoices();
     speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
   }, []);
 
-  return { startListening, stopListening };
+  return { startListening, stopListening, previewVoice };
 }
