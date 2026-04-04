@@ -5,43 +5,42 @@ export const ClipsView = () => {
   const { clips, settings } = useJarvisStore();
 
   return (
-    <div className="flex-1 p-5 overflow-y-auto grid-bg relative">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,hsl(222,28%,5%)_100%)] pointer-events-none" />
-      <div className="relative">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-xs text-primary/80 tracking-[0.2em]">CLIPS</h2>
-          <div className="flex gap-1.5">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[hsl(222,20%,9%)] text-muted-foreground/50 text-[10px] font-mono border border-[hsl(222,15%,12%)] hover:text-muted-foreground transition-colors">
-              <FolderOpen className="w-3 h-3" />
+    <div className="flex-1 overflow-y-auto bg-background">
+      <div className="max-w-3xl mx-auto p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-display text-sm text-primary/80 tracking-[0.15em]">CLIPS</h2>
+          <div className="flex gap-2">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary text-muted-foreground text-[11px] font-mono border border-border hover:text-foreground transition-colors">
+              <FolderOpen className="w-3.5 h-3.5" />
               Folder
             </button>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/8 text-primary/70 text-[10px] font-mono border border-primary/10 hover:bg-primary/12 hover:text-primary transition-colors">
-              <Scissors className="w-3 h-3" />
-              Clip
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-[11px] font-mono border border-primary/15 hover:bg-primary/15 transition-colors">
+              <Scissors className="w-3.5 h-3.5" />
+              Clip Now
             </button>
           </div>
         </div>
 
         {clips.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[65vh] text-center">
-            <div className="w-14 h-14 rounded-xl bg-[hsl(222,20%,9%)] border border-[hsl(222,15%,12%)] flex items-center justify-center mb-4">
-              <Film className="w-6 h-6 text-muted-foreground/15" />
+          <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+            <div className="w-16 h-16 rounded-2xl bg-card border border-border flex items-center justify-center mb-5">
+              <Film className="w-7 h-7 text-muted-foreground/15" />
             </div>
-            <p className="text-muted-foreground/40 font-mono text-[11px]">No clips saved</p>
-            <p className="text-muted-foreground/20 font-mono text-[9px] mt-1 max-w-[200px]">
-              Say "{settings.wakeName}, clip that" to save a replay
+            <p className="text-muted-foreground/50 text-sm">No clips saved</p>
+            <p className="text-muted-foreground/25 font-mono text-[11px] mt-2 max-w-[240px]">
+              Say "{settings.wakeName}, clip that" to save a replay buffer
             </p>
           </div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {clips.map((clip) => (
-              <div key={clip.id} className="glass-hover rounded-md p-2.5 flex items-center gap-3 cursor-pointer">
-                <div className="w-12 h-9 rounded bg-primary/5 border border-primary/8 flex items-center justify-center shrink-0">
-                  <Film className="w-4 h-4 text-primary/30" />
+              <div key={clip.id} className="bg-card rounded-xl p-4 flex items-center gap-4 border border-border hover:border-primary/15 transition-colors cursor-pointer">
+                <div className="w-14 h-10 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-center shrink-0">
+                  <Film className="w-5 h-5 text-primary/30" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-mono text-foreground/70 truncate">{clip.filename}</p>
-                  <p className="text-[9px] text-muted-foreground/30 font-mono">{clip.duration}s · {clip.size}</p>
+                  <p className="text-[12px] font-mono text-foreground/80 truncate">{clip.filename}</p>
+                  <p className="text-[10px] text-muted-foreground/30 font-mono">{clip.duration}s · {clip.size}</p>
                 </div>
               </div>
             ))}
