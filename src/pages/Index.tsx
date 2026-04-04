@@ -1,16 +1,31 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Sidebar } from '@/components/jarvis/Sidebar';
+import { DashboardView } from '@/components/jarvis/views/DashboardView';
+import { AppsView } from '@/components/jarvis/views/AppsView';
+import { ClipsView } from '@/components/jarvis/views/ClipsView';
+import { RoutinesView } from '@/components/jarvis/views/RoutinesView';
+import { OBSView } from '@/components/jarvis/views/OBSView';
+import { SettingsView } from '@/components/jarvis/views/SettingsView';
+import { useJarvisStore } from '@/store/jarvisStore';
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const views: Record<string, React.ComponentType> = {
+  dashboard: DashboardView,
+  apps: AppsView,
+  clips: ClipsView,
+  routines: RoutinesView,
+  obs: OBSView,
+  settings: SettingsView,
+};
+
+const Index = () => {
+  const { activeView } = useJarvisStore();
+  const View = views[activeView] || DashboardView;
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="flex h-screen bg-background overflow-hidden">
+      <Sidebar />
+      <View />
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
