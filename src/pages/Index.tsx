@@ -1,5 +1,5 @@
 import { Sidebar } from '@/components/jarvis/Sidebar';
-import { TitleBar } from '@/components/jarvis/TitleBar';
+import { WindowControls } from '@/components/jarvis/WindowControls';
 import { OnboardingWizard, useOnboarding } from '@/components/jarvis/OnboardingWizard';
 import { DashboardView } from '@/components/jarvis/views/DashboardView';
 import { AppsView } from '@/components/jarvis/views/AppsView';
@@ -28,10 +28,10 @@ const Index = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background overflow-hidden">
-      <TitleBar />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+    <div className="flex h-screen bg-background overflow-hidden">
+      <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden relative">
+        <WindowControls />
         <View />
       </div>
     </div>
