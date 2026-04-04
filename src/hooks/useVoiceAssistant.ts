@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { supabase } from '@/integrations/supabase/client';
+import { matchWakeWord } from '@/lib/fuzzyWake';
 
 let elevenLabsRetryAfter = 0;
 
@@ -145,20 +146,18 @@ export function useVoiceAssistant() {
       if (!last.isFinal) return;
 
       const transcript = last[0].transcript.trim();
-      const lower = transcript.toLowerCase();
-      const wakeName = settings.wakeName.toLowerCase();
-
-      const prefixPattern = new RegExp(
-        `^(?:hey|hi|hello|ok|okay|yo)?[,\\s]*${wakeName}[,\\s]*(.*)$`,
-        'i'
-      );
-      const match = lower.match(prefixPattern);
 
       if (!wakeWordHeard.current) {
-        if (match) {
-          const commandAfter = match[1]?.trim();
-          if (commandAfter && commandAfter.length > 2) {
-            await processCommand(commandAfter);
+        const result = matchWakeWord(
+          transcript,
+          settings.wakeName,
+          settings.wakeAliases,
+          settings.wakeSensitivity
+        );
+
+        if (result.matched) {
+          if (result.command && result.command.length > 2) {
+            await processCommand(result.command);
           } else {
             wakeWordHeard.current = true;
             setState('listening');
@@ -172,7 +171,7 @@ export function useVoiceAssistant() {
         }
       } else {
         wakeWordHeard.current = false;
-        await processCommand(lower);
+        await processCommand(transcript.toLowerCase());
       }
     };
 
