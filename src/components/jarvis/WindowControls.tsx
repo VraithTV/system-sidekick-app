@@ -15,28 +15,31 @@ export const WindowControls = () => {
 
   const api = isElectron ? (window as any).electronAPI : null;
 
-  if (!isElectron || !api) return null;
-
+  // Always render the drag bar (even in web preview for consistent layout), but only show buttons in Electron
   return (
-    <div className="absolute top-2 right-3 z-50 flex items-center gap-1 titlebar-no-drag">
-      <button
-        onClick={() => api.minimize()}
-        className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded transition-colors"
-      >
-        <Minus className="w-3.5 h-3.5" />
-      </button>
-      <button
-        onClick={() => api.maximize()}
-        className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded transition-colors"
-      >
-        <Maximize2 className="w-3 h-3" />
-      </button>
-      <button
-        onClick={() => api.close()}
-        className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/15 rounded transition-colors"
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
+    <div className="h-9 shrink-0 flex items-center justify-end titlebar-drag bg-background border-b border-border/20">
+      {isElectron && api && (
+        <div className="flex items-center gap-px pr-2 titlebar-no-drag">
+          <button
+            onClick={() => api.minimize()}
+            className="w-8 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded transition-colors"
+          >
+            <Minus className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => api.maximize()}
+            className="w-8 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded transition-colors"
+          >
+            <Maximize2 className="w-3 h-3" />
+          </button>
+          <button
+            onClick={() => api.close()}
+            className="w-8 h-7 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/15 rounded transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
