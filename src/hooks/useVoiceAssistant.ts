@@ -135,6 +135,7 @@ export function useVoiceAssistant() {
     const runCaptureLoop = async () => {
       while (isListeningRef.current) {
         try {
+          console.log('[Jarvis] Starting audio capture...');
           const controller = await startUtteranceCapture({
             deviceId: settings.inputDeviceId || undefined,
             maxDurationMs: wakeWordHeard.current ? 9000 : 7000,
@@ -145,10 +146,13 @@ export function useVoiceAssistant() {
           const blob = await controller.promise;
           captureStopRef.current = null;
 
+          console.log('[Jarvis] Capture complete, blob:', blob ? `${blob.size} bytes` : 'null');
           if (!blob || blob.size < 4000 || !isListeningRef.current) {
+            console.log('[Jarvis] Skipped — too small or stopped');
             continue;
           }
 
+          console.log('[Jarvis] Sending to transcription...');
           const formData = new FormData();
           formData.append('audio', new File([blob], 'utterance.webm', { type: blob.type || 'audio/webm' }));
 
@@ -166,12 +170,13 @@ export function useVoiceAssistant() {
 
           if (!response.ok) {
             const errorText = await response.text();
-            console.warn('Transcription failed:', errorText);
+            console.warn('[Jarvis] Transcription failed:', response.status, errorText);
             continue;
           }
 
           const data = await response.json();
           const transcript = typeof data?.text === 'string' ? data.text.trim() : '';
+          console.log('[Jarvis] Transcript:', JSON.stringify(transcript));
           if (!transcript) continue;
 
           if (!wakeWordHeard.current) {
@@ -202,7 +207,7 @@ export function useVoiceAssistant() {
           await processCommand(transcript.toLowerCase());
           if (isListeningRef.current) setState('listening');
         } catch (error) {
-          console.warn('Voice capture loop error:', error);
+          console.warn('[Jarvis] Voice capture loop error:', error);
           wakeWordHeard.current = false;
           if (!isListeningRef.current) break;
         }
