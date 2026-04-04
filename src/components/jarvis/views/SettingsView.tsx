@@ -1,4 +1,6 @@
 import { useJarvisStore } from '@/store/jarvisStore';
+import { Volume2, Minus, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const SettingRow = ({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) => (
   <div className="flex items-center justify-between py-3 border-b border-border/50">
@@ -19,8 +21,50 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void 
   </button>
 );
 
+const voiceOptions = [
+  { id: 'neural-male', label: 'Neural English (Male)', sample: 'Hello, I am your assistant. How can I help you today?' },
+  { id: 'neural-female', label: 'Neural English (Female)', sample: 'Hello, I am your assistant. How can I help you today?' },
+  { id: 'classic-jarvis', label: 'Classic Jarvis', sample: 'At your service. What would you like me to do?' },
+];
+
+const previewVoice = (voiceLabel: string) => {
+  speechSynthesis.cancel();
+  const sample = voiceOptions.find(v => v.label === voiceLabel)?.sample || 'Hello, I am your assistant.';
+  const utterance = new SpeechSynthesisUtterance(sample);
+  utterance.rate = 0.95;
+  utterance.pitch = voiceLabel.includes('Female') ? 1.1 : 0.9;
+  utterance.volume = 1;
+
+  const voices = speechSynthesis.getVoices();
+  if (voiceLabel.includes('Female')) {
+    const female = voices.find(v => v.lang.startsWith('en') && v.name.includes('Female'))
+      || voices.find(v => v.lang.startsWith('en'));
+    if (female) utterance.voice = female;
+  } else {
+    const male = voices.find(v => v.name.includes('Google') && v.lang.startsWith('en'))
+      || voices.find(v => v.lang.startsWith('en') && v.name.includes('Male'))
+      || voices.find(v => v.lang.startsWith('en'));
+    if (male) utterance.voice = male;
+  }
+
+  speechSynthesis.speak(utterance);
+};
+
+const clipDurations = [15, 30, 45, 60, 90, 120];
+
 export const SettingsView = () => {
   const { settings, updateSettings } = useJarvisStore();
+
+  const adjustClipDuration = (direction: 'up' | 'down') => {
+    const currentIndex = clipDurations.indexOf(settings.clipDuration);
+    if (direction === 'up' && currentIndex < clipDurations.length - 1) {
+      updateSettings({ clipDuration: clipDurations[currentIndex + 1] });
+    } else if (direction === 'down' && currentIndex > 0) {
+      updateSettings({ clipDuration: clipDurations[currentIndex - 1] });
+    } else if (currentIndex === -1) {
+      updateSettings({ clipDuration: 30 });
+    }
+  };
 
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
@@ -40,15 +84,27 @@ export const SettingsView = () => {
           />
         </SettingRow>
         <SettingRow label="Voice" description="Assistant voice style">
-          <select
-            value={settings.voice}
-            onChange={(e) => updateSettings({ voice: e.target.value })}
-            className="bg-secondary text-sm text-foreground px-3 py-1.5 rounded border border-border font-mono outline-none focus:border-primary"
-          >
-            <option>Neural English (Male)</option>
-            <option>Neural English (Female)</option>
-            <option>Classic Jarvis</option>
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={settings.voice}
+              onChange={(e) => updateSettings({ voice: e.target.value })}
+              className="bg-secondary text-sm text-foreground px-3 py-1.5 rounded border border-border font-mono outline-none focus:border-primary appearance-none pr-8"
+              style={{ backgroundImage: 'none' }}
+            >
+              {voiceOptions.map(v => (
+                <option key={v.id} value={v.label}>{v.label}</option>
+              ))}
+            </select>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-primary hover:text-primary/80 hover:bg-primary/10"
+              onClick={() => previewVoice(settings.voice)}
+              title="Preview voice"
+            >
+              <Volume2 className="w-4 h-4" />
+            </Button>
+          </div>
         </SettingRow>
         <SettingRow label="Start on Boot" description="Launch when Windows starts">
           <Toggle checked={settings.startOnBoot} onChange={() => updateSettings({ startOnBoot: !settings.startOnBoot })} />
@@ -70,14 +126,26 @@ export const SettingsView = () => {
       <div className="glass rounded-lg p-4 space-y-1">
         <h3 className="font-display text-xs tracking-[0.2em] text-primary uppercase mb-2">Clipping</h3>
         <SettingRow label="Clip Duration" description="Default replay buffer length">
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              value={settings.clipDuration}
-              onChange={(e) => updateSettings({ clipDuration: parseInt(e.target.value) || 30 })}
-              className="w-16 bg-secondary text-sm text-foreground px-2 py-1.5 rounded border border-border font-mono text-right outline-none focus:border-primary"
-            />
-            <span className="text-xs text-muted-foreground font-mono">sec</span>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
+              onClick={() => adjustClipDuration('down')}
+            >
+              <Minus className="w-3 h-3" />
+            </Button>
+            <span className="w-14 text-center text-sm font-mono text-foreground bg-secondary rounded px-2 py-1.5 border border-border">
+              {settings.clipDuration}s
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary"
+              onClick={() => adjustClipDuration('up')}
+            >
+              <Plus className="w-3 h-3" />
+            </Button>
           </div>
         </SettingRow>
         <SettingRow label="Save Folder" description="Where clips are stored">
