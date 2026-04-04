@@ -70,6 +70,55 @@ export const SettingsView = () => {
               <Row label="Wake Word" desc="Activation trigger name">
                 <Input value={settings.wakeName} onChange={(e: any) => updateSettings({ wakeName: e.target.value })} className="w-28" />
               </Row>
+
+              {/* Wake word aliases */}
+              <div className="py-3 border-b border-border/60">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="text-[13px] text-foreground/85">Wake Aliases</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Alt spellings the speech API may hear</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const alias = prompt('Add alias (how the speech API hears your wake word):');
+                      if (alias?.trim()) updateSettings({ wakeAliases: [...settings.wakeAliases, alias.trim()] });
+                    }}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {settings.wakeAliases.length === 0 && (
+                  <p className="text-[10px] text-muted-foreground/50 font-mono">None yet — add if wake word isn't detected</p>
+                )}
+                <div className="flex flex-wrap gap-1.5">
+                  {settings.wakeAliases.map((alias, i) => (
+                    <span key={i} className="flex items-center gap-1 text-[11px] font-mono bg-muted px-2.5 py-1 rounded-lg border border-border text-foreground/70">
+                      {alias}
+                      <button
+                        onClick={() => updateSettings({ wakeAliases: settings.wakeAliases.filter((_, j) => j !== i) })}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sensitivity slider */}
+              <Row label="Wake Sensitivity" desc={`${Math.round(settings.wakeSensitivity * 100)}% — lower = more lenient`}>
+                <input
+                  type="range"
+                  min={0.3}
+                  max={1}
+                  step={0.05}
+                  value={settings.wakeSensitivity}
+                  onChange={(e: any) => updateSettings({ wakeSensitivity: parseFloat(e.target.value) })}
+                  className="w-28 accent-primary"
+                />
+              </Row>
+
               <Row label="Start on Boot" desc="Auto-launch with Windows">
                 <Toggle checked={settings.startOnBoot} onChange={() => updateSettings({ startOnBoot: !settings.startOnBoot })} />
               </Row>
