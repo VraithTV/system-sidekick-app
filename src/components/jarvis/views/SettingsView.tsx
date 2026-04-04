@@ -60,7 +60,7 @@ export const SettingsView = () => {
 
   return (
     <div className="flex-1 overflow-y-auto bg-background">
-      <div className="max-w-3xl mx-auto p-8">
+      <div className="p-8">
         <h2 className="font-display text-sm text-primary tracking-[0.15em] mb-8">SETTINGS</h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

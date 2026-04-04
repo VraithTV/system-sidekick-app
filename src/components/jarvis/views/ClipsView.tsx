@@ -6,7 +6,7 @@ export const ClipsView = () => {
 
   return (
     <div className="flex-1 overflow-y-auto bg-background">
-      <div className="max-w-3xl mx-auto p-8">
+      <div className="p-8">
         <div className="flex items-center justify-between mb-8">
           <h2 className="font-display text-sm text-primary tracking-[0.15em]">CLIPS</h2>
           <div className="flex gap-2">

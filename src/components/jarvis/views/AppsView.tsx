@@ -6,7 +6,7 @@ export const AppsView = () => {
 
   return (
     <div className="flex-1 overflow-y-auto bg-background">
-      <div className="max-w-3xl mx-auto p-8">
+      <div className="p-8">
         <div className="flex items-center justify-between mb-8">
           <h2 className="font-display text-sm text-primary tracking-[0.15em]">APPLICATIONS</h2>
           <button className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary/10 text-primary text-[12px] font-mono border border-primary/20 hover:bg-primary/15 transition-colors">
