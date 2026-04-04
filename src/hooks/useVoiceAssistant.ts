@@ -203,7 +203,7 @@ export function useVoiceAssistant() {
             if (wakeMatch.command && wakeMatch.command.length > 2) {
               await processCommand(wakeMatch.command);
               wakeWordHeard.current = false;
-              if (isListeningRef.current) setState('listening');
+              if (isListeningRef.current) setState('standby');
               continue;
             }
 
