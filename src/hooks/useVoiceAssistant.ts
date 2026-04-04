@@ -2,7 +2,13 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { supabase } from '@/integrations/supabase/client';
 
+let elevenLabsRetryAfter = 0;
+
 async function speakWithElevenLabs(text: string, voiceId: string): Promise<void> {
+  if (Date.now() < elevenLabsRetryAfter) {
+    return speakBrowser(text);
+  }
+
   try {
     const response = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
@@ -18,27 +24,41 @@ async function speakWithElevenLabs(text: string, voiceId: string): Promise<void>
     );
 
     if (!response.ok) {
-      console.warn('ElevenLabs TTS failed, falling back to browser TTS');
+      const errorText = await response.text();
+      console.warn('ElevenLabs TTS unavailable, falling back to browser TTS:', errorText);
+
+      if ([401, 402, 403, 429, 500, 502, 503].includes(response.status)) {
+        elevenLabsRetryAfter = Date.now() + 5 * 60 * 1000;
+      }
+
       return speakBrowser(text);
     }
+
+    elevenLabsRetryAfter = 0;
 
     const audioBlob = await response.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
     const audio = new Audio(audioUrl);
-    
+
     return new Promise((resolve) => {
       audio.onended = () => {
         URL.revokeObjectURL(audioUrl);
         resolve();
       };
-      audio.onerror = () => {
+      audio.onerror = async () => {
         URL.revokeObjectURL(audioUrl);
+        await speakBrowser(text);
         resolve();
       };
-      audio.play().catch(() => resolve());
+      audio.play().catch(async () => {
+        URL.revokeObjectURL(audioUrl);
+        await speakBrowser(text);
+        resolve();
+      });
     });
   } catch (e) {
     console.warn('ElevenLabs error, falling back:', e);
+    elevenLabsRetryAfter = Date.now() + 5 * 60 * 1000;
     return speakBrowser(text);
   }
 }
@@ -109,7 +129,9 @@ export function useVoiceAssistant() {
     }
 
     if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch {}
+      try {
+        recognitionRef.current.stop();
+      } catch {}
     }
 
     const recognition = new SpeechRecognition();
@@ -126,7 +148,6 @@ export function useVoiceAssistant() {
       const lower = transcript.toLowerCase();
       const wakeName = settings.wakeName.toLowerCase();
 
-      // Strip common prefixes like "hey", "hi", "ok", "yo" before the wake word
       const prefixPattern = new RegExp(
         `^(?:hey|hi|hello|ok|okay|yo)?[,\\s]*${wakeName}[,\\s]*(.*)$`,
         'i'
@@ -137,10 +158,8 @@ export function useVoiceAssistant() {
         if (match) {
           const commandAfter = match[1]?.trim();
           if (commandAfter && commandAfter.length > 2) {
-            // Full command in one breath: "Hey Jarvis, open Chrome"
             await processCommand(commandAfter);
           } else {
-            // Just the wake word: "Hey Jarvis" — wait for next utterance
             wakeWordHeard.current = true;
             setState('listening');
             setTimeout(() => {
@@ -152,7 +171,6 @@ export function useVoiceAssistant() {
           }
         }
       } else {
-        // Wake word already heard, this is the command
         wakeWordHeard.current = false;
         await processCommand(lower);
       }
@@ -172,7 +190,9 @@ export function useVoiceAssistant() {
     recognition.onend = () => {
       if (isListeningRef.current) {
         setTimeout(() => {
-          try { recognition.start(); } catch {}
+          try {
+            recognition.start();
+          } catch {}
         }, 100);
       }
     };
@@ -188,7 +208,9 @@ export function useVoiceAssistant() {
   const stopListening = useCallback(() => {
     isListeningRef.current = false;
     if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch {}
+      try {
+        recognitionRef.current.stop();
+      } catch {}
     }
     setState('idle');
   }, [setState]);
