@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { supabase } from '@/integrations/supabase/client';
+import { matchWakeWord } from '@/lib/fuzzyWake';
 
 let elevenLabsRetryAfter = 0;
 
