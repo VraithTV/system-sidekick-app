@@ -44,9 +44,17 @@ export interface SystemStatus {
   desktopOnline: boolean;
 }
 
+export interface VoiceOption {
+  id: string;
+  label: string;
+  elevenLabsId: string;
+  description: string;
+}
+
 export interface JarvisSettings {
   wakeName: string;
   voice: string;
+  voiceId: string;
   startOnBoot: boolean;
   alwaysListening: boolean;
   pushToTalk: boolean;
