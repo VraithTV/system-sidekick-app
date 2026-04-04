@@ -27,35 +27,30 @@ export const DashboardView = () => {
     <div className="flex-1 flex overflow-hidden">
       {/* Center - orb area */}
       <div className="flex-1 flex flex-col items-center justify-center relative grid-bg">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,hsl(var(--background))_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,hsl(var(--background))_100%)]" />
 
         <div className="relative flex flex-col items-center">
           <AssistantOrb />
 
           <button
             onClick={toggleMic}
-            className={`mt-12 flex items-center gap-2.5 px-7 py-3.5 rounded-full font-mono text-sm tracking-wide transition-all duration-300 ${
+            className={`mt-14 flex items-center gap-2.5 px-7 py-3 rounded-full font-mono text-[13px] tracking-wide transition-all duration-300 ${
               micOn
-                ? 'bg-primary/20 text-primary border-2 border-primary/40 shadow-[0_0_30px_hsl(var(--primary)/0.2)]'
-                : 'bg-secondary text-foreground/70 border-2 border-border hover:text-foreground hover:border-primary/30 hover:bg-secondary/80'
+                ? 'bg-primary/15 text-primary border-2 border-primary/30 shadow-[0_0_24px_hsl(var(--primary)/0.15)]'
+                : 'bg-secondary text-foreground/60 border-2 border-border hover:text-foreground hover:border-muted-foreground/30'
             }`}
           >
-            {micOn ? (
-              <Mic className="w-4 h-4 animate-pulse" />
-            ) : (
-              <MicOff className="w-4 h-4" />
-            )}
+            {micOn ? <Mic className="w-4 h-4 animate-pulse" /> : <MicOff className="w-4 h-4" />}
             {micOn ? `Listening for "${settings.wakeName}"` : 'Enable Microphone'}
           </button>
 
-          <p className="mt-4 text-foreground/40 font-mono text-xs tracking-wide">
+          <p className="mt-3 text-muted-foreground font-mono text-[11px] tracking-wide">
             {micOn
               ? `Say "${settings.wakeName}" followed by a command`
               : 'Click to activate voice control'}
           </p>
         </div>
 
-        {/* Command log overlay */}
         {commands.length > 0 && (
           <div className="absolute bottom-4 left-4 right-4">
             <CommandHistory />
@@ -64,7 +59,7 @@ export const DashboardView = () => {
       </div>
 
       {/* Right status panel */}
-      <div className="w-56 border-l border-border bg-card p-4 flex flex-col">
+      <div className="w-60 border-l border-border bg-card p-5 flex flex-col">
         <StatusPanel />
       </div>
     </div>
