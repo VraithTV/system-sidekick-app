@@ -83,7 +83,6 @@ export const AppsView = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] text-foreground/85 truncate">{app.name}</p>
-                  <p className="text-[10px] text-muted-foreground font-mono truncate">{app.path}</p>
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); removeApp(app.id); }}
