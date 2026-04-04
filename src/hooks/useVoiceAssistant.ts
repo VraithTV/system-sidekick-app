@@ -5,6 +5,25 @@ import { matchWakeWord } from '@/lib/fuzzyWake';
 import { startUtteranceCapture } from '@/lib/captureUtterance';
 import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 
+const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+
+/** Try to detect an "open app" intent and actually launch it via Electron */
+function tryLaunchApp(userText: string, aiReply: string): void {
+  if (!isElectron) return;
+  const api = (window as any).electronAPI;
+  if (!api?.openApp) return;
+
+  // Match patterns like "open chrome", "launch spotify", "start obs", "open up discord"
+  const openMatch = userText.match(/(?:open|launch|start|run|fire up|open up|pull up)\s+(.+)/i);
+  if (!openMatch) return;
+
+  const appName = openMatch[1].replace(/^(the|my|up)\s+/i, '').trim().toLowerCase();
+  if (!appName) return;
+
+  console.log('[Jarvis] Detected app launch intent:', appName);
+  api.openApp(appName);
+}
+
 let elevenLabsRetryAfter = 0;
 
 async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId?: string): Promise<void> {
