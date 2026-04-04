@@ -14,7 +14,7 @@ export const Sidebar = () => {
   const { activeView, setActiveView, systemStatus } = useJarvisStore();
 
   return (
-    <aside className="w-[72px] h-screen bg-card border-r border-border flex flex-col items-center py-5 shrink-0">
+    <aside className="w-[88px] h-screen bg-card border-r border-border flex flex-col items-center py-5 shrink-0">
       {/* Logo */}
       <div className="mb-8 flex flex-col items-center gap-2.5">
         <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary glow-border">
