@@ -1,71 +1,91 @@
-/**
- * Levenshtein distance between two strings (case-insensitive).
- */
+function normalizeSpeech(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s']/gu, ' ')
+    .replace(/\b(?:um|uh|erm|hmm)\b/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function levenshtein(a: string, b: string): number {
-  a = a.toLowerCase();
-  b = b.toLowerCase();
-  const m = a.length, n = b.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
-  for (let i = 1; i <= m; i++)
-    for (let j = 1; j <= n; j++)
-      dp[i][j] = a[i - 1] === b[j - 1]
-        ? dp[i - 1][j - 1]
-        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
-  return dp[m][n];
+  const source = a.toLowerCase();
+  const target = b.toLowerCase();
+  const rows = source.length + 1;
+  const cols = target.length + 1;
+  const matrix = Array.from({ length: rows }, () => Array<number>(cols).fill(0));
+
+  for (let i = 0; i < rows; i += 1) matrix[i][0] = i;
+  for (let j = 0; j < cols; j += 1) matrix[0][j] = j;
+
+  for (let i = 1; i < rows; i += 1) {
+    for (let j = 1; j < cols; j += 1) {
+      matrix[i][j] =
+        source[i - 1] === target[j - 1]
+          ? matrix[i - 1][j - 1]
+          : 1 + Math.min(matrix[i - 1][j], matrix[i][j - 1], matrix[i - 1][j - 1]);
+    }
+  }
+
+  return matrix[source.length][target.length];
 }
 
-/**
- * Returns a similarity score 0–1 between two strings.
- */
 function similarity(a: string, b: string): number {
-  const maxLen = Math.max(a.length, b.length);
-  if (maxLen === 0) return 1;
-  return 1 - levenshtein(a, b) / maxLen;
+  const maxLength = Math.max(a.length, b.length);
+  if (maxLength === 0) return 1;
+  return 1 - levenshtein(a, b) / maxLength;
 }
 
-/**
- * Try to extract a wake-word match and trailing command from a transcript.
- * Uses the primary wake name + aliases, with fuzzy matching.
- *
- * Returns `{ matched: true, command: string }` or `{ matched: false }`.
- */
+function phoneticKey(value: string): string {
+  return normalizeSpeech(value)
+    .replace(/\s+/g, '')
+    .replace(/ph/g, 'f')
+    .replace(/ck/g, 'k')
+    .replace(/c(?=[eiy])/g, 's')
+    .replace(/c/g, 'k')
+    .replace(/z/g, 's')
+    .replace(/(.)\1+/g, '$1')
+    .replace(/[aeiou]/g, '');
+}
+
+function wakeWordScore(spoken: string, candidate: string): number {
+  const normalizedSpoken = normalizeSpeech(spoken);
+  const normalizedCandidate = normalizeSpeech(candidate);
+  const directScore = similarity(normalizedSpoken, normalizedCandidate);
+  const compactScore = similarity(
+    normalizedSpoken.replace(/\s+/g, ''),
+    normalizedCandidate.replace(/\s+/g, '')
+  );
+  const phoneticScore = phoneticKey(normalizedSpoken) === phoneticKey(normalizedCandidate) ? 0.92 : 0;
+
+  return Math.max(directScore, compactScore, phoneticScore);
+}
+
 export function matchWakeWord(
   transcript: string,
   wakeName: string,
   aliases: string[],
-  sensitivity: number // 0–1, higher = stricter
+  sensitivity: number
 ): { matched: boolean; command: string } {
-  const lower = transcript.toLowerCase().trim();
-  const candidates = [wakeName, ...aliases].map((c) => c.toLowerCase().trim()).filter(Boolean);
-  const threshold = 0.5 + sensitivity * 0.4; // sensitivity 0.7 → threshold 0.78
-
-  // Split into words and try sliding windows of candidate-length words
-  const words = lower.split(/[\s,]+/);
+  const normalizedTranscript = normalizeSpeech(transcript);
+  const words = normalizedTranscript.split(/\s+/).filter(Boolean);
+  const candidates = [wakeName, ...aliases]
+    .map((candidate) => normalizeSpeech(candidate))
+    .filter(Boolean);
+  const threshold = 0.58 + sensitivity * 0.18;
 
   for (const candidate of candidates) {
-    const candWords = candidate.split(/\s+/);
-    const candLen = candWords.length;
+    const candidateWords = candidate.split(/\s+/).filter(Boolean);
+    const candidateLength = candidateWords.length;
 
-    for (let i = 0; i < words.length; i++) {
-      const window = words.slice(i, i + candLen).join(' ');
-      const score = similarity(window, candidate);
+    for (let index = 0; index < words.length; index += 1) {
+      const spokenWindow = words.slice(index, index + candidateLength).join(' ');
+      if (!spokenWindow) continue;
 
-      if (score >= threshold) {
-        // Strip optional prefix like "hey", "ok", etc.
-        let prefixStart = i;
-        if (i > 0) {
-          const prev = words[i - 1];
-          if (['hey', 'hi', 'hello', 'ok', 'okay', 'yo'].includes(prev)) {
-            prefixStart = i - 1;
-          }
-        }
-        // Everything after the matched wake word is the command
-        const commandWords = words.slice(i + candLen);
-        const command = commandWords.join(' ').trim();
-        return { matched: true, command };
-      }
+      const score = wakeWordScore(spokenWindow, candidate);
+      if (score < threshold) continue;
+
+      const command = words.slice(index + candidateLength).join(' ').trim();
+      return { matched: true, command };
     }
   }
 
