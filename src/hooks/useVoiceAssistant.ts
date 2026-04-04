@@ -131,7 +131,7 @@ export function useVoiceAssistant() {
       });
 
       await speakWithElevenLabs(response, settings.voiceId, settings.outputDeviceId || undefined);
-      setState('idle');
+      setState('standby');
     },
     [setState, addCommand, settings.voiceId, settings.outputDeviceId]
   );
