@@ -1,5 +1,5 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle } from 'lucide-react';
+import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Minus, Square, X } from 'lucide-react';
 import { JarvisLogo } from './JarvisLogo';
 
 const navItems = [
@@ -14,52 +14,63 @@ export const Sidebar = () => {
   const { activeView, setActiveView, systemStatus } = useJarvisStore();
 
   return (
-    <aside className="w-48 h-screen bg-card border-r border-border flex flex-col py-5 shrink-0">
-      {/* Logo */}
-      <div className="mb-8 flex items-center gap-3 px-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary glow-border shrink-0">
-          <JarvisLogo size={24} />
+    <aside className="w-52 h-screen bg-card flex flex-col shrink-0 select-none">
+      {/* Title bar — desktop window chrome */}
+      <div className="flex items-center justify-between h-9 px-3 bg-background/80 border-b border-border/60">
+        <div className="flex items-center gap-2">
+          <JarvisLogo size={14} />
+          <span className="font-display text-[10px] tracking-[0.15em] text-foreground/60">JARVIS</span>
         </div>
-        <div>
-          <p className="font-display text-[11px] tracking-[0.18em] text-foreground/80">JARVIS</p>
-          <p className="font-mono text-[8px] text-muted-foreground/50 tracking-wider">v1.0 · ONLINE</p>
+        <div className="flex items-center">
+          <button className="w-8 h-8 flex items-center justify-center text-muted-foreground/40 hover:text-foreground/60 hover:bg-muted/50 transition-colors">
+            <Minus className="w-3 h-3" />
+          </button>
+          <button className="w-8 h-8 flex items-center justify-center text-muted-foreground/40 hover:text-foreground/60 hover:bg-muted/50 transition-colors">
+            <Square className="w-2.5 h-2.5" />
+          </button>
+          <button className="w-8 h-8 flex items-center justify-center text-muted-foreground/40 hover:text-foreground/60 hover:bg-destructive/80 hover:text-destructive-foreground transition-colors">
+            <X className="w-3 h-3" />
+          </button>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 flex flex-col gap-0.5 px-3">
+      {/* Nav items */}
+      <nav className="flex-1 flex flex-col py-2 px-2 gap-px overflow-y-auto">
         {navItems.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setActiveView(id)}
-            className={`relative flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 text-left ${
+            className={`relative flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded transition-all duration-150 text-left group ${
               activeView === id
-                ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground hover:bg-secondary hover:text-foreground/70'
+                ? 'bg-primary/12 text-primary'
+                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground/80'
             }`}
           >
             {activeView === id && (
-              <div className="absolute left-0 top-1/2 h-5 w-[2.5px] -translate-y-1/2 rounded-r-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.4)]" />
+              <div className="absolute left-0 top-[6px] bottom-[6px] w-[2px] rounded-r bg-primary shadow-[0_0_6px_hsl(var(--primary)/0.4)]" />
             )}
-            <Icon className="h-4 w-4 shrink-0" strokeWidth={activeView === id ? 2 : 1.5} />
-            <span className="text-[12px] font-mono tracking-wide">{label}</span>
+            <Icon className="h-[15px] w-[15px] shrink-0" strokeWidth={activeView === id ? 2 : 1.5} />
+            <span className="text-[11px] tracking-wide">{label}</span>
           </button>
         ))}
       </nav>
 
-      {/* Bottom status */}
-      <div className="px-5 pt-3 border-t border-border/50 mt-2">
-        <div className="flex items-center gap-2.5">
-          <Circle
-            className={`h-2.5 w-2.5 shrink-0 ${
-              systemStatus.micActive
-                ? 'fill-success text-success drop-shadow-[0_0_8px_hsl(var(--success)/0.6)]'
-                : 'fill-muted-foreground/25 text-muted-foreground/25'
-            }`}
-          />
-          <span className="text-[10px] font-mono text-muted-foreground/60">
-            {systemStatus.micActive ? 'Mic Active' : 'Mic Off'}
-          </span>
+      {/* Status bar */}
+      <div className="px-3 py-2 border-t border-border/40 bg-background/40">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Circle
+              className={`h-[6px] w-[6px] shrink-0 ${
+                systemStatus.micActive
+                  ? 'fill-success text-success drop-shadow-[0_0_4px_hsl(var(--success)/0.5)]'
+                  : 'fill-muted-foreground/20 text-muted-foreground/20'
+              }`}
+            />
+            <span className="text-[9px] font-mono text-muted-foreground/50">
+              {systemStatus.micActive ? 'MIC ON' : 'MIC OFF'}
+            </span>
+          </div>
+          <span className="text-[9px] font-mono text-muted-foreground/30">v1.0</span>
         </div>
       </div>
     </aside>
