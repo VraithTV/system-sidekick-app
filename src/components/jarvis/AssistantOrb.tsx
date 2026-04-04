@@ -25,13 +25,7 @@ const stateLabels: Record<string, string> = {
 };
 
 export const AssistantOrb = () => {
-  const { state, setState } = useJarvisStore();
-
-  const cycleState = () => {
-    const states: Array<typeof state> = ['idle', 'listening', 'thinking', 'speaking', 'executing'];
-    const next = states[(states.indexOf(state) + 1) % states.length];
-    setState(next);
-  };
+  const { state } = useJarvisStore();
 
   return (
     <div className="flex flex-col items-center gap-6">
@@ -41,13 +35,12 @@ export const AssistantOrb = () => {
         <div className="absolute inset-[-35px] rounded-full border border-primary/10 animate-ring-rotate-reverse" />
         
         {/* Orb */}
-        <button
-          onClick={cycleState}
-          className={`relative w-32 h-32 rounded-full bg-gradient-to-br ${stateColors[state]} ${stateAnimations[state]} cursor-pointer transition-all duration-500 flex items-center justify-center`}
+        <div
+          className={`relative w-32 h-32 rounded-full bg-gradient-to-br ${stateColors[state]} ${stateAnimations[state]} transition-all duration-500 flex items-center justify-center`}
         >
           <div className="absolute inset-1 rounded-full bg-gradient-to-br from-background/80 to-background/40" />
           <div className={`relative w-16 h-16 rounded-full bg-gradient-to-br ${stateColors[state]} opacity-80`} />
-        </button>
+        </div>
       </div>
 
       {/* Waveform */}
