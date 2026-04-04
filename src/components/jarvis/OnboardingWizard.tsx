@@ -150,7 +150,7 @@ const OutputStep = ({ onNext }: { onNext: () => void }) => {
         {outputs.map((d) => (
           <button
             key={d.deviceId}
-            onClick={() => updateSettings({ outputDeviceId: d.deviceId })}
+            onClick={() => { playTick(); updateSettings({ outputDeviceId: d.deviceId }); }}
             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
               settings.outputDeviceId === d.deviceId
                 ? 'bg-primary/10 border border-primary/25'
