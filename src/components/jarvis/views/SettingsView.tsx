@@ -1,7 +1,8 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { Minus, Plus, Play, X } from 'lucide-react';
+import { Minus, Plus, Play, X, RefreshCw } from 'lucide-react';
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
+import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useState } from 'react';
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
@@ -43,6 +44,7 @@ const clipDurations = [15, 30, 45, 60, 90, 120];
 export const SettingsView = () => {
   const { settings, updateSettings } = useJarvisStore();
   const { previewVoice } = useVoiceAssistant();
+  const { inputs, outputs, refresh: refreshDevices } = useAudioDevices();
   const [previewing, setPreviewing] = useState<string | null>(null);
 
   const adjustClip = (dir: 'up' | 'down') => {
@@ -126,12 +128,60 @@ export const SettingsView = () => {
 
             <div className="bg-card rounded-xl p-6 border border-border">
               <SectionTitle>Voice Input</SectionTitle>
+              {/* Microphone selector */}
+              <div className="py-3 border-b border-border/60">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="text-[13px] text-foreground/85">Microphone</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Select your input device</p>
+                  </div>
+                  <button onClick={refreshDevices} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <select
+                  value={settings.inputDeviceId}
+                  onChange={(e) => updateSettings({ inputDeviceId: e.target.value })}
+                  className="w-full bg-muted text-[12px] text-foreground/80 px-3 py-2 rounded-lg border border-border font-mono outline-none focus:border-primary/50 transition-colors"
+                >
+                  <option value="">System Default</option>
+                  {inputs.map((d) => (
+                    <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
+                  ))}
+                </select>
+              </div>
+
               <Row label="Always Listening" desc="Keep mic active in background">
                 <Toggle checked={settings.alwaysListening} onChange={() => updateSettings({ alwaysListening: !settings.alwaysListening })} />
               </Row>
               <Row label="Push to Talk" desc="Hold hotkey to speak">
                 <Toggle checked={settings.pushToTalk} onChange={() => updateSettings({ pushToTalk: !settings.pushToTalk })} />
               </Row>
+            </div>
+
+            <div className="bg-card rounded-xl p-6 border border-border">
+              <SectionTitle>Audio Output</SectionTitle>
+              <div className="py-3 border-b border-border/60 last:border-0">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="text-[13px] text-foreground/85">Speaker</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Where Jarvis speaks</p>
+                  </div>
+                  <button onClick={refreshDevices} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <select
+                  value={settings.outputDeviceId}
+                  onChange={(e) => updateSettings({ outputDeviceId: e.target.value })}
+                  className="w-full bg-muted text-[12px] text-foreground/80 px-3 py-2 rounded-lg border border-border font-mono outline-none focus:border-primary/50 transition-colors"
+                >
+                  <option value="">System Default</option>
+                  {outputs.map((d) => (
+                    <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="bg-card rounded-xl p-6 border border-border">
