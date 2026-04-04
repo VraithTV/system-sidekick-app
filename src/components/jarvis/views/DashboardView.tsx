@@ -9,7 +9,7 @@ import { Film, Clock, Mic, MicOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const DashboardView = () => {
-  const { clips, commands, settings } = useJarvisStore();
+  const { clips, commands, settings, setSystemStatus } = useJarvisStore();
   const { startListening, stopListening, sendTextCommand } = useVoiceAssistant();
   const [micOn, setMicOn] = useState(false);
 
@@ -17,9 +17,11 @@ export const DashboardView = () => {
     if (micOn) {
       stopListening();
       setMicOn(false);
+      setSystemStatus({ micActive: false });
     } else {
       startListening();
       setMicOn(true);
+      setSystemStatus({ micActive: true });
     }
   };
 

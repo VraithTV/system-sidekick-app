@@ -40,7 +40,7 @@ export const AssistantOrb = () => {
         >
           <div className="absolute inset-1 rounded-full bg-gradient-to-br from-background/80 to-background/40" />
           <div className={`relative w-16 h-16 rounded-full bg-gradient-to-br ${stateColors[state]} opacity-80`} />
-        </button>
+        </div>
       </div>
 
       {/* Waveform */}
