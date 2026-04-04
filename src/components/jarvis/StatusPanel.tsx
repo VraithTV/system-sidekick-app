@@ -1,30 +1,38 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { Mic, MicOff, Wifi, WifiOff, Circle, Monitor } from 'lucide-react';
+import { Mic, MicOff, Wifi, WifiOff, Circle, Monitor, Cpu, MemoryStick, MonitorCog } from 'lucide-react';
 
-const StatBar = ({ label, value, color }: { label: string; value: number; color: string }) => (
-  <div className="space-y-1">
-    <div className="flex justify-between text-[10px]">
-      <span className="text-muted-foreground font-mono">{label}</span>
-      <span className={`font-mono ${color}`}>{value}%</span>
+const StatBar = ({ label, value, icon: Icon }: { label: string; value: number; icon: any }) => {
+  const color = value > 80 ? 'hsl(var(--destructive))' : 'hsl(var(--primary))';
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-[10px]">
+        <div className="flex items-center gap-1.5 text-muted-foreground/60">
+          <Icon className="w-3 h-3" />
+          <span className="font-mono">{label}</span>
+        </div>
+        <span className="font-mono" style={{ color }}>{value}%</span>
+      </div>
+      <div className="h-[3px] bg-[hsl(222,15%,12%)] rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-1000"
+          style={{ width: `${value}%`, backgroundColor: color }}
+        />
+      </div>
     </div>
-    <div className="h-1 bg-muted/50 rounded-full overflow-hidden">
-      <div
-        className={`h-full rounded-full transition-all duration-1000 ${color.replace('text-', 'bg-')}`}
-        style={{ width: `${value}%` }}
-      />
-    </div>
-  </div>
-);
+  );
+};
 
-const StatusRow = ({ icon: Icon, label, active, activeText, inactiveText, activeColor = 'text-success' }: any) => (
-  <div className="flex items-center justify-between text-[10px] py-1.5">
-    <div className="flex items-center gap-1.5 text-muted-foreground font-mono">
-      <Icon className={`w-3 h-3 ${active ? activeColor : 'text-muted-foreground/40'}`} />
-      {label}
+const StatusDot = ({ active, label, activeLabel, inactiveLabel, color = 'success' }: any) => (
+  <div className="flex items-center justify-between py-1.5">
+    <span className="text-[10px] font-mono text-muted-foreground/40">{label}</span>
+    <div className="flex items-center gap-1.5">
+      <span className={`text-[10px] font-mono ${active ? `text-${color}` : 'text-muted-foreground/25'}`}>
+        {active ? activeLabel : inactiveLabel}
+      </span>
+      <div className={`w-1.5 h-1.5 rounded-full ${
+        active ? `bg-${color} shadow-[0_0_6px_hsl(var(--${color})/0.5)]` : 'bg-muted-foreground/15'
+      }`} />
     </div>
-    <span className={`font-mono ${active ? activeColor : 'text-muted-foreground/40'}`}>
-      {active ? activeText : inactiveText}
-    </span>
   </div>
 );
 
@@ -32,20 +40,22 @@ export const StatusPanel = () => {
   const { systemStatus } = useJarvisStore();
 
   return (
-    <div className="space-y-4">
-      <h3 className="font-display text-[10px] tracking-[0.2em] text-muted-foreground/60 uppercase">System</h3>
+    <div className="space-y-5">
+      <p className="font-display text-[9px] tracking-[0.25em] text-muted-foreground/30 uppercase">System</p>
 
-      <div className="space-y-2.5">
-        <StatBar label="CPU" value={systemStatus.cpu} color={systemStatus.cpu > 80 ? 'text-destructive' : 'text-primary'} />
-        <StatBar label="RAM" value={systemStatus.ram} color={systemStatus.ram > 85 ? 'text-destructive' : 'text-primary'} />
-        <StatBar label="GPU" value={systemStatus.gpu} color={systemStatus.gpu > 90 ? 'text-destructive' : 'text-primary'} />
+      <div className="space-y-3">
+        <StatBar label="CPU" value={systemStatus.cpu} icon={Cpu} />
+        <StatBar label="RAM" value={systemStatus.ram} icon={MemoryStick} />
+        <StatBar label="GPU" value={systemStatus.gpu} icon={MonitorCog} />
       </div>
 
-      <div className="border-t border-border/30 pt-3 space-y-0.5">
-        <StatusRow icon={systemStatus.micActive ? Mic : MicOff} label="Mic" active={systemStatus.micActive} activeText="On" inactiveText="Off" />
-        <StatusRow icon={systemStatus.obsConnected ? Wifi : WifiOff} label="OBS" active={systemStatus.obsConnected} activeText="OK" inactiveText="Off" />
-        <StatusRow icon={Circle} label="Rec" active={systemStatus.isRecording} activeText="REC" inactiveText="Off" activeColor="text-destructive" />
-        <StatusRow icon={Monitor} label="Live" active={systemStatus.isStreaming} activeText="LIVE" inactiveText="Off" />
+      <div className="h-px bg-[hsl(222,15%,10%)]" />
+
+      <div>
+        <StatusDot active={systemStatus.micActive} label="Mic" activeLabel="On" inactiveLabel="Off" />
+        <StatusDot active={systemStatus.obsConnected} label="OBS" activeLabel="OK" inactiveLabel="—" />
+        <StatusDot active={systemStatus.isRecording} label="Rec" activeLabel="REC" inactiveLabel="—" color="destructive" />
+        <StatusDot active={systemStatus.isStreaming} label="Live" activeLabel="LIVE" inactiveLabel="—" />
       </div>
     </div>
   );
