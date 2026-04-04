@@ -1,0 +1,57 @@
+export type AssistantState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'executing';
+
+export interface Command {
+  id: string;
+  text: string;
+  response: string;
+  timestamp: Date;
+  type: 'voice' | 'text';
+}
+
+export interface AppShortcut {
+  id: string;
+  name: string;
+  path: string;
+  aliases: string[];
+  icon?: string;
+}
+
+export interface Routine {
+  id: string;
+  name: string;
+  trigger: string;
+  actions: string[];
+  enabled: boolean;
+}
+
+export interface Clip {
+  id: string;
+  filename: string;
+  duration: number;
+  timestamp: Date;
+  size: string;
+  thumbnail?: string;
+}
+
+export interface SystemStatus {
+  cpu: number;
+  ram: number;
+  gpu: number;
+  micActive: boolean;
+  obsConnected: boolean;
+  isRecording: boolean;
+  isStreaming: boolean;
+  desktopOnline: boolean;
+}
+
+export interface JarvisSettings {
+  wakeName: string;
+  voice: string;
+  startOnBoot: boolean;
+  alwaysListening: boolean;
+  pushToTalk: boolean;
+  clipDuration: number;
+  clipFolder: string;
+  obsWebsocketUrl: string;
+  obsWebsocketPassword: string;
+}
