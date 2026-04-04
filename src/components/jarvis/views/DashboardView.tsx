@@ -3,7 +3,7 @@ import { AssistantOrb } from '../AssistantOrb';
 import { CommandHistory } from '../CommandHistory';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
-import { Mic, MicOff, ExternalLink } from 'lucide-react';
+import { Mic, MicOff } from 'lucide-react';
 
 export const DashboardView = () => {
   const { commands, settings, setSystemStatus } = useJarvisStore();
