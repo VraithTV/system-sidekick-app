@@ -33,6 +33,22 @@ function createWindow() {
     win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   }
 
+  // Disable DevTools in production
+  if (!isDev) {
+    win.webContents.on('before-input-event', (event, input) => {
+      // Block Ctrl+Shift+I, Ctrl+Shift+J, F12
+      if (
+        (input.control && input.shift && (input.key === 'I' || input.key === 'i' || input.key === 'J' || input.key === 'j')) ||
+        input.key === 'F12'
+      ) {
+        event.preventDefault();
+      }
+    });
+    win.webContents.on('devtools-opened', () => {
+      win.webContents.closeDevTools();
+    });
+  }
+
   // Window control IPC
   ipcMain.on('window-minimize', () => win.minimize());
   ipcMain.on('window-maximize', () => {
