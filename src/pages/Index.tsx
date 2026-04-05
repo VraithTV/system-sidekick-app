@@ -20,8 +20,13 @@ const views: Record<string, React.ComponentType> = {
 
 const Index = () => {
   const { activeView } = useJarvisStore();
-  const { complete, finish } = useOnboarding();
+  const { complete, finish, ready } = useOnboarding();
   const View = views[activeView] || DashboardView;
+
+  // Wait for install fingerprint check in Electron
+  if (!ready) {
+    return <div className="h-screen bg-background" />;
+  }
 
   if (!complete) {
     return <OnboardingWizard onComplete={finish} />;
