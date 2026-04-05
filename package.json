@@ -33,9 +33,9 @@
     },
     "publish": [
       {
-        "provider": "generic",
-        "url": "https://YOUR_UPDATE_SERVER_URL/releases",
-        "channel": "latest"
+        "provider": "github",
+        "owner": "VraithTV",
+        "repo": "system-sidekick-app"
       }
     ]
   },
