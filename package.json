@@ -30,7 +30,14 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Jarvis AI"
-    }
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://YOUR_UPDATE_SERVER_URL/releases",
+        "channel": "latest"
+      }
+    ]
   },
   "dependencies": {
     "@electron/packager": "^19.1.0",
@@ -69,6 +76,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "electron": "^41.1.1",
+    "electron-updater": "^6.6.2",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.462.0",

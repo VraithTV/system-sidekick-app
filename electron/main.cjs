@@ -2,6 +2,14 @@ const { app, BrowserWindow, Menu, Tray, dialog, ipcMain, nativeImage } = require
 const fs = require('fs');
 const path = require('path');
 
+// Auto-updater (only works in packaged builds)
+let autoUpdater = null;
+try {
+  autoUpdater = require('electron-updater').autoUpdater;
+} catch {
+  // electron-updater not available in dev
+}
+
 app.setName('Jarvis AI BETA');
 app.setAppUserModelId('com.jarvis.ai');
 
@@ -90,6 +98,66 @@ async function handleCloseRequest() {
     return true;
   } finally {
     closeDialogOpen = false;
+  }
+}
+
+// ── Auto-Update Logic ──
+function setupAutoUpdater() {
+  if (!autoUpdater || isDev) return;
+
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.logger = {
+    info: (...args) => console.log('[AutoUpdater]', ...args),
+    warn: (...args) => console.warn('[AutoUpdater]', ...args),
+    error: (...args) => console.error('[AutoUpdater]', ...args),
+    debug: (...args) => console.log('[AutoUpdater:debug]', ...args),
+  };
+
+  autoUpdater.on('checking-for-update', () => {
+    sendUpdateStatus('checking');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    sendUpdateStatus('available', {
+      version: info.version,
+      releaseNotes: info.releaseNotes || '',
+      releaseDate: info.releaseDate || '',
+    });
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    sendUpdateStatus('not-available');
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    sendUpdateStatus('downloading', {
+      percent: Math.round(progress.percent),
+      transferred: progress.transferred,
+      total: progress.total,
+    });
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    sendUpdateStatus('downloaded', {
+      version: info.version,
+      releaseNotes: info.releaseNotes || '',
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    sendUpdateStatus('error', { message: err?.message || 'Unknown error' });
+  });
+
+  // Check 5s after launch, then every 4 hours
+  setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 5000);
+  setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1000);
+}
+
+function sendUpdateStatus(status, data = {}) {
+  if (win?.webContents) {
+    win.webContents.send('update-status', { status, ...data });
   }
 }
 
@@ -182,9 +250,37 @@ ipcMain.handle('app-get-info', () => ({
   isPackaged: app.isPackaged,
 }));
 
+// Update IPC handlers
+ipcMain.handle('update-check', async () => {
+  if (!autoUpdater || isDev) return { status: 'dev-mode' };
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return { status: 'ok', version: result?.updateInfo?.version };
+  } catch (err) {
+    return { status: 'error', message: err?.message };
+  }
+});
+
+ipcMain.handle('update-download', async () => {
+  if (!autoUpdater || isDev) return { status: 'dev-mode' };
+  try {
+    await autoUpdater.downloadUpdate();
+    return { status: 'downloading' };
+  } catch (err) {
+    return { status: 'error', message: err?.message };
+  }
+});
+
+ipcMain.on('update-install', () => {
+  if (!autoUpdater || isDev) return;
+  isQuitting = true;
+  autoUpdater.quitAndInstall(false, true);
+});
+
 app.whenReady().then(() => {
   createTray();
   createWindow();
+  setupAutoUpdater();
 });
 
 app.on('before-quit', () => {
