@@ -5,6 +5,15 @@ import { matchWakeWord } from '@/lib/fuzzyWake';
 import { startUtteranceCapture } from '@/lib/captureUtterance';
 import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 
+function getInstalledAppNames(): string[] {
+  try {
+    const raw = localStorage.getItem('jarvis_apps');
+    if (!raw) return [];
+    const apps = JSON.parse(raw);
+    return apps.map((a: any) => a.name);
+  } catch { return []; }
+}
+
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 /** Try to detect an "open app" intent and actually launch it via Electron */
