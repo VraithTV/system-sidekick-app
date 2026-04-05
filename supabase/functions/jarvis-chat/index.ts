@@ -12,13 +12,21 @@ serve(async (req) => {
   }
 
   try {
-    const { message, memories } = await req.json();
+    const { message, memories, installedApps } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const memoriesSection = memories && memories.length > 0
       ? `\n\nYou remember these facts about the user:\n${memories}\n\nUse these facts naturally in conversation. For example, greet them by name if you know it.`
       : '';
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/London' });
+    const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+
+    const appsSection = installedApps && Array.isArray(installedApps) && installedApps.length > 0
+      ? `\n\nAPPS THE USER HAS CONFIGURED (you can ONLY open these):\n${installedApps.join(', ')}\n\nIf the user asks you to open an app that is NOT in this list, politely tell them you can't open it yet and they need to add it to their Applications page first. For example: "I don't have that app configured yet. You can add it on the Applications page, and then I'll be able to open it for you."`
+      : `\n\nThe user has not added any apps to their Applications page yet. If they ask you to open an app, tell them they need to add it on the Applications page first.`;
 
     const systemPrompt = `You are Jarvis, an AI desktop assistant inspired by Iron Man's Jarvis. You are:
 - Polite, efficient, calm, professional, and slightly witty
@@ -28,6 +36,9 @@ serve(async (req) => {
 - For questions or conversations, be helpful but concise
 - Never be overly childish or robotic
 - Sound sleek and natural
+
+CURRENT DATE AND TIME: ${dateStr}, ${timeStr} (UK time). Always use this when the user asks about the date, time, or day.
+${appsSection}
 ${memoriesSection}
 
 IMPORTANT: After your reply, if the user revealed any new personal facts about themselves (name, age, preferences, location, job, hobbies, etc.), output them on a new line starting with "MEMORY:" followed by a JSON array of short fact strings. Only include genuinely new facts. If no new facts, don't include a MEMORY line.
