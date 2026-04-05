@@ -118,8 +118,9 @@ function speakBrowser(text: string, _outputDeviceId?: string): Promise<void> {
 async function getAIResponse(text: string): Promise<string> {
   try {
     const memories = formatMemoriesForPrompt();
+    const installedApps = getInstalledAppNames();
     const { data, error } = await supabase.functions.invoke('jarvis-chat', {
-      body: { message: text, memories },
+      body: { message: text, memories, installedApps },
     });
     if (error) throw error;
 
