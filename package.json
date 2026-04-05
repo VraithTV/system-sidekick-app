@@ -31,13 +31,6 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Jarvis AI"
     },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "VraithTV",
-        "repo": "system-sidekick-app"
-      }
-    ]
   },
   "dependencies": {
     "@electron/packager": "^19.1.0",
