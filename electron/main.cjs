@@ -103,7 +103,8 @@ async function handleCloseRequest() {
 
 // ── Auto-Update Logic ──
 function setupAutoUpdater() {
-  if (!autoUpdater || isDev) return;
+  const updatesEnabled = process.env.JARVIS_ENABLE_UPDATES === '1';
+  if (!autoUpdater || isDev || !updatesEnabled) return;
 
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
