@@ -15,6 +15,8 @@ let forceQuit = false;
 function showMainWindow() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
 
+  mainWindow.setSkipTaskbar(false);
+
   if (mainWindow.isMinimized()) {
     mainWindow.restore();
   }
@@ -25,17 +27,26 @@ function showMainWindow() {
 
 function hideMainWindowToTray() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
+
+  createTray();
+  mainWindow.setSkipTaskbar(true);
   mainWindow.hide();
 }
 
 function quitApplication() {
   forceQuit = true;
 
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.destroy();
+  if (tray) {
+    tray.destroy();
+    tray = null;
   }
 
-  app.quit();
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.destroy();
+    mainWindow = null;
+  }
+
+  app.exit(0);
 }
 
 function promptCloseAction() {
@@ -131,6 +142,10 @@ function createWindow() {
     event.preventDefault();
     promptCloseAction();
   });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 }
 
 ipcMain.on('window-minimize', () => {
@@ -153,19 +168,12 @@ ipcMain.on('window-close', () => {
   promptCloseAction();
 });
 
-ipcMain.handle('window-close', () => {
-  promptCloseAction();
-  return null;
-});
-
-ipcMain.handle('window-hide-to-tray', () => {
+ipcMain.on('window-hide-to-tray', () => {
   hideMainWindowToTray();
-  return null;
 });
 
-ipcMain.handle('app-quit', () => {
+ipcMain.on('app-quit', () => {
   quitApplication();
-  return null;
 });
 
 ipcMain.handle('window-is-maximized', () => {
