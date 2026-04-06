@@ -207,6 +207,28 @@ ipcMain.handle('window-is-maximized', () => {
   return Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isMaximized());
 });
 
+ipcMain.on('open-url', (_event, url) => {
+  if (typeof url === 'string' && (url.startsWith('http') || url.startsWith('spotify:'))) {
+    shell.openExternal(url);
+  }
+});
+
+ipcMain.on('media-key', (_event, key) => {
+  const keyMap = {
+    'play-pause': 'media_play_pause',
+    'next': 'media_next_track',
+    'previous': 'media_prev_track',
+    'stop': 'media_stop',
+  };
+  const nircmdKey = keyMap[key];
+  if (nircmdKey) {
+    try {
+      // Use PowerShell to simulate media keys
+      execSync(`powershell -Command "(New-Object -ComObject WScript.Shell).SendKeys([char]0xB3)"`, { stdio: 'ignore' });
+    } catch {}
+  }
+});
+
 app.on('before-quit', () => {
   forceQuit = true;
 });
