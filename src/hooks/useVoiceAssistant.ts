@@ -148,9 +148,21 @@ async function getAIResponse(text: string): Promise<string> {
   try {
     const memories = formatMemoriesForPrompt();
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const { data, error } = await supabase.functions.invoke('jarvis-chat', {
-      body: { message: text, memories, timezone },
-    });
+
+    let data: any;
+    let error: any;
+
+    try {
+      const result = await supabase.functions.invoke('jarvis-chat', {
+        body: { message: text, memories, timezone },
+      });
+      data = result.data;
+      error = result.error;
+    } catch (networkErr) {
+      console.warn('[Jarvis] Network error calling AI — you may be offline or behind a VPN:', networkErr);
+      return "I can't reach the server right now. Check your internet connection or VPN and try again.";
+    }
+
     if (error) throw error;
 
     // Store any new memories the AI extracted
@@ -162,7 +174,7 @@ async function getAIResponse(text: string): Promise<string> {
     return data?.reply || "I didn't catch that. Could you say it again?";
   } catch (e) {
     console.error('AI response error:', e);
-    return "I'm having trouble connecting right now. Please try again.";
+    return "I'm having trouble connecting right now. If you're using a VPN, try switching servers or disabling it temporarily.";
   }
 }
 

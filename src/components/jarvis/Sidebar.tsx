@@ -1,14 +1,12 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Activity, MessageSquare, Brain, Eye } from 'lucide-react';
+import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Activity, Palette } from 'lucide-react';
 import { JarvisLogo } from './JarvisLogo';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'apps', label: 'Apps', icon: AppWindow },
   { id: 'clips', label: 'Clips', icon: Film },
-  { id: 'meetings', label: 'Meetings', icon: MessageSquare, comingSoon: true },
-  { id: 'memory', label: 'Memory', icon: Brain, comingSoon: true },
-  { id: 'vision', label: 'Vision', icon: Eye, comingSoon: true },
+  { id: 'themes', label: 'Themes', icon: Palette, comingSoon: true },
   { id: 'routines', label: 'Routines', icon: Zap },
   { id: 'system', label: 'System', icon: Activity },
   { id: 'settings', label: 'Settings', icon: Settings },
