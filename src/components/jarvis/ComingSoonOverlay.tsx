@@ -5,9 +5,9 @@ export const ComingSoonOverlay = ({ title }: { title: string }) => (
     {/* Blurred placeholder content */}
     <div className="p-8 blur-sm opacity-20 pointer-events-none select-none">
       <h2 className="font-display text-sm text-primary tracking-[0.15em] mb-8">{title}</h2>
-      <div className="grid grid-cols-2 xl:grid-cols-3 border border-border/30 bg-card">
+      <div className="grid grid-cols-2 xl:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="p-6 h-24" />
+          <div key={i} className="bg-card p-6 border border-border/30 h-24" />
         ))}
       </div>
     </div>

@@ -2,12 +2,6 @@ import type { VoiceOption } from '@/types/jarvis';
 
 export const voiceOptions: VoiceOption[] = [
   {
-    id: 'jarvis',
-    label: 'Jarvis',
-    elevenLabsId: 'lbbhDW6HxyTHZ2QFbpu8',
-    description: 'The official Jarvis AI voice — custom-built',
-  },
-  {
     id: 'daniel',
     label: 'Daniel',
     elevenLabsId: 'onwK4e9ZLuTAKqWW03F9',

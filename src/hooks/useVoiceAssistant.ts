@@ -1,18 +1,9 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { supabase } from '@/integrations/supabase/client';
 import { matchWakeWord } from '@/lib/fuzzyWake';
 import { startUtteranceCapture } from '@/lib/captureUtterance';
-import { formatMemoriesForPrompt, addMemories, getMemories } from '@/lib/memoryStore';
-
-function getInstalledAppNames(): string[] {
-  try {
-    const raw = localStorage.getItem('jarvis_apps');
-    if (!raw) return [];
-    const apps = JSON.parse(raw);
-    return apps.map((a: any) => a.name);
-  } catch { return []; }
-}
+import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -118,9 +109,8 @@ function speakBrowser(text: string, _outputDeviceId?: string): Promise<void> {
 async function getAIResponse(text: string): Promise<string> {
   try {
     const memories = formatMemoriesForPrompt();
-    const installedApps = getInstalledAppNames();
     const { data, error } = await supabase.functions.invoke('jarvis-chat', {
-      body: { message: text, memories, installedApps },
+      body: { message: text, memories },
     });
     if (error) throw error;
 
@@ -144,18 +134,9 @@ export function useVoiceAssistant() {
   const wakeWordHeard = useRef(false);
   const conversationActive = useRef(false);
   const captureStopRef = useRef<(() => void) | null>(null);
-  const processingRef = useRef(false);
-  const hasGreeted = useRef(false);
 
   const processCommand = useCallback(
     async (text: string) => {
-      // Prevent duplicate processing
-      if (processingRef.current) {
-        console.log('[Jarvis] Already processing a command, skipping:', text);
-        return;
-      }
-      processingRef.current = true;
-
       setState('thinking');
 
       const response = await getAIResponse(text);
@@ -187,58 +168,9 @@ export function useVoiceAssistant() {
         wakeWordHeard.current = false;
         setState('standby');
       }
-
-      processingRef.current = false;
     },
     [setState, addCommand, settings.voiceId, settings.outputDeviceId]
   );
-
-  /** Startup greeting — runs once when mic is first enabled */
-  const doStartupGreeting = useCallback(async () => {
-    if (hasGreeted.current) return;
-    hasGreeted.current = true;
-
-    setState('thinking');
-
-    const memories = getMemories();
-    const nameFact = memories.find((m) =>
-      m.fact.toLowerCase().includes('name is') || m.fact.toLowerCase().includes("user's name")
-    );
-    const userName = nameFact
-      ? nameFact.fact.replace(/.*name is\s*/i, '').replace(/[.!]/g, '').trim()
-      : null;
-
-    const now = new Date();
-    const hour = now.getHours();
-    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    const dateStr = now.toLocaleDateString('en-GB', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-    const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-
-    const startupMessage = userName
-      ? `${greeting}, ${userName}. Today is ${dateStr}, the time is ${timeStr}. All systems are online and fully operational. How can I help you?`
-      : `${greeting}. Today is ${dateStr}, the time is ${timeStr}. All systems are online and fully operational. What's on the agenda?`;
-
-    setState('speaking');
-    addCommand({
-      id: Date.now().toString(),
-      text: '[System startup]',
-      response: startupMessage,
-      timestamp: new Date(),
-      type: 'voice',
-    });
-
-    await speakWithElevenLabs(startupMessage, settings.voiceId, settings.outputDeviceId || undefined);
-
-    // After greeting, stay in conversation mode briefly so user can respond
-    conversationActive.current = true;
-    wakeWordHeard.current = true;
-    setState('listening');
-  }, [setState, addCommand, settings.voiceId, settings.outputDeviceId]);
 
   const startListening = useCallback(() => {
     isListeningRef.current = true;
@@ -246,19 +178,8 @@ export function useVoiceAssistant() {
     setSystemStatus({ micActive: true });
 
     const runCaptureLoop = async () => {
-      // Run startup greeting on first listen
-      if (!hasGreeted.current) {
-        await doStartupGreeting();
-      }
-
       while (isListeningRef.current) {
         try {
-          // Don't capture while already processing
-          if (processingRef.current) {
-            await new Promise((r) => setTimeout(r, 200));
-            continue;
-          }
-
           console.log('[Jarvis] Starting audio capture...');
           const controller = await startUtteranceCapture({
             deviceId: settings.inputDeviceId || undefined,
@@ -317,7 +238,8 @@ export function useVoiceAssistant() {
 
             if (wakeMatch.command && wakeMatch.command.length > 2) {
               await processCommand(wakeMatch.command);
-              // processCommand handles state transitions — don't override
+              wakeWordHeard.current = false;
+              if (isListeningRef.current) setState('standby');
               continue;
             }
 
@@ -326,24 +248,23 @@ export function useVoiceAssistant() {
             continue;
           }
 
+          wakeWordHeard.current = false;
           await processCommand(transcript.toLowerCase());
-          // processCommand handles wakeWordHeard and state transitions
+          if (isListeningRef.current) setState('standby');
         } catch (error) {
           console.warn('[Jarvis] Voice capture loop error:', error);
           wakeWordHeard.current = false;
-          processingRef.current = false;
           if (!isListeningRef.current) break;
         }
       }
     };
 
     runCaptureLoop();
-  }, [settings.inputDeviceId, settings.wakeAliases, settings.wakeName, settings.wakeSensitivity, setState, setSystemStatus, processCommand, doStartupGreeting]);
+  }, [settings.inputDeviceId, settings.wakeAliases, settings.wakeName, settings.wakeSensitivity, setState, setSystemStatus, processCommand]);
 
   const stopListening = useCallback(() => {
     isListeningRef.current = false;
     wakeWordHeard.current = false;
-    processingRef.current = false;
     captureStopRef.current?.();
     captureStopRef.current = null;
     if (recognitionRef.current) {

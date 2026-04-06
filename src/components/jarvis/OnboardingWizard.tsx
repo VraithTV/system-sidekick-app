@@ -10,48 +10,16 @@ import { Mic, Volume2, Play, ChevronRight, Check, AppWindow } from 'lucide-react
 import { playClick, playTick } from '@/lib/sounds';
 
 const ONBOARDING_KEY = 'jarvis_onboarding_complete';
-const ONBOARDING_INSTALL_KEY = 'jarvis_onboarding_install_fingerprint';
-const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 export function useOnboarding() {
   const [complete, setComplete] = useState(() => {
     try { return localStorage.getItem(ONBOARDING_KEY) === '1'; } catch { return false; }
   });
-  const [installFingerprint, setInstallFingerprint] = useState<string | null>(null);
-  const [ready, setReady] = useState(!isElectron);
-
-  // In Electron, check if this is a fresh install by comparing fingerprints
-  useEffect(() => {
-    if (!isElectron) return;
-    const api = (window as any).electronAPI;
-    if (!api?.getAppInfo) { setReady(true); return; }
-
-    api.getAppInfo()
-      .then((info: { installFingerprint?: string }) => {
-        const fp = info?.installFingerprint || null;
-        setInstallFingerprint(fp);
-        try {
-          const storedFp = localStorage.getItem(ONBOARDING_INSTALL_KEY);
-          if (fp && storedFp !== fp) {
-            // New install detected — reset onboarding
-            localStorage.removeItem(ONBOARDING_KEY);
-            setComplete(false);
-          }
-        } catch {}
-      })
-      .catch(() => {})
-      .finally(() => setReady(true));
-  }, []);
-
   const finish = useCallback(() => {
     localStorage.setItem(ONBOARDING_KEY, '1');
-    if (installFingerprint) {
-      localStorage.setItem(ONBOARDING_INSTALL_KEY, installFingerprint);
-    }
     setComplete(true);
-  }, [installFingerprint]);
-
-  return { complete, finish, ready };
+  }, []);
+  return { complete, finish };
 }
 
 // Step indicator dots
