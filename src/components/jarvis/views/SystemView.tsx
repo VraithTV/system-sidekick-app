@@ -69,9 +69,9 @@ export const SystemView = () => {
         <div className="mb-6 flex items-start gap-3 rounded-xl bg-primary/5 border border-primary/20 p-4">
           <Eye className="w-5 h-5 text-primary shrink-0 mt-0.5" />
           <div>
-            <p className="text-[13px] text-primary font-medium">Preview — System Monitor</p>
+            <p className="text-[13px] text-primary font-medium">Preview: System Monitor</p>
             <p className="text-[11px] text-muted-foreground font-mono mt-1">
-              Here's a preview of what the System page will look like. Live hardware monitoring from your PC is coming soon — data shown is simulated.
+              Here's a preview of what the System page will look like. Live hardware monitoring from your PC is coming soon.
             </p>
           </div>
         </div>
