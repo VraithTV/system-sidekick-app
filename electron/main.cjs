@@ -36,6 +36,7 @@ function hideMainWindowToTray() {
 
 function quitApplication() {
   forceQuit = true;
+  closePromptOpen = false;
 
   if (tray) {
     tray.destroy();
@@ -43,11 +44,14 @@ function quitApplication() {
   }
 
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.destroy();
-    mainWindow = null;
+    mainWindow.once('closed', () => {
+      app.quit();
+    });
+    mainWindow.close();
+    return;
   }
 
-  app.exit(0);
+  app.quit();
 }
 
 async function promptCloseAction() {
