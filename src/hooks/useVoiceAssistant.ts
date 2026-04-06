@@ -96,7 +96,7 @@ async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId
   } catch (e) {
     console.warn('ElevenLabs error, falling back:', e);
     elevenLabsRetryAfter = Date.now() + 5 * 60 * 1000;
-    return speakBrowser(text, outputDeviceId);
+    return speakBrowser(text, outputDeviceId, jarvisVoice);
   }
 }
 
