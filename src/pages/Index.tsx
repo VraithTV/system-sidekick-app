@@ -10,6 +10,7 @@ import { SettingsView } from '@/components/jarvis/views/SettingsView';
 import { SystemView } from '@/components/jarvis/views/SystemView';
 import { ThemesView } from '@/components/jarvis/views/ThemesView';
 import { useJarvisStore } from '@/store/jarvisStore';
+import { useGlobalShortcuts } from '@/hooks/useGlobalShortcuts';
 
 const views: Record<string, React.ComponentType> = {
   dashboard: DashboardView,
