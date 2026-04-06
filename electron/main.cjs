@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, dialog, shell } = require('electron');
+const { execSync } = require('child_process');
 const path = require('path');
 
 app.setName('Jarvis AI BETA');
