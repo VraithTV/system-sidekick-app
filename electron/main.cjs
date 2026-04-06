@@ -75,6 +75,7 @@ function createWindow() {
     title: 'Jarvis AI BETA', backgroundColor: '#0e1117',
     webPreferences: {
       contextIsolation: true, nodeIntegration: false,
+      devTools: !app.isPackaged,
       preload: path.join(__dirname, 'preload.cjs'),
     },
   });
