@@ -168,12 +168,27 @@ ipcMain.on('window-close', () => {
   promptCloseAction();
 });
 
+ipcMain.handle('window-close', () => {
+  promptCloseAction();
+  return null;
+});
+
 ipcMain.on('window-hide-to-tray', () => {
   hideMainWindowToTray();
 });
 
+ipcMain.handle('window-hide-to-tray', () => {
+  hideMainWindowToTray();
+  return null;
+});
+
 ipcMain.on('app-quit', () => {
   quitApplication();
+});
+
+ipcMain.handle('app-quit', () => {
+  quitApplication();
+  return null;
 });
 
 ipcMain.handle('window-is-maximized', () => {
