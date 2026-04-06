@@ -17,17 +17,15 @@ export const TitleBar = () => {
 
   const api = isElectron ? (window as any).electronAPI : null;
 
-  const runCloseAction = (action: 'tray' | 'quit') => {
+  const runCloseAction = async (action: 'tray' | 'quit') => {
     setShowClosePrompt(false);
 
-    window.setTimeout(() => {
-      if (action === 'tray') {
-        api?.hideToTray?.();
-        return;
-      }
+    if (action === 'tray') {
+      await api?.hideToTray?.();
+      return;
+    }
 
-      api?.quit?.();
-    }, 0);
+    await api?.quit?.();
   };
 
   return (
