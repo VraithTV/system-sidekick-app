@@ -64,7 +64,7 @@ const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
 );
 
 // ── Step 1: Microphone ──
-const MicStep = ({ onNext }: { onNext: () => void }) => {
+const MicStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
   const { inputs, refresh } = useAudioDevices();
   const { settings, updateSettings } = useJarvisStore();
 
@@ -102,12 +102,20 @@ const MicStep = ({ onNext }: { onNext: () => void }) => {
           </button>
         ))}
       </div>
-      <button
-        onClick={() => { playClick(); onNext(); }}
-        className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
-      >
-        {inputs.length === 0 ? 'Skip' : 'Continue'} <ChevronRight className="w-4 h-4" />
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => { playClick(); onBack(); }}
+          className="flex items-center gap-2 px-6 py-3 rounded-full border border-muted-foreground/20 text-muted-foreground font-display text-xs tracking-[0.15em] uppercase hover:bg-muted/40 transition-all duration-300"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
+        <button
+          onClick={() => { playClick(); onNext(); }}
+          className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
+        >
+          {inputs.length === 0 ? 'Skip' : 'Continue'} <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };
