@@ -140,6 +140,17 @@ export const ClipsView = () => {
           </div>
         </div>
 
+        {/* Beta Warning */}
+        <div className="mb-6 flex items-start gap-3 rounded-xl bg-amber-500/5 border border-amber-500/20 p-4">
+          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[13px] text-amber-400 font-medium">Clips is in Beta</p>
+            <p className="text-[11px] text-amber-500/70 font-mono mt-1">
+              This feature is still under development — some things may not work as expected. Screen recording and replay buffer support is coming soon.
+            </p>
+          </div>
+        </div>
+
         {/* Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
           {/* Recording Status */}
