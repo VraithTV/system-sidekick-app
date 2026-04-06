@@ -28,7 +28,7 @@ export const Sidebar = () => {
       </div>
 
       {/* Nav items */}
-      <nav className="flex-1 flex flex-col py-3 px-2 gap-px overflow-y-auto">
+      <nav className="flex-1 flex flex-col pt-1 pb-3 px-2 gap-px overflow-y-auto">
         {navItems.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
