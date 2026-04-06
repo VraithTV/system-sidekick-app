@@ -1,6 +1,14 @@
 import { Construction } from 'lucide-react';
 
-export const ComingSoonOverlay = ({ title }: { title: string }) => (
+type ComingSoonOverlayProps = {
+  title: string;
+  description?: string;
+};
+
+export const ComingSoonOverlay = ({
+  title,
+  description = 'This feature is still being built. Stay tuned for updates.',
+}: ComingSoonOverlayProps) => (
   <div className="flex-1 relative overflow-hidden bg-background">
     {/* Blurred placeholder content */}
     <div className="p-8 blur-sm opacity-20 pointer-events-none select-none">
@@ -22,7 +30,7 @@ export const ComingSoonOverlay = ({ title }: { title: string }) => (
           Under Development
         </h3>
         <p className="text-xs text-muted-foreground max-w-[240px] leading-relaxed">
-          This feature is still being built. Stay tuned for updates.
+          {description}
         </p>
         <span className="mt-4 text-[9px] font-mono text-primary/40 tracking-widest uppercase">Coming Soon</span>
       </div>
