@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import type { Clip } from '@/types/jarvis';
-import { Film, Scissors, Trash2, Play, FolderOpen, Circle, Square, Clock, HardDrive, Keyboard } from 'lucide-react';
+import { Film, Scissors, Trash2, Play, FolderOpen, Circle, Square, Clock, HardDrive, Eye } from 'lucide-react';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -140,6 +140,16 @@ export const ClipsView = () => {
           </div>
         </div>
 
+        {/* Preview Notice */}
+        <div className="mb-6 flex items-start gap-3 rounded-xl bg-primary/5 border border-primary/20 p-4">
+          <Eye className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[13px] text-primary font-medium">Preview — Clips</p>
+            <p className="text-[11px] text-muted-foreground font-mono mt-1">
+              Here's a preview of what the Clips feature will look like. Screen recording and clip saving are still under development.
+            </p>
+          </div>
+        </div>
 
         {/* Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
@@ -213,29 +223,6 @@ export const ClipsView = () => {
             <p className="text-[10px] font-mono text-muted-foreground/60 mt-2 truncate" title={settings.clipFolder}>
               {settings.clipFolder}
             </p>
-          </div>
-        </div>
-
-        {/* Shortcuts reminder */}
-        <div className="bg-card/50 rounded-xl p-4 border border-border/50 mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Keyboard className="w-4 h-4 text-primary/60" />
-            <p className="text-[10px] font-mono tracking-[0.15em] text-primary/60 uppercase">Quick Actions</p>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            {[
-              { keys: 'Ctrl+Shift+C', label: 'Clip last ' + settings.clipDuration + 's' },
-              { keys: 'Ctrl+Shift+R', label: 'Toggle recording' },
-              { keys: 'Ctrl+Shift+J', label: 'Show / Hide Jarvis' },
-              { keys: 'Ctrl+Shift+M', label: 'Toggle mic' },
-            ].map(({ keys, label }) => (
-              <div key={keys} className="flex items-center gap-2">
-                <kbd className="text-[10px] font-mono px-2 py-1 bg-muted rounded border border-border text-muted-foreground">
-                  {keys}
-                </kbd>
-                <span className="text-[11px] text-foreground/50">{label}</span>
-              </div>
-            ))}
           </div>
         </div>
 
