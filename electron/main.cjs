@@ -11,6 +11,7 @@ app.setLoginItemSettings({
 let mainWindow = null;
 let tray = null;
 let forceQuit = false;
+let closePromptOpen = false;
 
 function showMainWindow() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -49,27 +50,33 @@ function quitApplication() {
   app.exit(0);
 }
 
-function promptCloseAction() {
-  if (!mainWindow || mainWindow.isDestroyed()) return;
+async function promptCloseAction() {
+  if (!mainWindow || mainWindow.isDestroyed() || closePromptOpen) return;
 
-  const response = dialog.showMessageBoxSync(mainWindow, {
-    type: 'question',
-    buttons: ['Keep Running in Tray', 'Quit Completely'],
-    defaultId: 0,
-    cancelId: 0,
-    noLink: true,
-    title: 'Close Jarvis',
-    message: 'Keep Jarvis running in the background?',
-    detail:
-      'Choose “Keep Running in Tray” to hide Jarvis and keep it available from the system tray, or “Quit Completely” to close the app.',
-  });
+  closePromptOpen = true;
 
-  if (response === 0) {
-    hideMainWindowToTray();
-    return;
+  try {
+    const { response } = await dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      buttons: ['Keep Running in Tray', 'Quit Completely'],
+      defaultId: 0,
+      cancelId: 0,
+      noLink: true,
+      title: 'Close Jarvis',
+      message: 'Keep Jarvis running in the background?',
+      detail:
+        'Choose “Keep Running in Tray” to hide Jarvis and keep it available from the system tray, or “Quit Completely” to close the app.',
+    });
+
+    if (response === 0) {
+      setTimeout(() => hideMainWindowToTray(), 0);
+      return;
+    }
+
+    setTimeout(() => quitApplication(), 0);
+  } finally {
+    closePromptOpen = false;
   }
-
-  quitApplication();
 }
 
 function createTray() {
@@ -168,8 +175,8 @@ ipcMain.on('window-close', () => {
   promptCloseAction();
 });
 
-ipcMain.handle('window-close', () => {
-  promptCloseAction();
+ipcMain.handle('window-close', async () => {
+  await promptCloseAction();
   return null;
 });
 
