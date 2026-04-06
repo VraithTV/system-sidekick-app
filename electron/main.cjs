@@ -123,7 +123,7 @@ function createWindow() {
   if (isDev) {
     mainWindow.loadURL('http://localhost:8080');
   } else {
-    mainWindow.loadURL('https://system-sidekick-app.lovable.app');
+    mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   }
 
   mainWindow.on('maximize', () => {
