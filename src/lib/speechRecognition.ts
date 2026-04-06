@@ -48,7 +48,7 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
     recognition = new SpeechRecognitionCtor();
     recognition.lang = 'en-US';
     recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    recognition.maxAlternatives = 3;
     recognition.continuous = false;
 
     let settled = false;
