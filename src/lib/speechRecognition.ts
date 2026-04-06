@@ -138,7 +138,9 @@ async function decodeAudioBlob(blob: Blob): Promise<Float32Array> {
     const frameCount = Math.ceil(mono.length * TARGET_SAMPLE_RATE / decoded.sampleRate);
     const offlineContext = new OfflineAudioContext(1, frameCount, TARGET_SAMPLE_RATE);
     const resampleBuffer = offlineContext.createBuffer(1, mono.length, decoded.sampleRate);
-    resampleBuffer.copyToChannel(mono, 0);
+    const monoCopy = new Float32Array(mono.length);
+    monoCopy.set(mono);
+    resampleBuffer.copyToChannel(monoCopy, 0);
 
     const source = offlineContext.createBufferSource();
     source.buffer = resampleBuffer;
