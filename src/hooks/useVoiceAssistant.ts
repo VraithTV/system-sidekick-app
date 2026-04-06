@@ -37,9 +37,9 @@ function pause(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
-async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId?: string): Promise<void> {
+async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId?: string, jarvisVoice?: string): Promise<void> {
   if (Date.now() < elevenLabsRetryAfter) {
-    return speakBrowser(text, outputDeviceId);
+    return speakBrowser(text, outputDeviceId, jarvisVoice);
   }
 
   try {
@@ -64,7 +64,7 @@ async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId
         elevenLabsRetryAfter = Date.now() + 5 * 60 * 1000;
       }
 
-      return speakBrowser(text, outputDeviceId);
+      return speakBrowser(text, outputDeviceId, jarvisVoice);
     }
 
     elevenLabsRetryAfter = 0;
@@ -84,33 +84,60 @@ async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId
       };
       audio.onerror = async () => {
         URL.revokeObjectURL(audioUrl);
-        await speakBrowser(text, outputDeviceId);
+        await speakBrowser(text, outputDeviceId, jarvisVoice);
         resolve();
       };
       audio.play().catch(async () => {
         URL.revokeObjectURL(audioUrl);
-        await speakBrowser(text, outputDeviceId);
+        await speakBrowser(text, outputDeviceId, jarvisVoice);
         resolve();
       });
     });
   } catch (e) {
     console.warn('ElevenLabs error, falling back:', e);
     elevenLabsRetryAfter = Date.now() + 5 * 60 * 1000;
-    return speakBrowser(text, outputDeviceId);
+    return speakBrowser(text, outputDeviceId, jarvisVoice);
   }
 }
 
-function speakBrowser(text: string, _outputDeviceId?: string): Promise<void> {
+// Map Jarvis voice IDs to browser voice preferences for variety
+const browserVoiceMap: Record<string, { keywords: string[]; gender: 'male' | 'female'; pitch: number; rate: number }> = {
+  daniel:  { keywords: ['Daniel', 'Google UK English Male', 'British'], gender: 'male', pitch: 0.85, rate: 0.92 },
+  george:  { keywords: ['George', 'Google UK English Male', 'British'], gender: 'male', pitch: 0.9, rate: 0.95 },
+  brian:   { keywords: ['David', 'Google US English', 'Male'], gender: 'male', pitch: 0.8, rate: 0.9 },
+  chris:   { keywords: ['Google US English', 'Alex', 'Male'], gender: 'male', pitch: 1.0, rate: 1.0 },
+  liam:    { keywords: ['Google UK English Male', 'Liam', 'Male'], gender: 'male', pitch: 1.05, rate: 0.98 },
+  eric:    { keywords: ['Google US English', 'Fred', 'Male'], gender: 'male', pitch: 0.88, rate: 0.93 },
+  alice:   { keywords: ['Google UK English Female', 'Alice', 'Female'], gender: 'female', pitch: 1.1, rate: 0.95 },
+  sarah:   { keywords: ['Google US English Female', 'Samantha', 'Female'], gender: 'female', pitch: 1.05, rate: 0.92 },
+};
+
+function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string): Promise<void> {
   return new Promise((resolve) => {
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
-    utterance.pitch = 0.9;
+    const allVoices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith('en'));
+    const prefs = browserVoiceMap[voiceId || 'daniel'] || browserVoiceMap.daniel;
+
+    utterance.rate = prefs.rate;
+    utterance.pitch = prefs.pitch;
     utterance.volume = 1;
-    const voices = speechSynthesis.getVoices();
-    const preferred =
-      voices.find((v) => v.name.includes('Google') && v.lang.startsWith('en')) ||
-      voices.find((v) => v.lang.startsWith('en'));
-    if (preferred) utterance.voice = preferred;
+
+    // Try to find a matching voice by keyword
+    let matched: SpeechSynthesisVoice | undefined;
+    for (const kw of prefs.keywords) {
+      matched = allVoices.find((v) => v.name.includes(kw));
+      if (matched) break;
+    }
+    // Fallback: pick any English voice, preferring the right gender keyword
+    if (!matched) {
+      const genderKw = prefs.gender === 'female' ? 'Female' : 'Male';
+      matched =
+        allVoices.find((v) => v.name.includes(genderKw)) ||
+        allVoices.find((v) => v.name.includes('Google')) ||
+        allVoices[0];
+    }
+    if (matched) utterance.voice = matched;
+
     utterance.onend = () => resolve();
     utterance.onerror = () => resolve();
     speechSynthesis.speak(utterance);
@@ -171,7 +198,7 @@ export function useVoiceAssistant() {
         type: 'voice',
       });
 
-      await speakWithElevenLabs(response, settings.voiceId, settings.outputDeviceId || undefined);
+      await speakWithElevenLabs(response, settings.voiceId, settings.outputDeviceId || undefined, settings.voice);
 
       // If the response ends with a question mark, stay in conversation mode
       // so the user doesn't need the wake word for their reply
