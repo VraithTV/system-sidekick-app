@@ -149,8 +149,23 @@ ipcMain.on('window-maximize', () => {
   mainWindow.maximize();
 });
 
+ipcMain.on('window-close', () => {
+  promptCloseAction();
+});
+
 ipcMain.handle('window-close', () => {
   promptCloseAction();
+  return null;
+});
+
+ipcMain.handle('window-hide-to-tray', () => {
+  hideMainWindowToTray();
+  return null;
+});
+
+ipcMain.handle('app-quit', () => {
+  quitApplication();
+  return null;
 });
 
 ipcMain.handle('window-is-maximized', () => {
