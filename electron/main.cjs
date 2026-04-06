@@ -95,10 +95,8 @@ function createWindow() {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     mainWindow.webContents.send('window-maximized', false);
   });
-  mainWindow.on('close', (event) => {
-    if (forceQuit) return;
-    event.preventDefault();
-    promptCloseAction();
+  mainWindow.on('close', () => {
+    // Just quit — no prompt
   });
   mainWindow.on('closed', () => { mainWindow = null; });
 }
