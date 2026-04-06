@@ -12,9 +12,29 @@ serve(async (req) => {
   }
 
   try {
-    const { message, memories } = await req.json();
+    const { message, memories, timezone } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    // Build current date/time string in the user's timezone (or UTC)
+    const now = new Date();
+    const tz = timezone || "UTC";
+    let dateTimeStr: string;
+    try {
+      dateTimeStr = now.toLocaleString("en-US", {
+        timeZone: tz,
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      dateTimeStr = now.toUTCString();
+    }
 
     const memoriesSection = memories && memories.length > 0
       ? `\n\nYou remember these facts about the user:\n${memories}\n\nUse these facts naturally in conversation. For example, greet them by name if you know it.`
@@ -28,6 +48,8 @@ serve(async (req) => {
 - For questions or conversations, be helpful but concise
 - Never be overly childish or robotic
 - Sound sleek and natural
+
+The current date and time is: ${dateTimeStr} (${tz}).
 ${memoriesSection}
 
 IMPORTANT: After your reply, if the user revealed any new personal facts about themselves (name, age, preferences, location, job, hobbies, etc.), output them on a new line starting with "MEMORY:" followed by a JSON array of short fact strings. Only include genuinely new facts. If no new facts, don't include a MEMORY line.
