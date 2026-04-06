@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { loadThemePreference, applyTheme } from './lib/themes';
 
 // Catch unhandled network errors on startup so VPN/offline doesn't cause a white screen
 window.addEventListener('unhandledrejection', (event) => {
@@ -12,5 +13,9 @@ window.addEventListener('unhandledrejection', (event) => {
     event.preventDefault();
   }
 });
+
+// Apply saved theme before first render
+const { presetId, accentId } = loadThemePreference();
+applyTheme(presetId, accentId);
 
 createRoot(document.getElementById("root")!).render(<App />);
