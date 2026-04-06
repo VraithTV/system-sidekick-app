@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Minus, X } from 'lucide-react';
-import jarvisLogo from '@/assets/jarvis-logo.png';
+import { Minus, Maximize2, Minimize2, X } from 'lucide-react';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -17,15 +16,7 @@ export const TitleBar = () => {
   const api = isElectron ? (window as any).electronAPI : null;
 
   return (
-    <div className="titlebar-drag flex items-center justify-between h-9 bg-card border-b border-border/40 px-3 shrink-0 select-none z-50">
-      {/* Left — branding */}
-      <div className="flex items-center gap-2 titlebar-no-drag">
-        <img src={jarvisLogo} alt="Jarvis" className="w-4 h-4" />
-        <span className="text-[10px] font-display tracking-[0.12em] text-foreground/60">
-          Jarvis AI <span className="text-primary/70 font-semibold">BETA</span>
-        </span>
-      </div>
-
+    <div className="titlebar-drag flex items-center justify-end h-9 bg-card border-b border-border/40 px-3 shrink-0 select-none z-50">
       {/* Right — window controls (Electron only) */}
       {isElectron && api && (
         <div className="flex items-center gap-px titlebar-no-drag">
@@ -37,9 +28,9 @@ export const TitleBar = () => {
           </button>
           <button
             onClick={() => api.maximize()}
-            className="w-8 h-7 flex items-center justify-center hover:bg-muted/60 rounded transition-colors"
+            className="w-8 h-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded transition-colors"
           >
-            <img src={jarvisLogo} alt="" className="w-3.5 h-3.5" />
+            {maximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
           <button
             onClick={() => api.close()}
