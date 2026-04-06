@@ -16,4 +16,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onMaximizedChange: (callback) => {
     ipcRenderer.on('window-maximized', (_event, value) => callback(value));
   },
+  openUrl: (url) => ipcRenderer.send('open-url', url),
+  mediaKey: (key) => ipcRenderer.send('media-key', key),
 });

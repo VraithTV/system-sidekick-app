@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { matchWakeWord } from '@/lib/fuzzyWake';
 import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 import { startSpeechRecognition } from '@/lib/speechRecognition';
+import { processAppCommand } from '@/lib/appCommands';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -196,10 +197,19 @@ export function useVoiceAssistant() {
 
       setState('thinking');
 
-      const response = await getAIResponse(cleanedText);
+      // Check for app-specific commands first (Spotify, URLs, etc.)
+      const appResult = processAppCommand(cleanedText);
+      let response: string;
 
-      // Actually launch the app if the user asked to open one
-      tryLaunchApp(cleanedText);
+      if (appResult.handled) {
+        response = appResult.response || 'Done.';
+        // Also try to launch the app if needed
+        tryLaunchApp(cleanedText);
+      } else {
+        response = await getAIResponse(cleanedText);
+        // Try to launch the app if the user asked to open one
+        tryLaunchApp(cleanedText);
+      }
 
       setState('speaking');
       addCommand({

@@ -1,12 +1,24 @@
 import { create } from 'zustand';
 import type { AssistantState, Command, AppShortcut, Routine, Clip, SystemStatus, JarvisSettings } from '@/types/jarvis';
+import { getDefaultApps } from '@/lib/commonApps';
 
 const APPS_KEY = 'jarvis_apps';
+const APPS_INITIALIZED_KEY = 'jarvis_apps_initialized';
 
 function loadApps(): AppShortcut[] {
   try {
     const raw = localStorage.getItem(APPS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (raw) return JSON.parse(raw);
+
+    // First time: populate with defaults
+    if (!localStorage.getItem(APPS_INITIALIZED_KEY)) {
+      const defaults = getDefaultApps();
+      localStorage.setItem(APPS_KEY, JSON.stringify(defaults));
+      localStorage.setItem(APPS_INITIALIZED_KEY, 'true');
+      return defaults;
+    }
+
+    return [];
   } catch { return []; }
 }
 
