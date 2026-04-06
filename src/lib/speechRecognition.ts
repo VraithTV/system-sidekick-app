@@ -210,9 +210,9 @@ function createLocalSpeechRecognitionController(deviceId?: string): SpeechRecogn
   const promise = (async () => {
     const capture = await startUtteranceCapture({
       deviceId,
-      maxDurationMs: 20000,
-      silenceDurationMs: 1600,
-      levelThreshold: 6,
+      maxDurationMs: 15000,
+      silenceDurationMs: 1200,
+      levelThreshold: 4,
     });
 
     stopCapture = () => {
