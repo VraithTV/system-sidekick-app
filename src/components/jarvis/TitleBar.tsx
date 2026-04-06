@@ -17,14 +17,25 @@ export const TitleBar = () => {
 
   const api = isElectron ? (window as any).electronAPI : null;
 
-  const handleKeepRunningInTray = () => {
+  const runCloseAction = (action: 'tray' | 'quit') => {
     setShowClosePrompt(false);
-    void api?.hideToTray?.();
+
+    window.setTimeout(() => {
+      if (action === 'tray') {
+        api?.hideToTray?.();
+        return;
+      }
+
+      api?.quit?.();
+    }, 0);
+  };
+
+  const handleKeepRunningInTray = () => {
+    runCloseAction('tray');
   };
 
   const handleQuitCompletely = () => {
-    setShowClosePrompt(false);
-    void api?.quit?.();
+    runCloseAction('quit');
   };
 
   return (

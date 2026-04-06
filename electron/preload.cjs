@@ -1,11 +1,15 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+const sendWindowCommand = (channel) => () => {
+  ipcRenderer.send(channel);
+};
+
 contextBridge.exposeInMainWorld('electronAPI', {
-  minimize: () => ipcRenderer.send('window-minimize'),
-  maximize: () => ipcRenderer.send('window-maximize'),
-  close: () => ipcRenderer.invoke('window-close'),
-  hideToTray: () => ipcRenderer.invoke('window-hide-to-tray'),
-  quit: () => ipcRenderer.invoke('app-quit'),
+  minimize: sendWindowCommand('window-minimize'),
+  maximize: sendWindowCommand('window-maximize'),
+  close: sendWindowCommand('window-close'),
+  hideToTray: sendWindowCommand('window-hide-to-tray'),
+  quit: sendWindowCommand('app-quit'),
   isMaximized: () => ipcRenderer.invoke('window-is-maximized'),
   onMaximizedChange: (callback) => {
     ipcRenderer.on('window-maximized', (_event, value) => callback(value));
