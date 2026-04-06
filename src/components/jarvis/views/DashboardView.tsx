@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { AssistantOrb } from '../AssistantOrb';
 import { CommandHistory } from '../CommandHistory';
 import { useJarvisStore } from '@/store/jarvisStore';
@@ -6,19 +5,15 @@ import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { Mic, MicOff } from 'lucide-react';
 
 export const DashboardView = () => {
-  const { commands, settings, setSystemStatus, state } = useJarvisStore();
+  const { commands, settings, systemStatus, state } = useJarvisStore();
   const { startListening, stopListening } = useVoiceAssistant();
-  const [micOn, setMicOn] = useState(false);
+  const micOn = systemStatus.micActive;
 
   const toggleMic = () => {
     if (micOn) {
       stopListening();
-      setMicOn(false);
-      setSystemStatus({ micActive: false });
     } else {
       startListening();
-      setMicOn(true);
-      setSystemStatus({ micActive: true });
     }
   };
 

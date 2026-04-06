@@ -47,6 +47,17 @@ function phoneticKey(value: string): string {
     .replace(/[aeiou]/g, '');
 }
 
+function buildWakeCandidates(wakeName: string, aliases: string[]): string[] {
+  const normalizedWakeName = normalizeSpeech(wakeName);
+  const automaticAliases = normalizedWakeName === 'jarvis'
+    ? ['javis', 'jervis', 'jarviss', 'jarvus', 'jiva']
+    : [];
+
+  return Array.from(
+    new Set([wakeName, ...aliases, ...automaticAliases].map((candidate) => normalizeSpeech(candidate)).filter(Boolean))
+  );
+}
+
 function wakeWordScore(spoken: string, candidate: string): number {
   const normalizedSpoken = normalizeSpeech(spoken);
   const normalizedCandidate = normalizeSpeech(candidate);
@@ -55,7 +66,11 @@ function wakeWordScore(spoken: string, candidate: string): number {
     normalizedSpoken.replace(/\s+/g, ''),
     normalizedCandidate.replace(/\s+/g, '')
   );
-  const phoneticScore = phoneticKey(normalizedSpoken) === phoneticKey(normalizedCandidate) ? 0.92 : 0;
+  const spokenPhonetic = phoneticKey(normalizedSpoken);
+  const candidatePhonetic = phoneticKey(normalizedCandidate);
+  const phoneticScore = spokenPhonetic && candidatePhonetic
+    ? similarity(spokenPhonetic, candidatePhonetic)
+    : 0;
 
   return Math.max(directScore, compactScore, phoneticScore);
 }
@@ -68,10 +83,8 @@ export function matchWakeWord(
 ): { matched: boolean; command: string } {
   const normalizedTranscript = normalizeSpeech(transcript);
   const words = normalizedTranscript.split(/\s+/).filter(Boolean);
-  const candidates = [wakeName, ...aliases]
-    .map((candidate) => normalizeSpeech(candidate))
-    .filter(Boolean);
-  const threshold = 0.58 + sensitivity * 0.18;
+  const candidates = buildWakeCandidates(wakeName, aliases);
+  const threshold = 0.52 + sensitivity * 0.16;
 
   for (const candidate of candidates) {
     const candidateWords = candidate.split(/\s+/).filter(Boolean);
