@@ -3,34 +3,13 @@ import { Construction } from 'lucide-react';
 export const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 /**
- * Maintenance mode logic:
- * - URL param `?maintenance=on`  → forced ON (any environment)
- * - URL param `?maintenance=off` → forced OFF (any environment)
- * - No param → ON in Electron, OFF in web preview
- *
- * The param is persisted to localStorage so you only need to set it once.
+ * Maintenance mode: flip this flag to true/false.
+ * When true AND running in Electron, the maintenance screen is shown.
+ * The web preview is never blocked so you can always test changes.
  */
-const STORAGE_KEY = 'jarvis_maintenance_override';
+export const MAINTENANCE_ENABLED = false;
 
-function resolveMaintenanceMode(): boolean {
-  const params = new URLSearchParams(window.location.search);
-  const urlVal = params.get('maintenance');
-
-  if (urlVal === 'on' || urlVal === 'off') {
-    try { localStorage.setItem(STORAGE_KEY, urlVal); } catch {}
-    return urlVal === 'on';
-  }
-
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'on') return true;
-    if (stored === 'off') return false;
-  } catch {}
-
-  return isElectron;
-}
-
-export const isMaintenanceMode = resolveMaintenanceMode();
+export const isMaintenanceMode = isElectron && MAINTENANCE_ENABLED;
 
 export const MaintenanceScreen = () => (
   <div className="flex h-screen w-screen items-center justify-center bg-background">
