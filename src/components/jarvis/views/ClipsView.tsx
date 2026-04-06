@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import type { Clip } from '@/types/jarvis';
-import { Film, Scissors, Trash2, Play, FolderOpen, Circle, Square, Clock, HardDrive, Keyboard } from 'lucide-react';
+import { Film, Scissors, Trash2, Play, FolderOpen, Circle, Square, Clock, HardDrive, Eye } from 'lucide-react';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 

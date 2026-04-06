@@ -65,27 +65,14 @@ export const SystemView = () => {
         </div>
 
 
-        {/* Shortcuts */}
-        <div className="bg-card/50 rounded-xl p-4 border border-border/50 mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Keyboard className="w-4 h-4 text-primary/60" />
-            <p className="text-[10px] font-mono tracking-[0.15em] text-primary/60 uppercase">Keyboard Shortcuts</p>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            {[
-              { keys: 'Ctrl+Shift+J', label: 'Show / Hide Jarvis' },
-              { keys: 'Ctrl+Shift+M', label: 'Toggle mic' },
-              { keys: 'Ctrl+Space', label: 'Push to talk' },
-              { keys: 'Ctrl+Shift+R', label: 'Toggle recording' },
-              { keys: 'Ctrl+Shift+C', label: 'Clip last 30s' },
-            ].map(({ keys, label }) => (
-              <div key={keys} className="flex items-center gap-2">
-                <kbd className="text-[10px] font-mono px-2 py-1 bg-muted rounded border border-border text-muted-foreground">
-                  {keys}
-                </kbd>
-                <span className="text-[11px] text-foreground/50">{label}</span>
-              </div>
-            ))}
+        {/* Preview Notice */}
+        <div className="mb-6 flex items-start gap-3 rounded-xl bg-primary/5 border border-primary/20 p-4">
+          <Eye className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[13px] text-primary font-medium">Preview — System Monitor</p>
+            <p className="text-[11px] text-muted-foreground font-mono mt-1">
+              Here's a preview of what the System page will look like. Live hardware monitoring from your PC is coming soon — data shown is simulated.
+            </p>
           </div>
         </div>
 
