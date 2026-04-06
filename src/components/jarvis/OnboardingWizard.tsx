@@ -6,7 +6,7 @@ import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { commonApps, toAppShortcut } from '@/lib/commonApps';
 import { getAppIcon } from '@/components/jarvis/AppIcons';
-import { Mic, Volume2, Play, ChevronRight, Check, AppWindow } from 'lucide-react';
+import { Mic, Volume2, Play, ChevronRight, ChevronLeft, Check, AppWindow } from 'lucide-react';
 import { playClick, playTick } from '@/lib/sounds';
 
 const ONBOARDING_KEY = 'jarvis_onboarding_complete';
@@ -64,7 +64,7 @@ const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
 );
 
 // ── Step 1: Microphone ──
-const MicStep = ({ onNext }: { onNext: () => void }) => {
+const MicStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
   const { inputs, refresh } = useAudioDevices();
   const { settings, updateSettings } = useJarvisStore();
 
@@ -102,18 +102,26 @@ const MicStep = ({ onNext }: { onNext: () => void }) => {
           </button>
         ))}
       </div>
-      <button
-        onClick={() => { playClick(); onNext(); }}
-        className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
-      >
-        {inputs.length === 0 ? 'Skip' : 'Continue'} <ChevronRight className="w-4 h-4" />
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => { playClick(); onBack(); }}
+          className="flex items-center gap-2 px-6 py-3 rounded-full border border-border/40 text-muted-foreground font-display text-xs tracking-[0.15em] uppercase hover:bg-muted/60 transition-all duration-300"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
+        <button
+          onClick={() => { playClick(); onNext(); }}
+          className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
+        >
+          {inputs.length === 0 ? 'Skip' : 'Continue'} <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };
 
 // ── Step 2: Output Device ──
-const OutputStep = ({ onNext }: { onNext: () => void }) => {
+const OutputStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
   const { outputs, refresh } = useAudioDevices();
   const { settings, updateSettings } = useJarvisStore();
 
@@ -164,18 +172,26 @@ const OutputStep = ({ onNext }: { onNext: () => void }) => {
           </button>
         ))}
       </div>
-      <button
-        onClick={() => { playClick(); onNext(); }}
-        className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
-      >
-        Continue <ChevronRight className="w-4 h-4" />
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => { playClick(); onBack(); }}
+          className="flex items-center gap-2 px-6 py-3 rounded-full border border-border/40 text-muted-foreground font-display text-xs tracking-[0.15em] uppercase hover:bg-muted/60 transition-all duration-300"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
+        <button
+          onClick={() => { playClick(); onNext(); }}
+          className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
+        >
+          Continue <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };
 
 // ── Step 3: App Selection ──
-const AppsStep = ({ onNext }: { onNext: () => void }) => {
+const AppsStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
   const { setApps } = useJarvisStore();
   const [selected, setSelected] = useState<Set<string>>(new Set(['chrome', 'spotify', 'discord', 'obs']));
 
@@ -231,18 +247,26 @@ const AppsStep = ({ onNext }: { onNext: () => void }) => {
           );
         })}
       </div>
-      <button
-        onClick={() => { playClick(); handleContinue(); }}
-        className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
-      >
-        Continue <ChevronRight className="w-4 h-4" />
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => { playClick(); onBack(); }}
+          className="flex items-center gap-2 px-6 py-3 rounded-full border border-border/40 text-muted-foreground font-display text-xs tracking-[0.15em] uppercase hover:bg-muted/60 transition-all duration-300"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
+        <button
+          onClick={() => { playClick(); handleContinue(); }}
+          className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
+        >
+          Continue <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };
 
 // ── Step 4: Voice Selection ──
-const VoiceStep = ({ onNext }: { onNext: () => void }) => {
+const VoiceStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
   const { settings, updateSettings } = useJarvisStore();
   const { previewVoice } = useVoiceAssistant();
   const [previewing, setPreviewing] = useState<string | null>(null);
@@ -291,12 +315,20 @@ const VoiceStep = ({ onNext }: { onNext: () => void }) => {
           </button>
         ))}
       </div>
-      <button
-        onClick={() => { playClick(); onNext(); }}
-        className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
-      >
-        Finish Setup <Check className="w-4 h-4" />
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => { playClick(); onBack(); }}
+          className="flex items-center gap-2 px-6 py-3 rounded-full border border-border/40 text-muted-foreground font-display text-xs tracking-[0.15em] uppercase hover:bg-muted/60 transition-all duration-300"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
+        <button
+          onClick={() => { playClick(); onNext(); }}
+          className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
+        >
+          Finish Setup <Check className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };
@@ -311,23 +343,24 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
     else onComplete();
   };
 
+  const back = () => {
+    if (step > 0) setStep(step - 1);
+  };
+
   return (
     <div className="h-screen w-screen bg-background flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Background effects */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.04)_0%,transparent_60%)]" />
       <div className="absolute inset-0 grid-bg opacity-30" />
 
-      {/* Content */}
       <div className="relative z-10 w-full max-w-md px-6 flex-1 flex flex-col">
         <div className="flex-1 flex flex-col">
           {step === 0 && <WelcomeStep onNext={next} />}
-          {step === 1 && <MicStep onNext={next} />}
-          {step === 2 && <OutputStep onNext={next} />}
-          {step === 3 && <AppsStep onNext={next} />}
-          {step === 4 && <VoiceStep onNext={next} />}
+          {step === 1 && <MicStep onNext={next} onBack={back} />}
+          {step === 2 && <OutputStep onNext={next} onBack={back} />}
+          {step === 3 && <AppsStep onNext={next} onBack={back} />}
+          {step === 4 && <VoiceStep onNext={next} onBack={back} />}
         </div>
 
-        {/* Step dots */}
         <div className="flex justify-center pb-8">
           <StepDots current={step} total={totalSteps} />
         </div>
