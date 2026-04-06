@@ -126,6 +126,9 @@ export const SettingsView = () => {
               <Row label="Start on Boot" desc="Auto-launch with Windows">
                 <Toggle checked={settings.startOnBoot} onChange={() => updateSettings({ startOnBoot: !settings.startOnBoot })} />
               </Row>
+              <Row label="Maintenance Mode" desc="Show maintenance screen on desktop app">
+                <Toggle checked={maintenanceOn} onChange={toggleMaintenance} />
+              </Row>
             </div>
 
             <div className="bg-card rounded-xl p-6 border border-border">
