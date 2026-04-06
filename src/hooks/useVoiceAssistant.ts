@@ -198,7 +198,7 @@ export function useVoiceAssistant() {
         type: 'voice',
       });
 
-      await speakWithElevenLabs(response, settings.voiceId, settings.outputDeviceId || undefined);
+      await speakWithElevenLabs(response, settings.voiceId, settings.outputDeviceId || undefined, settings.voice);
 
       // If the response ends with a question mark, stay in conversation mode
       // so the user doesn't need the wake word for their reply
