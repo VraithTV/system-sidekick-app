@@ -84,7 +84,7 @@ async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId
       };
       audio.onerror = async () => {
         URL.revokeObjectURL(audioUrl);
-        await speakBrowser(text, outputDeviceId);
+        await speakBrowser(text, outputDeviceId, jarvisVoice);
         resolve();
       };
       audio.play().catch(async () => {
