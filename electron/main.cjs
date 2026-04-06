@@ -91,7 +91,7 @@ function createWindow() {
 
   // Intercept close to ask user
   mainWindow.on('close', (e) => {
-    if (forceQuit) return; // Allow quit from tray menu
+    if (forceQuit) return;
 
     e.preventDefault();
     dialog
@@ -102,15 +102,15 @@ function createWindow() {
         cancelId: 0,
         title: 'Close Jarvis',
         message: 'What would you like to do?',
-        detail: 'Minimize to system tray to keep Jarvis running in the background, or exit completely.',
+        detail:
+          'Minimize to system tray to keep Jarvis running in the background, or exit completely.',
       })
       .then(({ response }) => {
         if (response === 0) {
-          // Minimize to tray
           mainWindow.hide();
         } else {
-          // Full exit
           forceQuit = true;
+          mainWindow.destroy();
           app.quit();
         }
       });
