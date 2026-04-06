@@ -1,4 +1,4 @@
-import { Clock, Play, Pause, Repeat, Zap, AlertTriangle, Keyboard } from 'lucide-react';
+import { Clock, Play, Pause, Repeat, Zap, Eye } from 'lucide-react';
 
 const mockRoutines = [
   {
