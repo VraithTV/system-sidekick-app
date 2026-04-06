@@ -2,7 +2,6 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { supabase } from '@/integrations/supabase/client';
 import { matchWakeWord } from '@/lib/fuzzyWake';
-import { startUtteranceCapture } from '@/lib/captureUtterance';
 import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -25,11 +24,59 @@ function tryLaunchApp(userText: string): void {
 }
 
 let elevenLabsRetryAfter = 0;
-const MIN_CAPTURED_AUDIO_BYTES = 1500;
 const FATAL_CAPTURE_ERRORS = new Set(['NotAllowedError', 'NotFoundError', 'NotReadableError', 'SecurityError']);
 
 function pause(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+// ─── Browser Speech Recognition (free, no API key needed) ───
+
+const SpeechRecognitionCtor: any =
+  typeof window !== 'undefined'
+    ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    : undefined;
+
+function listenWithBrowserSTT(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!SpeechRecognitionCtor) {
+      return reject(new Error('Browser Speech Recognition not supported'));
+    }
+
+    const recognition = new SpeechRecognitionCtor();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    let settled = false;
+
+    recognition.onresult = (event: any) => {
+      if (settled) return;
+      settled = true;
+      const transcript = event.results?.[0]?.[0]?.transcript || '';
+      resolve(transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      if (settled) return;
+      settled = true;
+      if (event.error === 'no-speech' || event.error === 'aborted') {
+        resolve('');
+      } else {
+        reject(new Error(`Speech recognition error: ${event.error}`));
+      }
+    };
+
+    recognition.onend = () => {
+      if (!settled) {
+        settled = true;
+        resolve('');
+      }
+    };
+
+    recognition.start();
+  });
 }
 
 async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId?: string): Promise<void> {
