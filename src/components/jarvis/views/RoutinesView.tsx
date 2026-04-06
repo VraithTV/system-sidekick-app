@@ -39,16 +39,6 @@ export const RoutinesView = () => {
           <h2 className="font-display text-sm text-primary tracking-[0.15em]">ROUTINES</h2>
         </div>
 
-        {/* Preview Notice */}
-        <div className="mb-6 flex items-start gap-3 rounded-xl bg-primary/5 border border-primary/20 p-4">
-          <Eye className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-          <div>
-            <p className="text-[13px] text-primary font-medium">Preview — Routines</p>
-            <p className="text-[11px] text-muted-foreground font-mono mt-1">
-              Here's a preview of what Routines will look like. Create custom voice-triggered workflows that chain multiple actions together. Coming soon!
-            </p>
-          </div>
-        </div>
 
         {/* Shortcuts */}
         <div className="bg-card/50 rounded-xl p-4 border border-border/50 mb-6">
