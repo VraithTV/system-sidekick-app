@@ -120,8 +120,9 @@ function speakBrowser(text: string, _outputDeviceId?: string): Promise<void> {
 async function getAIResponse(text: string): Promise<string> {
   try {
     const memories = formatMemoriesForPrompt();
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const { data, error } = await supabase.functions.invoke('jarvis-chat', {
-      body: { message: text, memories },
+      body: { message: text, memories, timezone },
     });
     if (error) throw error;
 
