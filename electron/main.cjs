@@ -42,7 +42,6 @@ function hideMainWindowToTray() {
 
 function quitApplication() {
   forceQuit = true;
-  closePromptOpen = false;
   if (tray) { tray.destroy(); tray = null; }
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.once('closed', () => app.quit());
@@ -50,28 +49,6 @@ function quitApplication() {
     return;
   }
   app.quit();
-}
-
-async function promptCloseAction() {
-  if (!mainWindow || mainWindow.isDestroyed() || closePromptOpen) return;
-  closePromptOpen = true;
-  try {
-    const { response } = await dialog.showMessageBox(mainWindow, {
-      type: 'question',
-      buttons: ['Keep Running in Tray', 'Quit Completely'],
-      defaultId: 0, cancelId: 0, noLink: true,
-      title: 'Close Jarvis',
-      message: 'Keep Jarvis running in the background?',
-      detail: 'Choose "Keep Running in Tray" to hide Jarvis and keep it available from the system tray, or "Quit Completely" to close the app.',
-    });
-    if (response === 0) {
-      setTimeout(() => hideMainWindowToTray(), 0);
-      return;
-    }
-    setTimeout(() => quitApplication(), 0);
-  } finally {
-    closePromptOpen = false;
-  }
 }
 
 function createTray() {
