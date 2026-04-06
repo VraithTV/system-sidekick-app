@@ -46,6 +46,7 @@ export const SettingsView = () => {
   const { settings, updateSettings } = useJarvisStore();
   const { previewVoice } = useVoiceAssistant();
   const { inputs, outputs, refresh: refreshDevices } = useAudioDevices();
+  const { enabled: maintenanceOn, toggle: toggleMaintenance } = useMaintenanceMode();
   const [previewing, setPreviewing] = useState<string | null>(null);
 
   const adjustClip = (dir: 'up' | 'down') => {
