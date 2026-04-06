@@ -6,9 +6,9 @@ const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'apps', label: 'Apps', icon: AppWindow },
   { id: 'clips', label: 'Clips', icon: Film },
-  { id: 'themes', label: 'Themes', icon: Palette, comingSoon: true },
   { id: 'routines', label: 'Routines', icon: Zap },
   { id: 'system', label: 'System', icon: Activity },
+  { id: 'themes', label: 'Themes', icon: Palette, comingSoon: true },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
