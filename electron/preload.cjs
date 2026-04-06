@@ -7,6 +7,7 @@ const sendWindowCommand = (channel) => () => {
 const invokeWindowCommand = (channel) => () => ipcRenderer.invoke(channel);
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  // Window controls
   minimize: sendWindowCommand('window-minimize'),
   maximize: sendWindowCommand('window-maximize'),
   close: invokeWindowCommand('window-close'),
@@ -16,6 +17,25 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onMaximizedChange: (callback) => {
     ipcRenderer.on('window-maximized', (_event, value) => callback(value));
   },
+
+  // URLs & media
   openUrl: (url) => ipcRenderer.send('open-url', url),
   mediaKey: (key) => ipcRenderer.send('media-key', key),
+
+  // Clips
+  clipNow: (duration) => ipcRenderer.send('clip-now', duration),
+  openClipsFolder: () => ipcRenderer.send('open-clips-folder'),
+  startRecording: () => ipcRenderer.send('start-recording'),
+  stopRecording: () => ipcRenderer.send('stop-recording'),
+  playClip: (filename) => ipcRenderer.send('play-clip', filename),
+  deleteClip: (clipId) => ipcRenderer.send('delete-clip', clipId),
+  getClipsFolder: () => ipcRenderer.invoke('get-clips-folder'),
+  onClipSaved: (callback) => {
+    ipcRenderer.on('clip-saved', (_event, clip) => callback(clip));
+  },
+
+  // Keyboard shortcuts
+  onShortcut: (callback) => {
+    ipcRenderer.on('shortcut', (_event, action) => callback(action));
+  },
 });
