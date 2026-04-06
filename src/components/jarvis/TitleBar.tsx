@@ -18,12 +18,12 @@ export const TitleBar = () => {
 
   const handleKeepRunningInTray = () => {
     setShowClosePrompt(false);
-    api?.hideToTray?.();
+    api?.hideToTray();
   };
 
   const handleQuitCompletely = () => {
     setShowClosePrompt(false);
-    api?.quit?.();
+    api?.quit();
   };
 
   return (
