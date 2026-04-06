@@ -15,7 +15,7 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 // Apply saved theme before first render
-const { presetId, accentId } = loadThemePreference();
-applyTheme(presetId, accentId);
+const { presetId, accentId, fontId } = loadThemePreference();
+applyTheme(presetId, accentId, fontId);
 
 createRoot(document.getElementById("root")!).render(<App />);
