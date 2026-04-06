@@ -107,6 +107,82 @@ export const TaskManagerIcon = ({ className, size }: IconProps) => (
   </svg>
 );
 
+export const FirefoxIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <circle cx="24" cy="24" r="22" fill="#FF9500"/>
+    <path d="M24 6C14 6 6 14 6 24s8 18 18 18 18-8 18-18c0-3-1-6-2.5-8.5-.5 2-2 3.5-2 3.5s-1-5-4-8c-2-2-3-5-2.5-7.5C28 4.5 24 6 24 6z" fill="#FF6D00"/>
+    <circle cx="24" cy="24" r="10" fill="#FFEB3B"/>
+    <circle cx="24" cy="24" r="7" fill="#FF9500"/>
+  </svg>
+);
+
+export const BraveIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <path d="M24 4L8 12v12c0 10 8 18 16 20 8-2 16-10 16-20V12L24 4z" fill="#FB542B"/>
+    <path d="M24 10l-10 5v8c0 7 5 13 10 15 5-2 10-8 10-15v-8L24 10z" fill="white"/>
+    <path d="M24 14l-6 3v6c0 5 3 9 6 10 3-1 6-5 6-10v-6l-6-3z" fill="#FB542B"/>
+  </svg>
+);
+
+export const SlackIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <rect width="48" height="48" rx="10" fill="#4A154B"/>
+    <rect x="10" y="20" width="8" height="4" rx="2" fill="#E01E5A"/>
+    <rect x="20" y="10" width="4" height="8" rx="2" fill="#36C5F0"/>
+    <rect x="30" y="24" width="8" height="4" rx="2" fill="#2EB67D"/>
+    <rect x="24" y="30" width="4" height="8" rx="2" fill="#ECB22E"/>
+    <rect x="14" y="10" width="4" height="4" rx="2" fill="#36C5F0"/>
+    <rect x="30" y="14" width="4" height="4" rx="2" fill="#2EB67D"/>
+    <rect x="10" y="30" width="4" height="4" rx="2" fill="#E01E5A"/>
+    <rect x="34" y="30" width="4" height="4" rx="2" fill="#ECB22E"/>
+  </svg>
+);
+
+export const TelegramIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <circle cx="24" cy="24" r="22" fill="#2AABEE"/>
+    <path d="M12 24l4 2 2 6 3-3 5 4 8-18-22 9z" fill="white"/>
+    <path d="M18 26l1 6 3-3-4-3z" fill="#C8DAEA"/>
+    <path d="M19 32l5 4 8-18-12 11z" fill="#A9C9DD" opacity="0.6"/>
+  </svg>
+);
+
+export const WhatsAppIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <circle cx="24" cy="24" r="22" fill="#25D366"/>
+    <path d="M24 10c-7.7 0-14 6.3-14 14 0 2.5.7 4.8 1.8 6.8L10 38l7.5-1.9c2 1 4.2 1.5 6.5 1.5 7.7 0 14-6.3 14-14s-6.3-14-14-14zm0 25c-2 0-3.9-.5-5.6-1.4l-3.9 1 1-3.7C14.5 29 14 27.1 14 25c0-5.5 4.5-10 10-10s10 4.5 10 10-4.5 10-10 10z" fill="white"/>
+    <path d="M29 27.5c-.4-.2-2.3-1.1-2.6-1.3-.3-.1-.6-.2-.8.2s-1 1.3-1.2 1.5c-.2.2-.4.3-.8.1s-1.6-.6-3-1.8c-1.1-1-1.9-2.2-2.1-2.6-.2-.4 0-.6.2-.8l.6-.7.3-.5.1-.4c0-.2-.1-.4-.2-.6-.1-.2-.8-2-1.1-2.7-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4s-1.3 1.2-1.3 3 1.3 3.5 1.5 3.7 2.6 4 6.3 5.6c3.7 1.6 3.7 1.1 4.4 1s2.3-.9 2.6-1.8c.3-.9.3-1.6.2-1.8-.1-.2-.3-.3-.7-.5z" fill="white"/>
+  </svg>
+);
+
+export const WordIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <rect x="4" y="4" width="40" height="40" rx="4" fill="#2B579A"/>
+    <text x="24" y="30" textAnchor="middle" fill="white" fontSize="20" fontWeight="bold" fontFamily="Arial">W</text>
+  </svg>
+);
+
+export const ExcelIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <rect x="4" y="4" width="40" height="40" rx="4" fill="#217346"/>
+    <text x="24" y="30" textAnchor="middle" fill="white" fontSize="20" fontWeight="bold" fontFamily="Arial">X</text>
+  </svg>
+);
+
+export const PhotoshopIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <rect x="4" y="4" width="40" height="40" rx="4" fill="#001E36"/>
+    <text x="13" y="30" fill="#31A8FF" fontSize="16" fontWeight="bold" fontFamily="Arial">Ps</text>
+  </svg>
+);
+
+export const PremiereProIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <rect x="4" y="4" width="40" height="40" rx="4" fill="#00005B"/>
+    <text x="13" y="30" fill="#9999FF" fontSize="16" fontWeight="bold" fontFamily="Arial">Pr</text>
+  </svg>
+);
+
 export const GenericAppIcon = ({ className, size }: IconProps) => (
   <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
     <rect x="4" y="4" width="40" height="40" rx="8" fill="#455A64"/>
@@ -129,6 +205,15 @@ export const appIconMap: Record<string, React.FC<IconProps>> = {
   notepad: NotepadIcon,
   taskmgr: TaskManagerIcon,
   'task-manager': TaskManagerIcon,
+  firefox: FirefoxIcon,
+  brave: BraveIcon,
+  slack: SlackIcon,
+  telegram: TelegramIcon,
+  whatsapp: WhatsAppIcon,
+  word: WordIcon,
+  excel: ExcelIcon,
+  photoshop: PhotoshopIcon,
+  'premiere-pro': PremiereProIcon,
 };
 
 export const getAppIcon = (id: string) => appIconMap[id] || GenericAppIcon;
