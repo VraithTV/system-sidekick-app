@@ -120,7 +120,7 @@ export const ClipsView = () => {
     <div className="flex-1 overflow-y-auto bg-background">
       <div className="p-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="font-display text-sm text-primary tracking-[0.15em]">CLIPS</h2>
           <div className="flex items-center gap-2">
             <button
