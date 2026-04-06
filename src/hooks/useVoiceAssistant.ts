@@ -258,49 +258,10 @@ export function useVoiceAssistant() {
           const shouldBypassWakeWord = wakeWordHeard.current || conversationActive.current;
 
           try {
-            console.log('[Jarvis] Starting audio capture...');
-            const controller = await startUtteranceCapture({
-              deviceId: settings.inputDeviceId || undefined,
-              maxDurationMs: shouldBypassWakeWord ? 10000 : 7000,
-              silenceDurationMs: shouldBypassWakeWord ? 1000 : 1400,
-              levelThreshold: shouldBypassWakeWord ? 6 : 7,
-            });
-            captureStopRef.current = controller.stop;
-            const blob = await controller.promise;
-            captureStopRef.current = null;
-
-            console.log('[Jarvis] Capture complete, blob:', blob ? `${blob.size} bytes` : 'null');
-            if (!blob || blob.size < MIN_CAPTURED_AUDIO_BYTES || !isListeningRef.current) {
-              console.log('[Jarvis] Skipped — too small or stopped');
-              continue;
-            }
-
-            console.log('[Jarvis] Sending to transcription...');
-            const formData = new FormData();
-            formData.append('audio', new File([blob], 'utterance.webm', { type: blob.type || 'audio/webm' }));
-
-            const response = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-transcribe`,
-              {
-                method: 'POST',
-                headers: {
-                  apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-                },
-                body: formData,
-              }
-            );
-
-            if (!response.ok) {
-              const errorText = await response.text();
-              console.warn('[Jarvis] Transcription failed:', response.status, errorText);
-              continue;
-            }
-
-            const data = await response.json();
-            const transcript = typeof data?.text === 'string' ? data.text.trim() : '';
-            console.log('[Jarvis] Transcript:', JSON.stringify(transcript));
-            if (!transcript) continue;
+              console.log('[Jarvis] Listening via browser Speech Recognition...');
+              const transcript = await listenWithBrowserSTT();
+              console.log('[Jarvis] Transcript:', JSON.stringify(transcript));
+              if (!transcript || !isListeningRef.current) continue;
 
             if (!shouldBypassWakeWord) {
               const wakeMatch = matchWakeWord(
