@@ -25,6 +25,7 @@ const views: Record<string, React.ComponentType> = {
 const Index = () => {
   const { activeView } = useJarvisStore();
   const { complete, finish } = useOnboarding();
+  useGlobalShortcuts();
   const View = views[activeView] || DashboardView;
 
   if (isMaintenanceMode) {
