@@ -226,29 +226,6 @@ export const ClipsView = () => {
           </div>
         </div>
 
-        {/* Shortcuts reminder */}
-        <div className="bg-card/50 rounded-xl p-4 border border-border/50 mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Keyboard className="w-4 h-4 text-primary/60" />
-            <p className="text-[10px] font-mono tracking-[0.15em] text-primary/60 uppercase">Quick Actions</p>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            {[
-              { keys: 'Ctrl+Shift+C', label: 'Clip last ' + settings.clipDuration + 's' },
-              { keys: 'Ctrl+Shift+R', label: 'Toggle recording' },
-              { keys: 'Ctrl+Shift+J', label: 'Show / Hide Jarvis' },
-              { keys: 'Ctrl+Shift+M', label: 'Toggle mic' },
-            ].map(({ keys, label }) => (
-              <div key={keys} className="flex items-center gap-2">
-                <kbd className="text-[10px] font-mono px-2 py-1 bg-muted rounded border border-border text-muted-foreground">
-                  {keys}
-                </kbd>
-                <span className="text-[11px] text-foreground/50">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Clips List */}
         {clips.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[40vh] text-center">
