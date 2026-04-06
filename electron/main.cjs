@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, dialog } = require('electron');
 const path = require('path');
 
 // Set the app name shown in taskbar / dock
@@ -10,11 +10,49 @@ app.setLoginItemSettings({
   path: app.getPath('exe'),
 });
 
+let mainWindow = null;
+let tray = null;
+let forceQuit = false;
+
+function createTray() {
+  const iconPath = path.join(__dirname, '..', 'public', 'jarvis-icon.png');
+  tray = new Tray(nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 }));
+  tray.setToolTip('Jarvis AI BETA');
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Open Jarvis',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      },
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit',
+      click: () => {
+        forceQuit = true;
+        app.quit();
+      },
+    },
+  ]);
+
+  tray.setContextMenu(contextMenu);
+  tray.on('double-click', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
 function createWindow() {
   const iconPath = path.join(__dirname, '..', 'public', 'jarvis-icon.png');
   const icon = nativeImage.createFromPath(iconPath);
 
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1280,
     height: 860,
     minWidth: 900,
@@ -34,25 +72,55 @@ function createWindow() {
   // In dev, load Vite dev server; in prod, load built files
   const isDev = !app.isPackaged;
   if (isDev) {
-    win.loadURL('http://localhost:8080');
+    mainWindow.loadURL('http://localhost:8080');
   } else {
-    win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
+    mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   }
 
   // Window control IPC
-  ipcMain.on('window-minimize', () => win.minimize());
+  ipcMain.on('window-minimize', () => mainWindow.minimize());
   ipcMain.on('window-maximize', () => {
-    if (win.isMaximized()) win.unmaximize();
-    else win.maximize();
+    if (mainWindow.isMaximized()) mainWindow.unmaximize();
+    else mainWindow.maximize();
   });
-  ipcMain.on('window-close', () => win.close());
-  ipcMain.handle('window-is-maximized', () => win.isMaximized());
+  ipcMain.on('window-close', () => mainWindow.close());
+  ipcMain.handle('window-is-maximized', () => mainWindow.isMaximized());
 
-  win.on('maximize', () => win.webContents.send('window-maximized', true));
-  win.on('unmaximize', () => win.webContents.send('window-maximized', false));
+  mainWindow.on('maximize', () => mainWindow.webContents.send('window-maximized', true));
+  mainWindow.on('unmaximize', () => mainWindow.webContents.send('window-maximized', false));
+
+  // Intercept close to ask user
+  mainWindow.on('close', (e) => {
+    if (forceQuit) return; // Allow quit from tray menu
+
+    e.preventDefault();
+    dialog
+      .showMessageBox(mainWindow, {
+        type: 'question',
+        buttons: ['Minimize to Tray', 'Exit'],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'Close Jarvis',
+        message: 'What would you like to do?',
+        detail: 'Minimize to system tray to keep Jarvis running in the background, or exit completely.',
+      })
+      .then(({ response }) => {
+        if (response === 0) {
+          // Minimize to tray
+          mainWindow.hide();
+        } else {
+          // Full exit
+          forceQuit = true;
+          app.quit();
+        }
+      });
+  });
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createTray();
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
