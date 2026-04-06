@@ -13,7 +13,6 @@ app.setLoginItemSettings({
 let mainWindow = null;
 let tray = null;
 let forceQuit = false;
-let closePromptOpen = false;
 
 // Ensure Jarvis clips folder exists
 const JARVIS_FOLDER = path.join('C:', 'Jarvis');
