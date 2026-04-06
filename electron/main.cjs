@@ -1,14 +1,34 @@
-const { app, BrowserWindow, ipcMain, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, dialog } = require('electron');
 const path = require('path');
 
 // Set the app name shown in taskbar / dock
 app.setName('Jarvis AI BETA');
 
+let win;
+let tray = null;
+let isQuitting = false;
+
+function createTray() {
+  const iconPath = path.join(__dirname, '..', 'public', 'jarvis-icon.png');
+  const icon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
+  tray = new Tray(icon);
+  tray.setToolTip('Jarvis AI');
+
+  const contextMenu = Menu.buildFromTemplate([
+    { label: 'Show Jarvis', click: () => { win.show(); win.focus(); } },
+    { type: 'separator' },
+    { label: 'Quit', click: () => { isQuitting = true; app.quit(); } },
+  ]);
+  tray.setContextMenu(contextMenu);
+
+  tray.on('double-click', () => { win.show(); win.focus(); });
+}
+
 function createWindow() {
   const iconPath = path.join(__dirname, '..', 'public', 'jarvis-icon.png');
   const icon = nativeImage.createFromPath(iconPath);
 
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
     width: 1280,
     height: 860,
     minWidth: 900,
@@ -44,14 +64,51 @@ function createWindow() {
 
   win.on('maximize', () => win.webContents.send('window-maximized', true));
   win.on('unmaximize', () => win.webContents.send('window-maximized', false));
+
+  // Intercept close — ask user whether to minimize to tray or quit
+  win.on('close', (e) => {
+    if (isQuitting) return; // Actually quit
+
+    e.preventDefault();
+    win.webContents.send('confirm-close');
+  });
+
+  // Listen for the user's choice from the renderer
+  ipcMain.on('close-action', (_event, action) => {
+    if (action === 'tray') {
+      win.hide();
+    } else {
+      isQuitting = true;
+      app.quit();
+    }
+  });
+
+  createTray();
 }
 
-app.whenReady().then(createWindow);
+// Auto-launch on boot (Windows/Linux)
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (win) { win.show(); win.focus(); }
+  });
+
+  app.whenReady().then(() => {
+    // Enable auto-launch
+    app.setLoginItemSettings({ openAtLogin: true, name: 'Jarvis AI' });
+    createWindow();
+  });
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  if (win) { win.show(); win.focus(); }
+  else createWindow();
 });
+
+app.on('before-quit', () => { isQuitting = true; });
