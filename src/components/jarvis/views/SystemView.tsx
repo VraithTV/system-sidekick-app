@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Cpu, MemoryStick, HardDrive, Thermometer, Monitor, Wifi, Keyboard, Activity } from 'lucide-react';
+import { Cpu, MemoryStick, HardDrive, Thermometer, Monitor, Wifi, Activity, Eye } from 'lucide-react';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
