@@ -1,11 +1,14 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Activity } from 'lucide-react';
+import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Activity, MessageSquare, Brain, Eye } from 'lucide-react';
 import { JarvisLogo } from './JarvisLogo';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'apps', label: 'Apps', icon: AppWindow },
   { id: 'clips', label: 'Clips', icon: Film },
+  { id: 'meetings', label: 'Meetings', icon: MessageSquare, comingSoon: true },
+  { id: 'memory', label: 'Memory', icon: Brain, comingSoon: true },
+  { id: 'vision', label: 'Vision', icon: Eye, comingSoon: true },
   { id: 'routines', label: 'Routines', icon: Zap },
   { id: 'system', label: 'System', icon: Activity },
   { id: 'settings', label: 'Settings', icon: Settings },
@@ -29,7 +32,7 @@ export const Sidebar = () => {
 
       {/* Nav items */}
       <nav className="flex-1 flex flex-col pt-1 pb-3 px-2 gap-px overflow-y-auto">
-        {navItems.map(({ id, label, icon: Icon }) => (
+        {navItems.map(({ id, label, icon: Icon, comingSoon }) => (
           <button
             key={id}
             onClick={() => setActiveView(id)}
@@ -44,6 +47,11 @@ export const Sidebar = () => {
             )}
             <Icon className="h-[15px] w-[15px] shrink-0" strokeWidth={activeView === id ? 2 : 1.5} />
             <span className="text-[11px] tracking-wide">{label}</span>
+            {comingSoon ? (
+              <span className="ml-auto rounded-full border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[8px] font-mono uppercase tracking-[0.14em] text-primary/70">
+                Dev
+              </span>
+            ) : null}
           </button>
         ))}
       </nav>
