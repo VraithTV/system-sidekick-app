@@ -8,7 +8,7 @@ import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 /** Try to detect an "open app" intent and actually launch it via Electron */
-function tryLaunchApp(userText: string, aiReply: string): void {
+function tryLaunchApp(userText: string): void {
   if (!isElectron) return;
   const api = (window as any).electronAPI;
   if (!api?.openApp) return;
@@ -25,6 +25,12 @@ function tryLaunchApp(userText: string, aiReply: string): void {
 }
 
 let elevenLabsRetryAfter = 0;
+const MIN_CAPTURED_AUDIO_BYTES = 1500;
+const FATAL_CAPTURE_ERRORS = new Set(['NotAllowedError', 'NotFoundError', 'NotReadableError', 'SecurityError']);
+
+function pause(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
 
 async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId?: string): Promise<void> {
   if (Date.now() < elevenLabsRetryAfter) {
@@ -129,25 +135,31 @@ async function getAIResponse(text: string): Promise<string> {
 
 export function useVoiceAssistant() {
   const { setState, addCommand, settings, setSystemStatus } = useJarvisStore();
-  const recognitionRef = useRef<any>(null);
   const isListeningRef = useRef(false);
+  const isCaptureLoopActiveRef = useRef(false);
   const wakeWordHeard = useRef(false);
   const conversationActive = useRef(false);
   const captureStopRef = useRef<(() => void) | null>(null);
 
   const processCommand = useCallback(
     async (text: string) => {
+      const cleanedText = text.trim();
+      if (!cleanedText) {
+        if (isListeningRef.current) setState('standby');
+        return;
+      }
+
       setState('thinking');
 
-      const response = await getAIResponse(text);
+      const response = await getAIResponse(cleanedText);
 
       // Actually launch the app if the user asked to open one
-      tryLaunchApp(text, response);
+      tryLaunchApp(cleanedText);
 
       setState('speaking');
       addCommand({
         id: Date.now().toString(),
-        text,
+        text: cleanedText,
         response,
         timestamp: new Date(),
         type: 'voice',
@@ -158,14 +170,18 @@ export function useVoiceAssistant() {
       // If the response ends with a question mark, stay in conversation mode
       // so the user doesn't need the wake word for their reply
       const isQuestion = response.trim().endsWith('?');
+      conversationActive.current = isQuestion;
+      wakeWordHeard.current = false;
+
+      if (!isListeningRef.current) {
+        setState('idle');
+        return;
+      }
+
       if (isQuestion) {
-        conversationActive.current = true;
-        wakeWordHeard.current = true; // skip wake word for next capture
         setState('listening');
         console.log('[Jarvis] Response was a question — staying in conversation mode');
       } else {
-        conversationActive.current = false;
-        wakeWordHeard.current = false;
         setState('standby');
       }
     },
@@ -173,105 +189,141 @@ export function useVoiceAssistant() {
   );
 
   const startListening = useCallback(() => {
+    if (isListeningRef.current || isCaptureLoopActiveRef.current) {
+      return;
+    }
+
     isListeningRef.current = true;
+    wakeWordHeard.current = false;
+    conversationActive.current = false;
     setState('standby');
     setSystemStatus({ micActive: true });
 
     const runCaptureLoop = async () => {
-      while (isListeningRef.current) {
-        try {
-          console.log('[Jarvis] Starting audio capture...');
-          const controller = await startUtteranceCapture({
-            deviceId: settings.inputDeviceId || undefined,
-            maxDurationMs: wakeWordHeard.current ? 9000 : 7000,
-            silenceDurationMs: wakeWordHeard.current ? 900 : 1200,
-            levelThreshold: 8,
-          });
-          captureStopRef.current = controller.stop;
-          const blob = await controller.promise;
-          captureStopRef.current = null;
+      if (isCaptureLoopActiveRef.current) {
+        return;
+      }
 
-          console.log('[Jarvis] Capture complete, blob:', blob ? `${blob.size} bytes` : 'null');
-          if (!blob || blob.size < 4000 || !isListeningRef.current) {
-            console.log('[Jarvis] Skipped — too small or stopped');
-            continue;
-          }
+      isCaptureLoopActiveRef.current = true;
 
-          console.log('[Jarvis] Sending to transcription...');
-          const formData = new FormData();
-          formData.append('audio', new File([blob], 'utterance.webm', { type: blob.type || 'audio/webm' }));
+      try {
+        while (isListeningRef.current) {
+          const shouldBypassWakeWord = wakeWordHeard.current || conversationActive.current;
 
-          const response = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-transcribe`,
-            {
-              method: 'POST',
-              headers: {
-                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-              },
-              body: formData,
+          try {
+            console.log('[Jarvis] Starting audio capture...');
+            const controller = await startUtteranceCapture({
+              deviceId: settings.inputDeviceId || undefined,
+              maxDurationMs: shouldBypassWakeWord ? 10000 : 7000,
+              silenceDurationMs: shouldBypassWakeWord ? 1000 : 1400,
+              levelThreshold: shouldBypassWakeWord ? 6 : 7,
+            });
+            captureStopRef.current = controller.stop;
+            const blob = await controller.promise;
+            captureStopRef.current = null;
+
+            console.log('[Jarvis] Capture complete, blob:', blob ? `${blob.size} bytes` : 'null');
+            if (!blob || blob.size < MIN_CAPTURED_AUDIO_BYTES || !isListeningRef.current) {
+              console.log('[Jarvis] Skipped — too small or stopped');
+              continue;
             }
-          );
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.warn('[Jarvis] Transcription failed:', response.status, errorText);
-            continue;
-          }
+            console.log('[Jarvis] Sending to transcription...');
+            const formData = new FormData();
+            formData.append('audio', new File([blob], 'utterance.webm', { type: blob.type || 'audio/webm' }));
 
-          const data = await response.json();
-          const transcript = typeof data?.text === 'string' ? data.text.trim() : '';
-          console.log('[Jarvis] Transcript:', JSON.stringify(transcript));
-          if (!transcript) continue;
-
-          if (!wakeWordHeard.current) {
-            const wakeMatch = matchWakeWord(
-              transcript,
-              settings.wakeName,
-              settings.wakeAliases,
-              settings.wakeSensitivity
+            const response = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-transcribe`,
+              {
+                method: 'POST',
+                headers: {
+                  apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+                },
+                body: formData,
+              }
             );
 
-            if (!wakeMatch.matched) {
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.warn('[Jarvis] Transcription failed:', response.status, errorText);
               continue;
             }
 
-            if (wakeMatch.command && wakeMatch.command.length > 2) {
-              await processCommand(wakeMatch.command);
-              wakeWordHeard.current = false;
-              if (isListeningRef.current) setState('standby');
+            const data = await response.json();
+            const transcript = typeof data?.text === 'string' ? data.text.trim() : '';
+            console.log('[Jarvis] Transcript:', JSON.stringify(transcript));
+            if (!transcript) continue;
+
+            if (!shouldBypassWakeWord) {
+              const wakeMatch = matchWakeWord(
+                transcript,
+                settings.wakeName,
+                settings.wakeAliases,
+                settings.wakeSensitivity
+              );
+
+              if (!wakeMatch.matched) {
+                continue;
+              }
+
+              if (wakeMatch.command && wakeMatch.command.length > 1) {
+                wakeWordHeard.current = false;
+                conversationActive.current = false;
+                await processCommand(wakeMatch.command);
+                continue;
+              }
+
+              wakeWordHeard.current = true;
+              conversationActive.current = false;
+              setState('listening');
               continue;
             }
 
-            wakeWordHeard.current = true;
-            setState('listening');
-            continue;
+            wakeWordHeard.current = false;
+            conversationActive.current = false;
+            await processCommand(transcript);
+          } catch (error) {
+            console.warn('[Jarvis] Voice capture loop error:', error);
+            captureStopRef.current = null;
+            wakeWordHeard.current = false;
+            conversationActive.current = false;
+
+            if (!isListeningRef.current) break;
+
+            const errorName = error instanceof Error ? error.name : '';
+            if (FATAL_CAPTURE_ERRORS.has(errorName)) {
+              isListeningRef.current = false;
+              setSystemStatus({ micActive: false });
+              setState('idle');
+              break;
+            }
+
+            await pause(250);
           }
+        }
+      } finally {
+        isCaptureLoopActiveRef.current = false;
+        captureStopRef.current = null;
 
+        if (!isListeningRef.current) {
           wakeWordHeard.current = false;
-          await processCommand(transcript.toLowerCase());
-          if (isListeningRef.current) setState('standby');
-        } catch (error) {
-          console.warn('[Jarvis] Voice capture loop error:', error);
-          wakeWordHeard.current = false;
-          if (!isListeningRef.current) break;
+          conversationActive.current = false;
+          setSystemStatus({ micActive: false });
         }
       }
     };
 
-    runCaptureLoop();
+    void runCaptureLoop();
   }, [settings.inputDeviceId, settings.wakeAliases, settings.wakeName, settings.wakeSensitivity, setState, setSystemStatus, processCommand]);
 
   const stopListening = useCallback(() => {
     isListeningRef.current = false;
+    conversationActive.current = false;
     wakeWordHeard.current = false;
     captureStopRef.current?.();
     captureStopRef.current = null;
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {}
-    }
+    speechSynthesis.cancel();
     setSystemStatus({ micActive: false });
     setState('idle');
   }, [setState, setSystemStatus]);
@@ -284,6 +336,8 @@ export function useVoiceAssistant() {
     speechSynthesis.getVoices();
     speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
   }, []);
+
+  useEffect(() => stopListening, [stopListening]);
 
   return { startListening, stopListening, previewVoice };
 }

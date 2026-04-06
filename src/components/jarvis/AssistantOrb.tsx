@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 
 const stateAnimations: Record<string, string> = {
@@ -18,11 +19,11 @@ const stateLabels: Record<string, string> = {
   executing: 'EXECUTING',
 };
 
-export const AssistantOrb = () => {
+export const AssistantOrb = forwardRef<HTMLDivElement>((_props, ref) => {
   const { state } = useJarvisStore();
 
   return (
-    <div className="flex flex-col items-center gap-5">
+    <div ref={ref} className="flex flex-col items-center gap-5">
       <div className="relative">
         {/* Outer rings */}
         <div className="absolute inset-[-32px] rounded-full border-2 border-primary/25 animate-ring-rotate" />
@@ -100,4 +101,6 @@ export const AssistantOrb = () => {
       </span>
     </div>
   );
-};
+});
+
+AssistantOrb.displayName = 'AssistantOrb';
