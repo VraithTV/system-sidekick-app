@@ -89,7 +89,7 @@ export const useJarvisStore = create<JarvisStore>((set) => ({
     alwaysListening: true,
     pushToTalk: false,
     clipDuration: 30,
-    clipFolder: 'C:\\Users\\User\\Videos\\Clips',
+    clipFolder: 'C:\\Jarvis\\Clips',
     obsWebsocketUrl: 'ws://localhost:4455',
     obsWebsocketPassword: '',
     inputDeviceId: '',
