@@ -245,7 +245,9 @@ export function useVoiceAssistant() {
 
           try {
             console.log('[Jarvis] Listening for speech...');
-            const recognition = startSpeechRecognition(settings.inputDeviceId || undefined);
+            const recognition = startSpeechRecognition(settings.inputDeviceId || undefined, {
+              preferLocal: isElectron,
+            });
             captureStopRef.current = recognition.stop;
             const transcript = await recognition.promise;
             captureStopRef.current = null;
