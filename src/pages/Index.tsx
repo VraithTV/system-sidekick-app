@@ -1,7 +1,7 @@
 import { Sidebar } from '@/components/jarvis/Sidebar';
 import { WindowControls } from '@/components/jarvis/WindowControls';
 import { OnboardingWizard, useOnboarding } from '@/components/jarvis/OnboardingWizard';
-import { MaintenanceScreen, isElectron } from '@/components/jarvis/MaintenanceScreen';
+import { MaintenanceScreen, isMaintenanceMode } from '@/components/jarvis/MaintenanceScreen';
 import { DashboardView } from '@/components/jarvis/views/DashboardView';
 import { AppsView } from '@/components/jarvis/views/AppsView';
 import { ClipsView } from '@/components/jarvis/views/ClipsView';
@@ -24,8 +24,7 @@ const Index = () => {
   const { complete, finish } = useOnboarding();
   const View = views[activeView] || DashboardView;
 
-  // Show maintenance screen only in Electron desktop app
-  if (isElectron) {
+  if (isMaintenanceMode) {
     return <MaintenanceScreen />;
   }
 
