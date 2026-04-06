@@ -343,6 +343,10 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
     else onComplete();
   };
 
+  const back = () => {
+    if (step > 0) setStep(step - 1);
+  };
+
   return (
     <div className="h-screen w-screen bg-background flex flex-col items-center justify-center relative overflow-hidden">
       {/* Background effects */}
@@ -353,10 +357,10 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
       <div className="relative z-10 w-full max-w-md px-6 flex-1 flex flex-col">
         <div className="flex-1 flex flex-col">
           {step === 0 && <WelcomeStep onNext={next} />}
-          {step === 1 && <MicStep onNext={next} />}
-          {step === 2 && <OutputStep onNext={next} />}
-          {step === 3 && <AppsStep onNext={next} />}
-          {step === 4 && <VoiceStep onNext={next} />}
+          {step === 1 && <MicStep onNext={next} onBack={back} />}
+          {step === 2 && <OutputStep onNext={next} onBack={back} />}
+          {step === 3 && <AppsStep onNext={next} onBack={back} />}
+          {step === 4 && <VoiceStep onNext={next} onBack={back} />}
         </div>
 
         {/* Step dots */}
