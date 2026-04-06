@@ -183,6 +183,73 @@ export const PremiereProIcon = ({ className, size }: IconProps) => (
   </svg>
 );
 
+export const YouTubeIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <rect x="2" y="8" width="44" height="32" rx="8" fill="#FF0000"/>
+    <polygon points="20,16 20,32 34,24" fill="white"/>
+  </svg>
+);
+
+export const CalculatorIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <rect x="8" y="4" width="32" height="40" rx="4" fill="#607D8B"/>
+    <rect x="12" y="8" width="24" height="10" rx="2" fill="#B0BEC5"/>
+    <rect x="12" y="22" width="6" height="5" rx="1" fill="white"/>
+    <rect x="21" y="22" width="6" height="5" rx="1" fill="white"/>
+    <rect x="30" y="22" width="6" height="5" rx="1" fill="#FF9800"/>
+    <rect x="12" y="30" width="6" height="5" rx="1" fill="white"/>
+    <rect x="21" y="30" width="6" height="5" rx="1" fill="white"/>
+    <rect x="30" y="30" width="6" height="5" rx="1" fill="#FF9800"/>
+    <rect x="12" y="38" width="15" height="4" rx="1" fill="white"/>
+    <rect x="30" y="38" width="6" height="4" rx="1" fill="#4CAF50"/>
+  </svg>
+);
+
+export const TerminalIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <rect x="4" y="4" width="40" height="40" rx="4" fill="#1E1E1E"/>
+    <polyline points="12,16 20,24 12,32" fill="none" stroke="#4EC9B0" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+    <line x1="24" y1="32" x2="36" y2="32" stroke="#4EC9B0" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
+);
+
+export const NetflixIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <rect x="4" y="4" width="40" height="40" rx="4" fill="#000"/>
+    <path d="M16 10h5l7 20V10h5v28h-5l-7-20v20h-5z" fill="#E50914"/>
+  </svg>
+);
+
+export const TwitchIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <path d="M10 4L6 14v26h10v4h6l4-4h8l10-10V4H10z" fill="#9146FF"/>
+    <path d="M14 8h26v22l-6 6h-8l-4 4h-4v-4h-4V8z" fill="white"/>
+    <rect x="22" y="14" width="4" height="12" rx="1" fill="#9146FF"/>
+    <rect x="30" y="14" width="4" height="12" rx="1" fill="#9146FF"/>
+  </svg>
+);
+
+export const TwitterIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <rect x="4" y="4" width="40" height="40" rx="8" fill="#000"/>
+    <path d="M14 12l8.5 12L14 36h2l7-9.5L29.5 36H36l-9-12.5L35 12h-2l-6.5 8.5L21 12H14zm3.5 2h3l14 20h-3l-14-20z" fill="white"/>
+  </svg>
+);
+
+export const GitHubIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <circle cx="24" cy="24" r="22" fill="#24292E"/>
+    <path d="M24 6C14 6 6 14 6 24c0 8 5.2 14.8 12.4 17.2.9.2 1.2-.4 1.2-.9v-3c-5 1.1-6.1-2.4-6.1-2.4-.8-2.1-2-2.6-2-2.6-1.7-1.1.1-1.1.1-1.1 1.8.1 2.8 1.9 2.8 1.9 1.6 2.8 4.3 2 5.3 1.5.2-1.2.6-2 1.1-2.4-4-.5-8.2-2-8.2-9 0-2 .7-3.6 1.9-4.9-.2-.5-.8-2.3.2-4.8 0 0 1.5-.5 5 1.9 1.4-.4 3-.6 4.5-.6s3 .2 4.5.6c3.5-2.4 5-1.9 5-1.9 1 2.5.4 4.3.2 4.8 1.2 1.3 1.9 2.9 1.9 4.9 0 7-4.2 8.5-8.2 9 .6.6 1.2 1.7 1.2 3.4v5c0 .5.3 1.1 1.2.9C36.8 38.8 42 32 42 24 42 14 34 6 24 6z" fill="white"/>
+  </svg>
+);
+
+export const ChatGPTIcon = ({ className, size }: IconProps) => (
+  <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
+    <rect x="4" y="4" width="40" height="40" rx="8" fill="#10A37F"/>
+    <path d="M24 12c-6.6 0-12 5.4-12 12s5.4 12 12 12 12-5.4 12-12-5.4-12-12-12zm0 4a8 8 0 0 1 7.7 5.8H16.3A8 8 0 0 1 24 16zm-8 8a8 8 0 0 1 .3-2.2l6.7 3.9-6.7 3.9A8 8 0 0 1 16 24zm8 8a8 8 0 0 1-7.7-5.8h15.4A8 8 0 0 1 24 32z" fill="white" opacity="0.9"/>
+  </svg>
+);
+
 export const GenericAppIcon = ({ className, size }: IconProps) => (
   <svg width={s(size)} height={s(size)} viewBox="0 0 48 48" className={className}>
     <rect x="4" y="4" width="40" height="40" rx="8" fill="#455A64"/>
@@ -214,6 +281,14 @@ export const appIconMap: Record<string, React.FC<IconProps>> = {
   excel: ExcelIcon,
   photoshop: PhotoshopIcon,
   'premiere-pro': PremiereProIcon,
+  youtube: YouTubeIcon,
+  calculator: CalculatorIcon,
+  terminal: TerminalIcon,
+  netflix: NetflixIcon,
+  twitch: TwitchIcon,
+  twitter: TwitterIcon,
+  github: GitHubIcon,
+  chatgpt: ChatGPTIcon,
 };
 
 export const getAppIcon = (id: string) => appIconMap[id] || GenericAppIcon;

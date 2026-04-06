@@ -5,8 +5,8 @@ export interface CommonApp {
   name: string;
   path: string;
   aliases: string[];
-  icon: string; // emoji for now
-  launchCmd: string; // Windows shell command
+  icon: string;
+  launchCmd: string;
 }
 
 export const commonApps: CommonApp[] = [
@@ -162,6 +162,76 @@ export const commonApps: CommonApp[] = [
     icon: '🎬',
     launchCmd: 'start adobe premierepro',
   },
+  {
+    id: 'youtube',
+    name: 'YouTube',
+    path: '',
+    aliases: ['youtube', 'yt'],
+    icon: '▶️',
+    launchCmd: 'start https://youtube.com',
+  },
+  {
+    id: 'calculator',
+    name: 'Calculator',
+    path: 'C:\\Windows\\System32\\calc.exe',
+    aliases: ['calculator', 'calc'],
+    icon: '🧮',
+    launchCmd: 'start calc',
+  },
+  {
+    id: 'terminal',
+    name: 'Windows Terminal',
+    path: 'C:\\Users\\%USERNAME%\\AppData\\Local\\Microsoft\\WindowsApps\\wt.exe',
+    aliases: ['terminal', 'windows terminal', 'command prompt', 'cmd', 'powershell'],
+    icon: '⬛',
+    launchCmd: 'start wt',
+  },
+  {
+    id: 'netflix',
+    name: 'Netflix',
+    path: '',
+    aliases: ['netflix'],
+    icon: '🎬',
+    launchCmd: 'start https://netflix.com',
+  },
+  {
+    id: 'twitch',
+    name: 'Twitch',
+    path: '',
+    aliases: ['twitch'],
+    icon: '📺',
+    launchCmd: 'start https://twitch.tv',
+  },
+  {
+    id: 'twitter',
+    name: 'X (Twitter)',
+    path: '',
+    aliases: ['twitter', 'x', 'tweets'],
+    icon: '🐦',
+    launchCmd: 'start https://x.com',
+  },
+  {
+    id: 'github',
+    name: 'GitHub',
+    path: '',
+    aliases: ['github', 'git hub'],
+    icon: '🐱',
+    launchCmd: 'start https://github.com',
+  },
+  {
+    id: 'chatgpt',
+    name: 'ChatGPT',
+    path: '',
+    aliases: ['chatgpt', 'chat gpt', 'gpt'],
+    icon: '🤖',
+    launchCmd: 'start https://chat.openai.com',
+  },
+];
+
+/** Default apps that come pre-installed */
+export const defaultAppIds = [
+  'chrome', 'edge', 'spotify', 'discord', 'obs', 'steam',
+  'vscode', 'explorer', 'notepad', 'task-manager', 'youtube',
 ];
 
 export function toAppShortcut(app: CommonApp): AppShortcut {
@@ -172,4 +242,10 @@ export function toAppShortcut(app: CommonApp): AppShortcut {
     aliases: app.aliases,
     icon: app.icon,
   };
+}
+
+export function getDefaultApps(): AppShortcut[] {
+  return commonApps
+    .filter((ca) => defaultAppIds.includes(ca.id))
+    .map(toAppShortcut);
 }
