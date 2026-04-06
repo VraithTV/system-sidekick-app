@@ -1,9 +1,7 @@
 import { Construction } from 'lucide-react';
-import { TitleBar } from './TitleBar';
 
 export const MaintenanceScreen = () => (
   <div className="flex flex-col h-screen w-screen bg-background">
-    <TitleBar />
     <div className="flex-1 flex items-center justify-center">
       <div className="flex flex-col items-center text-center px-8">
         <div className="w-20 h-20 rounded-2xl bg-primary/5 border border-primary/20 flex items-center justify-center mb-6">
