@@ -3,7 +3,7 @@ import { Minus, Plus, Play, X, RefreshCw } from 'lucide-react';
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
-import { useMaintenanceMode } from '@/hooks/useMaintenanceMode';
+
 import { useState } from 'react';
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
@@ -46,7 +46,7 @@ export const SettingsView = () => {
   const { settings, updateSettings } = useJarvisStore();
   const { previewVoice } = useVoiceAssistant();
   const { inputs, outputs, refresh: refreshDevices } = useAudioDevices();
-  const { enabled: maintenanceOn, toggle: toggleMaintenance } = useMaintenanceMode();
+  
   const [previewing, setPreviewing] = useState<string | null>(null);
 
   const adjustClip = (dir: 'up' | 'down') => {
@@ -125,9 +125,6 @@ export const SettingsView = () => {
 
               <Row label="Start on Boot" desc="Auto-launch with Windows">
                 <Toggle checked={settings.startOnBoot} onChange={() => updateSettings({ startOnBoot: !settings.startOnBoot })} />
-              </Row>
-              <Row label="Maintenance Mode" desc="Show maintenance screen on desktop app">
-                <Toggle checked={maintenanceOn} onChange={toggleMaintenance} />
               </Row>
             </div>
 
