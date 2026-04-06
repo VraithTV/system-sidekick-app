@@ -3,6 +3,7 @@ import { Minus, Plus, Play, X, RefreshCw } from 'lucide-react';
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
+import { useMaintenanceMode } from '@/hooks/useMaintenanceMode';
 import { useState } from 'react';
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
