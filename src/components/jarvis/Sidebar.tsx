@@ -8,7 +8,7 @@ const navItems = [
   { id: 'clips', label: 'Clips', icon: Film },
   { id: 'routines', label: 'Routines', icon: Zap },
   { id: 'system', label: 'System', icon: Activity },
-  { id: 'themes', label: 'Themes', icon: Palette, comingSoon: true },
+  { id: 'themes', label: 'Themes', icon: Palette },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
