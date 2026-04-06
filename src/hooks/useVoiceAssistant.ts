@@ -89,7 +89,7 @@ async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId
       };
       audio.play().catch(async () => {
         URL.revokeObjectURL(audioUrl);
-        await speakBrowser(text, outputDeviceId);
+        await speakBrowser(text, outputDeviceId, jarvisVoice);
         resolve();
       });
     });
