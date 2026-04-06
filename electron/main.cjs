@@ -69,12 +69,12 @@ function createWindow() {
     },
   });
 
-  // In dev, load Vite dev server; in prod, load built files
+  // In dev, load Vite dev server; in prod, load published Lovable URL
   const isDev = !app.isPackaged;
   if (isDev) {
     mainWindow.loadURL('http://localhost:8080');
   } else {
-    mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
+    mainWindow.loadURL('https://system-sidekick-app.lovable.app');
   }
 
   // Window control IPC
