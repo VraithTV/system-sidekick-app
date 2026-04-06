@@ -164,8 +164,8 @@ ipcMain.on('window-maximize', () => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
 });
-ipcMain.on('window-close', () => promptCloseAction());
-ipcMain.handle('window-close', async () => { await promptCloseAction(); return null; });
+ipcMain.on('window-close', () => quitApplication());
+ipcMain.handle('window-close', async () => { quitApplication(); return null; });
 ipcMain.on('window-hide-to-tray', () => hideMainWindowToTray());
 ipcMain.handle('window-hide-to-tray', () => { hideMainWindowToTray(); return null; });
 ipcMain.on('app-quit', () => quitApplication());
