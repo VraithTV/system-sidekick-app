@@ -127,7 +127,6 @@ export const SettingsView = () => {
                 <Toggle checked={settings.startOnBoot} onChange={() => updateSettings({ startOnBoot: !settings.startOnBoot })} />
               </Row>
             </div>
-            </div>
 
             <div className="bg-card rounded-xl p-6 border border-border">
               <SectionTitle>Voice Input</SectionTitle>
