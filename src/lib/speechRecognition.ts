@@ -6,10 +6,15 @@ const SpeechRecognitionCtor: any =
     : undefined;
 
 const TARGET_SAMPLE_RATE = 16000;
+const isElectronApp = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 type SpeechRecognitionController = {
   promise: Promise<string>;
   stop: () => void;
+};
+
+type SpeechRecognitionStartOptions = {
+  preferLocal?: boolean;
 };
 
 class SpeechRecognitionUnavailableError extends Error {
@@ -165,7 +170,7 @@ async function getWhisperPipeline() {
       env.allowLocalModels = false;
       env.useBrowserCache = true;
 
-      return pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
+      return pipeline('automatic-speech-recognition', 'Xenova/whisper-base.en');
     })();
   }
 
@@ -193,9 +198,9 @@ function createLocalSpeechRecognitionController(deviceId?: string): SpeechRecogn
   const promise = (async () => {
     const capture = await startUtteranceCapture({
       deviceId,
-      maxDurationMs: 7000,
-      silenceDurationMs: 1000,
-      levelThreshold: 8,
+      maxDurationMs: 20000,
+      silenceDurationMs: 1600,
+      levelThreshold: 6,
     });
 
     stopCapture = () => {
@@ -226,24 +231,59 @@ function createLocalSpeechRecognitionController(deviceId?: string): SpeechRecogn
   };
 }
 
-export function startSpeechRecognition(deviceId?: string): SpeechRecognitionController {
+export function startSpeechRecognition(
+  deviceId?: string,
+  options: SpeechRecognitionStartOptions = {}
+): SpeechRecognitionController {
   let activeController: SpeechRecognitionController | null = null;
   let stopped = false;
 
   const promise = (async () => {
-    if (SpeechRecognitionCtor) {
-      activeController = createBrowserSpeechRecognitionController();
+    const preferLocal = options.preferLocal ?? isElectronApp;
+    const attempts = preferLocal
+      ? [
+          {
+            label: 'local transcription',
+            create: () => createLocalSpeechRecognitionController(deviceId),
+          },
+          {
+            label: 'browser speech recognition',
+            create: () => createBrowserSpeechRecognitionController(),
+          },
+        ]
+      : [
+          {
+            label: 'browser speech recognition',
+            create: () => createBrowserSpeechRecognitionController(),
+          },
+          {
+            label: 'local transcription',
+            create: () => createLocalSpeechRecognitionController(deviceId),
+          },
+        ];
+
+    let lastError: unknown = null;
+
+    for (let index = 0; index < attempts.length; index += 1) {
+      const attempt = attempts[index];
+      activeController = attempt.create();
 
       try {
         return await activeController.promise;
       } catch (error) {
+        lastError = error;
+
         if (stopped) return '';
-        console.warn('[Jarvis] Browser speech recognition failed, falling back to local transcription:', error);
+
+        if (index < attempts.length - 1) {
+          console.warn(`[Jarvis] ${attempt.label} failed, trying fallback:`, error);
+        }
       }
     }
 
-    activeController = createLocalSpeechRecognitionController(deviceId);
-    return activeController.promise;
+    throw lastError instanceof Error
+      ? lastError
+      : new SpeechRecognitionUnavailableError('Speech recognition failed.');
   })();
 
   return {
