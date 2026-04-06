@@ -16,7 +16,6 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Build current date/time string in the user's timezone (or UTC)
     const now = new Date();
     const tz = timezone || "UTC";
     let dateTimeStr: string;
@@ -49,6 +48,17 @@ serve(async (req) => {
 - Never be overly childish or robotic
 - Sound sleek and natural
 
+You can control these things on the user's PC:
+- Open applications (Chrome, Spotify, Discord, OBS, Steam, VS Code, etc.)
+- Control Spotify (play/pause/skip/previous music)
+- Open websites (YouTube, Netflix, Twitch, GitHub, etc.)
+- Search Google or YouTube
+- Save screen clips
+- Toggle recording
+- Control OBS (start/stop recording, streaming)
+
+When the user asks you to do something, respond as if you're doing it. Be confident and direct.
+
 The current date and time is: ${dateTimeStr} (${tz}).
 ${memoriesSection}
 
@@ -56,14 +66,10 @@ IMPORTANT: After your reply, if the user revealed any new personal facts about t
 
 Examples of your tone:
 - "Opening Chrome for you now."
+- "Playing your music on Spotify."
 - "Recording has started."
 - "Your clip has been saved."
-- "I couldn't find that application. Would you like to set it manually?"
-
-Example with memory extraction:
-User: "My name is Alex and I love playing guitar"
-Response: "Nice to meet you, Alex. I'll remember that.
-MEMORY:["The user's name is Alex","The user loves playing guitar"]"`;
+- "Searching YouTube for that now."`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -74,6 +80,7 @@ MEMORY:["The user's name is Alex","The user loves playing guitar"]"`;
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          model: "openai/gpt-5-mini",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: message },
@@ -103,7 +110,6 @@ MEMORY:["The user's name is Alex","The user loves playing guitar"]"`;
     const data = await response.json();
     const fullReply = data.choices?.[0]?.message?.content || "I didn't catch that. Could you say it again?";
 
-    // Parse out memory extraction
     let reply = fullReply;
     let newMemories: string[] = [];
 
@@ -113,7 +119,6 @@ MEMORY:["The user's name is Alex","The user loves playing guitar"]"`;
         newMemories = JSON.parse(memoryMatch[1]);
         reply = fullReply.substring(0, memoryMatch.index).trim();
       } catch {
-        // If parsing fails, just use the full reply
         reply = fullReply.replace(/MEMORY:.*$/s, '').trim();
       }
     }

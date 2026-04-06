@@ -66,8 +66,20 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
     };
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results?.[0]?.[0]?.transcript || '';
-      finish(transcript);
+      // Pick the best transcript from all alternatives
+      const results = event.results?.[0];
+      let bestTranscript = '';
+      let bestConfidence = 0;
+      if (results) {
+        for (let i = 0; i < results.length; i++) {
+          if (results[i].confidence > bestConfidence) {
+            bestConfidence = results[i].confidence;
+            bestTranscript = results[i].transcript;
+          }
+        }
+      }
+      if (!bestTranscript) bestTranscript = results?.[0]?.transcript || '';
+      finish(bestTranscript);
     };
 
     recognition.onerror = (event: any) => {

@@ -3,23 +3,22 @@ import type { AssistantState, Command, AppShortcut, Routine, Clip, SystemStatus,
 import { getDefaultApps } from '@/lib/commonApps';
 
 const APPS_KEY = 'jarvis_apps';
-const APPS_INITIALIZED_KEY = 'jarvis_apps_initialized';
+const APPS_VERSION_KEY = 'jarvis_apps_version';
+const CURRENT_APPS_VERSION = 2; // bump to force re-seed defaults
 
 function loadApps(): AppShortcut[] {
   try {
-    const raw = localStorage.getItem(APPS_KEY);
-    if (raw) return JSON.parse(raw);
-
-    // First time: populate with defaults
-    if (!localStorage.getItem(APPS_INITIALIZED_KEY)) {
+    const version = parseInt(localStorage.getItem(APPS_VERSION_KEY) || '0', 10);
+    if (version < CURRENT_APPS_VERSION) {
+      // First time or version bump: seed with defaults
       const defaults = getDefaultApps();
       localStorage.setItem(APPS_KEY, JSON.stringify(defaults));
-      localStorage.setItem(APPS_INITIALIZED_KEY, 'true');
+      localStorage.setItem(APPS_VERSION_KEY, String(CURRENT_APPS_VERSION));
       return defaults;
     }
-
-    return [];
-  } catch { return []; }
+    const raw = localStorage.getItem(APPS_KEY);
+    return raw ? JSON.parse(raw) : getDefaultApps();
+  } catch { return getDefaultApps(); }
 }
 
 function saveApps(apps: AppShortcut[]) {
