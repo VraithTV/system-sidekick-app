@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, dialog, shell, globalShortcut, Notification } = require('electron');
+const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, shell, globalShortcut, Notification } = require('electron');
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
@@ -13,7 +13,6 @@ app.setLoginItemSettings({
 let mainWindow = null;
 let tray = null;
 let forceQuit = false;
-let closePromptOpen = false;
 
 // Ensure Jarvis clips folder exists
 const JARVIS_FOLDER = path.join('C:', 'Jarvis');
@@ -42,7 +41,6 @@ function hideMainWindowToTray() {
 
 function quitApplication() {
   forceQuit = true;
-  closePromptOpen = false;
   if (tray) { tray.destroy(); tray = null; }
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.once('closed', () => app.quit());
@@ -50,28 +48,6 @@ function quitApplication() {
     return;
   }
   app.quit();
-}
-
-async function promptCloseAction() {
-  if (!mainWindow || mainWindow.isDestroyed() || closePromptOpen) return;
-  closePromptOpen = true;
-  try {
-    const { response } = await dialog.showMessageBox(mainWindow, {
-      type: 'question',
-      buttons: ['Keep Running in Tray', 'Quit Completely'],
-      defaultId: 0, cancelId: 0, noLink: true,
-      title: 'Close Jarvis',
-      message: 'Keep Jarvis running in the background?',
-      detail: 'Choose "Keep Running in Tray" to hide Jarvis and keep it available from the system tray, or "Quit Completely" to close the app.',
-    });
-    if (response === 0) {
-      setTimeout(() => hideMainWindowToTray(), 0);
-      return;
-    }
-    setTimeout(() => quitApplication(), 0);
-  } finally {
-    closePromptOpen = false;
-  }
 }
 
 function createTray() {
@@ -118,10 +94,8 @@ function createWindow() {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     mainWindow.webContents.send('window-maximized', false);
   });
-  mainWindow.on('close', (event) => {
-    if (forceQuit) return;
-    event.preventDefault();
-    promptCloseAction();
+  mainWindow.on('close', () => {
+    // Just quit — no prompt
   });
   mainWindow.on('closed', () => { mainWindow = null; });
 }
@@ -190,8 +164,8 @@ ipcMain.on('window-maximize', () => {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
 });
-ipcMain.on('window-close', () => promptCloseAction());
-ipcMain.handle('window-close', async () => { await promptCloseAction(); return null; });
+ipcMain.on('window-close', () => quitApplication());
+ipcMain.handle('window-close', async () => { quitApplication(); return null; });
 ipcMain.on('window-hide-to-tray', () => hideMainWindowToTray());
 ipcMain.handle('window-hide-to-tray', () => { hideMainWindowToTray(); return null; });
 ipcMain.on('app-quit', () => quitApplication());

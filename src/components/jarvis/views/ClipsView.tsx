@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import type { Clip } from '@/types/jarvis';
-import { Film, Scissors, Trash2, Play, FolderOpen, Circle, Square, Clock, HardDrive, Keyboard } from 'lucide-react';
+import { Film, Scissors, Trash2, Play, FolderOpen, Circle, Square, Clock, HardDrive, Keyboard, AlertTriangle } from 'lucide-react';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -120,7 +120,7 @@ export const ClipsView = () => {
     <div className="flex-1 overflow-y-auto bg-background">
       <div className="p-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="font-display text-sm text-primary tracking-[0.15em]">CLIPS</h2>
           <div className="flex items-center gap-2">
             <button
@@ -137,6 +137,17 @@ export const ClipsView = () => {
               <Scissors className="w-4 h-4" />
               Clip Last {settings.clipDuration}s
             </button>
+          </div>
+        </div>
+
+        {/* Beta Warning */}
+        <div className="mb-6 flex items-start gap-3 rounded-xl bg-amber-500/5 border border-amber-500/20 p-4">
+          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[13px] text-amber-400 font-medium">Clips is in Beta</p>
+            <p className="text-[11px] text-amber-500/70 font-mono mt-1">
+              This feature is still under development — some things may not work as expected. Screen recording and replay buffer support is coming soon.
+            </p>
           </div>
         </div>
 
