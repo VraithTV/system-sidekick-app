@@ -3,7 +3,6 @@ import { Minus, Plus, Play, X, RefreshCw } from 'lucide-react';
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
-
 import { useState } from 'react';
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
@@ -46,7 +45,6 @@ export const SettingsView = () => {
   const { settings, updateSettings } = useJarvisStore();
   const { previewVoice } = useVoiceAssistant();
   const { inputs, outputs, refresh: refreshDevices } = useAudioDevices();
-  
   const [previewing, setPreviewing] = useState<string | null>(null);
 
   const adjustClip = (dir: 'up' | 'down') => {

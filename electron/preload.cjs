@@ -8,9 +8,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onMaximizedChange: (callback) => {
     ipcRenderer.on('window-maximized', (_event, value) => callback(value));
   },
-  // Close confirmation
-  onConfirmClose: (callback) => {
-    ipcRenderer.on('confirm-close', () => callback());
-  },
-  closeAction: (action) => ipcRenderer.send('close-action', action),
 });
