@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { matchWakeWord } from '@/lib/fuzzyWake';
 import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 import { startSpeechRecognition } from '@/lib/speechRecognition';
+import { processAppCommand } from '@/lib/appCommands';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
