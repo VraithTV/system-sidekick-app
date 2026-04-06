@@ -8,7 +8,7 @@ export const isElectron = typeof window !== "undefined" && !!(window as any).ele
  * When true AND running in Electron, the maintenance screen is shown.
  * The web preview is never blocked so you can always test changes.
  */
-export const MAINTENANCE_ENABLED = false;
+export const MAINTENANCE_ENABLED = true;
 
 export const isMaintenanceMode = isElectron && MAINTENANCE_ENABLED;
 
