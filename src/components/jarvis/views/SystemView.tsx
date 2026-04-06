@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Cpu, MemoryStick, HardDrive, Thermometer, Monitor, Wifi, Eye, Keyboard } from 'lucide-react';
+import { Cpu, MemoryStick, HardDrive, Thermometer, Monitor, Wifi, Keyboard, Activity } from 'lucide-react';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -64,16 +64,6 @@ export const SystemView = () => {
           <span className="text-[10px] font-mono text-muted-foreground/60">Uptime: {sys.uptime}</span>
         </div>
 
-        {/* Preview Notice */}
-        <div className="mb-6 flex items-start gap-3 rounded-xl bg-primary/5 border border-primary/20 p-4">
-          <Eye className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-          <div>
-            <p className="text-[13px] text-primary font-medium">Preview — System Monitor</p>
-            <p className="text-[11px] text-muted-foreground font-mono mt-1">
-              Here's a preview of what the System page will look like. Live hardware monitoring from your PC is coming soon — data shown is simulated.
-            </p>
-          </div>
-        </div>
 
         {/* Shortcuts */}
         <div className="bg-card/50 rounded-xl p-4 border border-border/50 mb-6">
@@ -100,7 +90,7 @@ export const SystemView = () => {
         </div>
 
         {/* Main Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           {/* CPU */}
           <div className="bg-card rounded-xl p-5 border border-border">
             <div className="flex items-center gap-2 mb-4">
@@ -168,6 +158,31 @@ export const SystemView = () => {
               <div className="flex justify-between text-[10px] text-muted-foreground/60 font-mono">
                 <span>VRAM: {sys.gpu.vram}</span>
               </div>
+            </div>
+          </div>
+
+          {/* Top Processes */}
+          <div className="bg-card rounded-xl p-5 border border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="w-4 h-4 text-primary" />
+              <p className="text-[10px] font-mono tracking-[0.15em] text-primary/60 uppercase">Top Processes</p>
+            </div>
+            <div className="space-y-2.5">
+              {[
+                { name: 'chrome.exe', cpu: 8.2, ram: 1.4 },
+                { name: 'discord.exe', cpu: 3.1, ram: 0.6 },
+                { name: 'obs64.exe', cpu: 2.8, ram: 0.9 },
+                { name: 'explorer.exe', cpu: 1.2, ram: 0.3 },
+                { name: 'spotify.exe', cpu: 0.9, ram: 0.4 },
+              ].map((proc) => (
+                <div key={proc.name} className="flex items-center justify-between text-[11px]">
+                  <span className="text-foreground/70 font-mono truncate max-w-[140px]">{proc.name}</span>
+                  <div className="flex items-center gap-4">
+                    <span className="text-muted-foreground font-mono">{proc.cpu}% <span className="text-muted-foreground/50">CPU</span></span>
+                    <span className="text-muted-foreground font-mono">{proc.ram} GB <span className="text-muted-foreground/50">RAM</span></span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

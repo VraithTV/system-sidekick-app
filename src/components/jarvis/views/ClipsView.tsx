@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import type { Clip } from '@/types/jarvis';
-import { Film, Scissors, Trash2, Play, FolderOpen, Circle, Square, Clock, HardDrive, Keyboard, AlertTriangle } from 'lucide-react';
+import { Film, Scissors, Trash2, Play, FolderOpen, Circle, Square, Clock, HardDrive, Keyboard } from 'lucide-react';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -140,16 +140,6 @@ export const ClipsView = () => {
           </div>
         </div>
 
-        {/* Preview Notice */}
-        <div className="mb-6 flex items-start gap-3 rounded-xl bg-primary/5 border border-primary/20 p-4">
-          <AlertTriangle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-          <div>
-            <p className="text-[13px] text-primary font-medium">Preview — Clips</p>
-            <p className="text-[11px] text-muted-foreground font-mono mt-1">
-              Here's a little preview of what the Clips feature will look like. Screen recording, replay buffer and clip saving are still under development.
-            </p>
-          </div>
-        </div>
 
         {/* Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
