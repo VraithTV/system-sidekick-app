@@ -1,30 +1,6 @@
 import { Construction } from 'lucide-react';
 import { TitleBar } from './TitleBar';
 
-export const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
-
-const STORAGE_KEY = 'jarvis_maintenance_override';
-
-function resolveMaintenanceMode(): boolean {
-  const params = new URLSearchParams(window.location.search);
-  const urlVal = params.get('maintenance');
-
-  if (urlVal === 'on' || urlVal === 'off') {
-    try { localStorage.setItem(STORAGE_KEY, urlVal); } catch {}
-    return urlVal === 'on';
-  }
-
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'on') return true;
-    if (stored === 'off') return false;
-  } catch {}
-
-  return isElectron;
-}
-
-export const isMaintenanceMode = resolveMaintenanceMode();
-
 export const MaintenanceScreen = () => (
   <div className="flex flex-col h-screen w-screen bg-background">
     <TitleBar />

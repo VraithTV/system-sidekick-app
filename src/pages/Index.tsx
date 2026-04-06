@@ -1,7 +1,7 @@
 import { Sidebar } from '@/components/jarvis/Sidebar';
 import { WindowControls } from '@/components/jarvis/WindowControls';
 import { OnboardingWizard, useOnboarding } from '@/components/jarvis/OnboardingWizard';
-import { MaintenanceScreen, isMaintenanceMode } from '@/components/jarvis/MaintenanceScreen';
+import { MaintenanceScreen } from '@/components/jarvis/MaintenanceScreen';
 import { DashboardView } from '@/components/jarvis/views/DashboardView';
 import { AppsView } from '@/components/jarvis/views/AppsView';
 import { ClipsView } from '@/components/jarvis/views/ClipsView';
@@ -9,6 +9,7 @@ import { RoutinesView } from '@/components/jarvis/views/RoutinesView';
 import { SettingsView } from '@/components/jarvis/views/SettingsView';
 import { SystemView } from '@/components/jarvis/views/SystemView';
 import { useJarvisStore } from '@/store/jarvisStore';
+import { useMaintenanceMode } from '@/hooks/useMaintenanceMode';
 
 const views: Record<string, React.ComponentType> = {
   dashboard: DashboardView,
@@ -22,9 +23,11 @@ const views: Record<string, React.ComponentType> = {
 const Index = () => {
   const { activeView } = useJarvisStore();
   const { complete, finish } = useOnboarding();
+  const { enabled: maintenanceOn, loading, isElectron } = useMaintenanceMode();
   const View = views[activeView] || DashboardView;
 
-  if (isMaintenanceMode) {
+  // Show maintenance screen only in Electron when flag is on
+  if (!loading && isElectron && maintenanceOn) {
     return <MaintenanceScreen />;
   }
 
