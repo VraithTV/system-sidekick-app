@@ -4,6 +4,12 @@ const path = require('path');
 // Set the app name shown in taskbar / dock
 app.setName('Jarvis AI BETA');
 
+// Auto-launch on Windows login
+app.setLoginItemSettings({
+  openAtLogin: true,
+  path: app.getPath('exe'),
+});
+
 function createWindow() {
   const iconPath = path.join(__dirname, '..', 'public', 'jarvis-icon.png');
   const icon = nativeImage.createFromPath(iconPath);
