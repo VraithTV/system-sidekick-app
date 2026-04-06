@@ -37,9 +37,9 @@ function pause(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
-async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId?: string): Promise<void> {
+async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId?: string, jarvisVoice?: string): Promise<void> {
   if (Date.now() < elevenLabsRetryAfter) {
-    return speakBrowser(text, outputDeviceId);
+    return speakBrowser(text, outputDeviceId, jarvisVoice);
   }
 
   try {
