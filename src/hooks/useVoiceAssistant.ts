@@ -2,7 +2,6 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { supabase } from '@/integrations/supabase/client';
 import { matchWakeWord } from '@/lib/fuzzyWake';
-import { startUtteranceCapture } from '@/lib/captureUtterance';
 import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -25,11 +24,59 @@ function tryLaunchApp(userText: string): void {
 }
 
 let elevenLabsRetryAfter = 0;
-const MIN_CAPTURED_AUDIO_BYTES = 1500;
 const FATAL_CAPTURE_ERRORS = new Set(['NotAllowedError', 'NotFoundError', 'NotReadableError', 'SecurityError']);
 
 function pause(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+// ─── Browser Speech Recognition (free, no API key needed) ───
+
+const SpeechRecognitionCtor: any =
+  typeof window !== 'undefined'
+    ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    : undefined;
+
+function listenWithBrowserSTT(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!SpeechRecognitionCtor) {
+      return reject(new Error('Browser Speech Recognition not supported'));
+    }
+
+    const recognition = new SpeechRecognitionCtor();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false;
+
+    let settled = false;
+
+    recognition.onresult = (event: any) => {
+      if (settled) return;
+      settled = true;
+      const transcript = event.results?.[0]?.[0]?.transcript || '';
+      resolve(transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      if (settled) return;
+      settled = true;
+      if (event.error === 'no-speech' || event.error === 'aborted') {
+        resolve('');
+      } else {
+        reject(new Error(`Speech recognition error: ${event.error}`));
+      }
+    };
+
+    recognition.onend = () => {
+      if (!settled) {
+        settled = true;
+        resolve('');
+      }
+    };
+
+    recognition.start();
+  });
 }
 
 async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId?: string): Promise<void> {
@@ -211,49 +258,10 @@ export function useVoiceAssistant() {
           const shouldBypassWakeWord = wakeWordHeard.current || conversationActive.current;
 
           try {
-            console.log('[Jarvis] Starting audio capture...');
-            const controller = await startUtteranceCapture({
-              deviceId: settings.inputDeviceId || undefined,
-              maxDurationMs: shouldBypassWakeWord ? 10000 : 7000,
-              silenceDurationMs: shouldBypassWakeWord ? 1000 : 1400,
-              levelThreshold: shouldBypassWakeWord ? 6 : 7,
-            });
-            captureStopRef.current = controller.stop;
-            const blob = await controller.promise;
-            captureStopRef.current = null;
-
-            console.log('[Jarvis] Capture complete, blob:', blob ? `${blob.size} bytes` : 'null');
-            if (!blob || blob.size < MIN_CAPTURED_AUDIO_BYTES || !isListeningRef.current) {
-              console.log('[Jarvis] Skipped — too small or stopped');
-              continue;
-            }
-
-            console.log('[Jarvis] Sending to transcription...');
-            const formData = new FormData();
-            formData.append('audio', new File([blob], 'utterance.webm', { type: blob.type || 'audio/webm' }));
-
-            const response = await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-transcribe`,
-              {
-                method: 'POST',
-                headers: {
-                  apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-                },
-                body: formData,
-              }
-            );
-
-            if (!response.ok) {
-              const errorText = await response.text();
-              console.warn('[Jarvis] Transcription failed:', response.status, errorText);
-              continue;
-            }
-
-            const data = await response.json();
-            const transcript = typeof data?.text === 'string' ? data.text.trim() : '';
-            console.log('[Jarvis] Transcript:', JSON.stringify(transcript));
-            if (!transcript) continue;
+              console.log('[Jarvis] Listening via browser Speech Recognition...');
+              const transcript = await listenWithBrowserSTT();
+              console.log('[Jarvis] Transcript:', JSON.stringify(transcript));
+              if (!transcript || !isListeningRef.current) continue;
 
             if (!shouldBypassWakeWord) {
               const wakeMatch = matchWakeWord(
