@@ -17,6 +17,25 @@ interface SpotifyTokens {
   expires_at: number;
 }
 
+function openExternalUrl(url: string) {
+  if (typeof window === 'undefined') return;
+  if ((window as any).electronAPI?.openUrl) {
+    (window as any).electronAPI.openUrl(url);
+  } else {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+}
+
+function openSpotifySearchFallback(query: string) {
+  const encoded = encodeURIComponent(query.trim());
+  (window as any).electronAPI?.openApp?.('spotify');
+  if ((window as any).electronAPI?.openUrl) {
+    (window as any).electronAPI.openUrl(`spotify:search:${encoded}`);
+  } else {
+    openExternalUrl(`https://open.spotify.com/search/${encoded}`);
+  }
+}
+
 async function getSupabaseClient() {
   const { supabase } = await import('@/integrations/supabase/client');
   return supabase;
@@ -210,24 +229,37 @@ export async function spotifyPlayTrack(query: string): Promise<{ success: boolea
         return { success: false, message: 'Spotify session expired. Please reconnect in Settings.' };
       }
       if (searchResult.status === 403) {
-        return { success: false, message: 'Spotify denied the search request. Reconnect Spotify in Settings and try again.' };
+        openSpotifySearchFallback(query);
+        return { success: true, message: `I opened "${query}" in Spotify for you.` };
       }
       if (searchResult.status === 429) {
-        return { success: false, message: 'Spotify is rate limiting requests right now. Try again in a moment.' };
+        openSpotifySearchFallback(query);
+        return { success: true, message: `Spotify is busy, so I opened "${query}" in Spotify search instead.` };
       }
-      return { success: false, message: 'Could not search Spotify right now.' };
+      openSpotifySearchFallback(query);
+      return { success: true, message: `I opened "${query}" in Spotify for you.` };
     }
 
-    const track = searchResult.data?.tracks?.items?.[0];
+    const track = searchResult.data?.tracks?.items?.[0] as any;
     if (!track) {
-      return { success: false, message: `I couldn't find "${query}" on Spotify.` };
+      openSpotifySearchFallback(query);
+      return { success: true, message: `I couldn't match that track exactly, so I opened Spotify search for "${query}".` };
     }
+
+    const artistName = track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist';
 
     let deviceId = await getActiveDeviceId(token);
     if (!deviceId) {
+      // No device: open the track in Spotify app instead
+      (window as any).electronAPI?.openApp?.('spotify');
+      if (track.uri && (window as any).electronAPI?.openUrl) {
+        (window as any).electronAPI.openUrl(track.uri);
+      } else if (track.external_urls?.spotify) {
+        openExternalUrl(track.external_urls.spotify);
+      }
       return {
-        success: false,
-        message: 'No active Spotify device found. Open Spotify on your PC first, then try again.',
+        success: true,
+        message: `I found "${track.name}" by ${artistName} and opened it in Spotify.`,
       };
     }
 
@@ -244,15 +276,18 @@ export async function spotifyPlayTrack(query: string): Promise<{ success: boolea
         return { success: false, message: 'Spotify session expired. Please reconnect in Settings.' };
       }
       if (playResult.status === 404 || playResult.status === 403) {
+        (window as any).electronAPI?.openApp?.('spotify');
+        if (track.uri && (window as any).electronAPI?.openUrl) {
+          (window as any).electronAPI.openUrl(track.uri);
+        }
         return {
-          success: false,
-          message: 'No active Spotify device found. Open Spotify on your PC first, then try again.',
+          success: true,
+          message: `I found "${track.name}" by ${artistName} and opened it in Spotify.`,
         };
       }
-      return { success: false, message: 'Could not start playback. Make sure Spotify is open.' };
+      return { success: false, message: 'Could not start playback right now.' };
     }
 
-    const artistName = track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist';
     return { success: true, message: `Now playing "${track.name}" by ${artistName}.` };
   } catch (e) {
     console.error('[Spotify] Play error:', e);
