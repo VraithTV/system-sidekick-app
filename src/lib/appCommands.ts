@@ -10,6 +10,7 @@ import {
   spotifyResume,
   spotifyNext,
   spotifyPrevious,
+  spotifySetVolume,
 } from '@/lib/spotifyClient';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
