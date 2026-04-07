@@ -35,7 +35,8 @@
     },
     "win": {
       "target": "nsis",
-      "icon": "public/jarvis-icon.ico"
+      "icon": "public/jarvis-icon.ico",
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
