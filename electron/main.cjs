@@ -5,6 +5,23 @@ const fs = require('fs');
 
 app.setName('Jarvis AI BETA');
 
+// ─── Fresh-install detection ─────────────────────────────────
+// When the user uninstalls and reinstalls, the exe path changes.
+// We store the exe path in a stamp file; if it differs we wipe
+// localStorage so onboarding runs again.
+const STAMP_FILE = path.join(app.getPath('userData'), '.install-stamp');
+function checkFreshInstall() {
+  const currentExe = app.getPath('exe');
+  try {
+    const saved = fs.readFileSync(STAMP_FILE, 'utf-8').trim();
+    if (saved === currentExe) return; // same install, do nothing
+  } catch {}
+  // New install or first run: write stamp and clear session data on window load
+  fs.writeFileSync(STAMP_FILE, currentExe, 'utf-8');
+  global.__jarvisFreshInstall = true;
+}
+checkFreshInstall();
+
 app.setLoginItemSettings({
   openAtLogin: true,
   path: app.getPath('exe'),
@@ -80,13 +97,24 @@ function createWindow() {
     },
   });
 
-  const distPath = path.join(__dirname, '..', 'dist', 'index.html');
-  const hasDist = fs.existsSync(distPath);
-
-  if (!app.isPackaged && !hasDist) {
-    mainWindow.loadURL('http://localhost:8080');
+  // If fresh install, clear localStorage before loading
+  if (global.__jarvisFreshInstall) {
+    mainWindow.webContents.session.clearStorageData({ storages: ['localstorage'] }).then(() => {
+      global.__jarvisFreshInstall = false;
+      loadApp();
+    }).catch(() => loadApp());
   } else {
-    mainWindow.loadFile(distPath);
+    loadApp();
+  }
+
+  function loadApp() {
+    const distPath = path.join(__dirname, '..', 'dist', 'index.html');
+    const hasDist = fs.existsSync(distPath);
+    if (!app.isPackaged && !hasDist) {
+      mainWindow.loadURL('http://localhost:8080');
+    } else {
+      mainWindow.loadFile(distPath);
+    }
   }
 
   mainWindow.on('maximize', () => {
