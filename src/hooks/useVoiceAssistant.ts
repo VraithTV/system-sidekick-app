@@ -322,7 +322,12 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
             captureStopRef.current = null;
 
             console.log('[Jarvis] Transcript:', JSON.stringify(transcript));
-            if (!transcript || !isListeningRef.current) continue;
+            if (!isListeningRef.current) continue;
+            if (!transcript) {
+              // Small delay to prevent tight empty-result loops
+              await pause(300);
+              continue;
+            }
 
             if (!shouldBypassWakeWord) {
               const wakeMatch = matchWakeWord(

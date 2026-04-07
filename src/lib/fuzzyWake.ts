@@ -50,11 +50,14 @@ function phoneticKey(value: string): string {
 function buildWakeCandidates(wakeName: string, aliases: string[]): string[] {
   const normalizedWakeName = normalizeSpeech(wakeName);
   const automaticAliases = normalizedWakeName === 'jarvis'
-    ? ['javis', 'jervis', 'jarviss', 'jarvus', 'jiva']
+    ? ['javis', 'jervis', 'jarviss', 'jarvus', 'jiva', 'hey jarvis', 'hey javis', 'hey jervis', 'a jarvis', 'hey jarvus']
     : [];
 
+  // Also add "hey <wakeName>" variant automatically
+  const heyVariant = `hey ${normalizedWakeName}`;
+
   return Array.from(
-    new Set([wakeName, ...aliases, ...automaticAliases].map((candidate) => normalizeSpeech(candidate)).filter(Boolean))
+    new Set([wakeName, heyVariant, ...aliases, ...automaticAliases].map((candidate) => normalizeSpeech(candidate)).filter(Boolean))
   );
 }
 
