@@ -11,6 +11,7 @@ import {
   spotifyNext,
   spotifyPrevious,
   spotifySetVolume,
+  spotifyNowPlaying,
 } from '@/lib/spotifyClient';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
