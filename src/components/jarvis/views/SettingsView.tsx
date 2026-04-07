@@ -1,9 +1,11 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { Minus, Plus, Play, X, RefreshCw } from 'lucide-react';
+import { Minus, Plus, Play, X, RefreshCw, Download } from 'lucide-react';
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useState } from 'react';
+
+const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <p className="font-display text-[10px] tracking-[0.2em] text-primary/60 uppercase mb-4">{children}</p>
@@ -251,6 +253,21 @@ export const SettingsView = () => {
                 ))}
               </div>
             </div>
+
+            {isElectron && (
+              <div className="bg-card rounded-xl p-6 border border-border">
+                <SectionTitle>Updates</SectionTitle>
+                <Row label="Check for Updates" desc="See if a newer version is available">
+                  <button
+                    onClick={() => (window as any).electronAPI?.checkForUpdates?.()}
+                    className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg border border-primary/30 transition-colors"
+                  >
+                    <Download size={14} />
+                    Check Now
+                  </button>
+                </Row>
+              </div>
+            )}
 
             <div className="bg-card rounded-xl p-6 border border-border">
               <SectionTitle>Keyboard Shortcuts</SectionTitle>
