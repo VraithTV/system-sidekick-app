@@ -316,3 +316,35 @@ export async function spotifySetVolume(percent: number): Promise<{ success: bool
     return { success: false, message: 'Could not reach Spotify.' };
   }
 }
+
+/** Get currently playing track info */
+export async function spotifyNowPlaying(): Promise<{ success: boolean; message: string }> {
+  const token = await getAccessToken();
+  if (!token) return { success: false, message: 'Spotify is not connected.' };
+
+  try {
+    const res = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 204 || res.status === 202) {
+      return { success: true, message: 'Nothing is playing on Spotify right now.' };
+    }
+    if (!res.ok) {
+      return { success: false, message: 'Could not check what is playing.' };
+    }
+    const data = await res.json();
+    if (!data.item) {
+      return { success: true, message: 'Nothing is playing on Spotify right now.' };
+    }
+    const track = data.item;
+    const artists = track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist';
+    const album = track.album?.name || '';
+    const isPlaying = data.is_playing ? 'Currently playing' : 'Paused on';
+    return {
+      success: true,
+      message: `${isPlaying}: "${track.name}" by ${artists}${album ? ` from the album "${album}"` : ''}.`,
+    };
+  } catch {
+    return { success: false, message: 'Could not reach Spotify.' };
+  }
+}
