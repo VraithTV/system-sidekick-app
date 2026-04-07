@@ -273,8 +273,8 @@ export const ThemesView = () => {
               {accentOptions.map((accent) => {
                 const sel = accent.id === activeAccent;
                 return (
-                  <button key={accent.id} onClick={() => selectAccent(accent.id)} className={`rounded-2xl border p-3 text-center transition-all duration-200 ${sel ? 'border-primary/40 bg-primary/5' : 'border-border bg-background/70 hover:border-primary/20 hover:bg-card/80'}`}>
-                    <div className="mx-auto h-10 w-10 rounded-full border border-border/60" style={{ backgroundColor: `hsl(${accent.hsl})`, boxShadow: sel ? `0 0 20px hsl(${accent.hsl} / 0.35)` : undefined }} />
+                  <button key={accent.id} onClick={() => selectAccent(accent.id)} className={`flex flex-col items-center rounded-2xl border p-3 transition-all duration-200 ${sel ? 'border-primary/40 bg-primary/5' : 'border-border bg-background/70 hover:border-primary/20 hover:bg-card/80'}`}>
+                    <div className="h-10 w-10 rounded-full border border-border/60" style={{ backgroundColor: `hsl(${accent.hsl})`, boxShadow: sel ? `0 0 20px hsl(${accent.hsl} / 0.35)` : undefined }} />
                     <p className={`mt-2 text-[10px] font-mono uppercase tracking-[0.14em] ${sel ? 'text-foreground' : 'text-muted-foreground'}`}>{accent.name}</p>
                   </button>
                 );
