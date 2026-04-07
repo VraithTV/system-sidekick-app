@@ -81,6 +81,22 @@ serve(async (req) => {
       });
     }
 
+    if (action === "get-auth-url") {
+      const { redirect_uri } = await req.json().catch(() => ({ redirect_uri: "" }));
+      const scopes = "user-modify-playback-state user-read-playback-state user-read-currently-playing streaming";
+      const params = new URLSearchParams({
+        client_id: SPOTIFY_CLIENT_ID,
+        response_type: "code",
+        redirect_uri: redirect_uri || "http://localhost:8080",
+        scope: scopes,
+        show_dialog: "true",
+      });
+      return new Response(
+        JSON.stringify({ url: `https://accounts.spotify.com/authorize?${params}` }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (action === "play") {
       // Play a track/search via Spotify Web API
       const { access_token, query } = await req.json().catch(() => ({ access_token: null, query: null }));
