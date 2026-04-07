@@ -5,6 +5,16 @@ const fs = require('fs');
 
 app.setName('Jarvis AI BETA');
 
+// ─── Single Instance Lock ────────────────────────────────────
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    showMainWindow();
+  });
+}
+
 // ─── Fresh-install detection ─────────────────────────────────
 // When the user uninstalls and reinstalls, the exe path changes.
 // We store the exe path in a stamp file; if it differs we wipe
