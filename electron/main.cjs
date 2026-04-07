@@ -169,7 +169,7 @@ function createWindow() {
         mainWindow.show();
         mainWindow.focus();
       }
-    }, 1500); // Brief delay so splash feels intentional
+    }, 30000); // 30-second splash screen
   });
 
   mainWindow.on('maximize', () => {
