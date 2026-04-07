@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, shell, globalShort
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { checkForUpdates, startAutoUpdateSchedule, stopAutoUpdateSchedule, getCurrentVersion } = require('./autoUpdater.cjs');
 
 app.setName('Jarvis AI BETA');
 
@@ -289,6 +290,10 @@ ipcMain.on('clip-now', (_event, duration) => {
 // Get clips folder path
 ipcMain.handle('get-clips-folder', () => CLIPS_FOLDER);
 
+// Auto-updater
+ipcMain.handle('check-for-updates', () => checkForUpdates(false));
+ipcMain.handle('get-app-version', () => getCurrentVersion());
+
 // ─── App Lifecycle ───────────────────────────────────────────
 
 app.on('before-quit', () => { forceQuit = true; });
@@ -297,10 +302,12 @@ app.whenReady().then(() => {
   createTray();
   createWindow();
   registerShortcuts();
+  startAutoUpdateSchedule();
 });
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  stopAutoUpdateSchedule();
 });
 
 app.on('window-all-closed', () => {

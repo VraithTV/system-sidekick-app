@@ -39,4 +39,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onShortcut: (callback) => {
     ipcRenderer.on('shortcut', (_event, action) => callback(action));
   },
+
+  // Auto-updater
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
 });
