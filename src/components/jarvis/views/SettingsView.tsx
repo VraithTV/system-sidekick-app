@@ -1,9 +1,10 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { Minus, Plus, Play, X, RefreshCw, Download } from 'lucide-react';
+import { Minus, Plus, Play, X, RefreshCw, Download, Music, Unlink } from 'lucide-react';
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { isSpotifyConnected, clearSpotifyTokens, getSpotifyAuthUrl, exchangeSpotifyCode } from '@/lib/spotifyClient';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -48,6 +49,22 @@ export const SettingsView = () => {
   const { previewVoice } = useVoiceAssistant({ previewOnly: true });
   const { inputs, outputs, refresh: refreshDevices } = useAudioDevices();
   const [previewing, setPreviewing] = useState<string | null>(null);
+  const [spotifyConnected, setSpotifyConnected] = useState(isSpotifyConnected());
+  const [spotifyClientId, setSpotifyClientId] = useState(localStorage.getItem('jarvis_spotify_client_id') || '');
+
+  // Listen for Spotify OAuth callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+      const redirectUri = window.location.origin + window.location.pathname;
+      exchangeSpotifyCode(code, redirectUri).then((ok) => {
+        if (ok) setSpotifyConnected(true);
+        // Clean up URL
+        window.history.replaceState({}, '', window.location.pathname);
+      });
+    }
+  }, []);
 
   const adjustClip = (dir: 'up' | 'down') => {
     const i = clipDurations.indexOf(settings.clipDuration);
