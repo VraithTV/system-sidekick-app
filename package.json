@@ -2,6 +2,8 @@
   "name": "vite_react_shadcn_ts",
   "private": true,
   "version": "1.0.0",
+  "description": "Jarvis AI desktop assistant packaged with Electron.",
+  "author": "Jarvis AI",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -27,6 +29,9 @@
     ],
     "directories": {
       "output": "release"
+    },
+    "toolsets": {
+      "winCodeSign": "1.1.0"
     },
     "win": {
       "target": "nsis",
