@@ -1,7 +1,6 @@
 import { Construction } from "lucide-react";
 import { TitleBar } from "./TitleBar";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 export const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
 export const LOCAL_MAINTENANCE_OVERRIDE: boolean | null = null;
@@ -21,6 +20,7 @@ export function useMaintenanceMode() {
 
     async function check() {
       try {
+        const { supabase } = await import('@/integrations/supabase/client');
         const { data } = await supabase
           .from('app_config')
           .select('value')
