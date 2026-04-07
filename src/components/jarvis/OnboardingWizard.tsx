@@ -45,8 +45,8 @@ const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
   <div className="flex flex-col items-center justify-center h-full animate-fade-in-up">
     <div className="relative mb-8">
       <div className="absolute inset-0 bg-[radial-gradient(circle,hsl(var(--primary)/0.2)_0%,transparent_70%)] scale-[2.5]" />
-      <div className="relative w-24 h-24 rounded-full border border-primary/30 flex items-center justify-center bg-primary/5 shadow-[0_0_40px_hsl(var(--primary)/0.15)]">
-        <JarvisLogo size={48} className="text-primary" />
+      <div className="relative w-32 h-32 rounded-full border border-primary/30 flex items-center justify-center bg-primary/5 shadow-[0_0_40px_hsl(var(--primary)/0.15)]">
+        <JarvisLogo size={72} className="text-primary" />
       </div>
     </div>
     <h1 className="font-display text-2xl tracking-[0.15em] text-foreground mb-2">

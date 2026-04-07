@@ -83,10 +83,17 @@ function quitApplication() {
   app.quit();
 }
 
+function getIconPath(name) {
+  // In packaged app, public/ is copied into dist/ by Vite; check dist first, then public
+  const distPath = path.join(__dirname, '..', 'dist', name);
+  if (fs.existsSync(distPath)) return distPath;
+  return path.join(__dirname, '..', 'public', name);
+}
+
 function createTray() {
   if (tray) return;
   const trayIconName = process.platform === 'win32' ? 'jarvis-icon.ico' : 'jarvis-icon.png';
-  const iconPath = path.join(__dirname, '..', 'public', trayIconName);
+  const iconPath = getIconPath(trayIconName);
   const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
   tray = new Tray(trayIcon);
   tray.setToolTip('Jarvis AI BETA');

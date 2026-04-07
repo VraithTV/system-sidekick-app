@@ -271,20 +271,6 @@ export const SettingsView = () => {
               </div>
             </div>
 
-            {isElectron && (
-              <div className="bg-card rounded-xl p-6 border border-border">
-                <SectionTitle>Updates</SectionTitle>
-                <Row label="Check for Updates" desc="See if a newer version is available">
-                  <button
-                    onClick={() => (window as any).electronAPI?.checkForUpdates?.()}
-                    className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg border border-primary/30 transition-colors"
-                  >
-                    <Download size={14} />
-                    Check Now
-                  </button>
-                </Row>
-              </div>
-            )}
 
             <div className="bg-card rounded-xl p-6 border border-border">
               <SectionTitle>Keyboard Shortcuts</SectionTitle>
@@ -323,15 +309,23 @@ export const SettingsView = () => {
                   </button>
                 ) : (
                   <button
-                    onClick={() => {
-                      const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID || localStorage.getItem('jarvis_spotify_client_id') || '';
-                      if (!clientId) return;
-                      const redirectUri = window.location.origin + window.location.pathname;
-                      const url = getSpotifyAuthUrl(clientId, redirectUri);
-                      if (isElectron && (window as any).electronAPI?.openUrl) {
-                        (window as any).electronAPI.openUrl(url);
-                      } else {
-                        window.location.href = url;
+                    onClick={async () => {
+                      try {
+                        const { supabase } = await import('@/integrations/supabase/client');
+                        const { data, error } = await supabase.functions.invoke('spotify-auth', {
+                          body: { action: 'get-auth-url', redirect_uri: window.location.origin + window.location.pathname },
+                        });
+                        if (error || !data?.url) {
+                          console.error('[Spotify] Could not get auth URL:', error);
+                          return;
+                        }
+                        if (isElectron && (window as any).electronAPI?.openUrl) {
+                          (window as any).electronAPI.openUrl(data.url);
+                        } else {
+                          window.location.href = data.url;
+                        }
+                      } catch (e) {
+                        console.error('[Spotify] Auth error:', e);
                       }
                     }}
                     className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-[#1DB954]/10 hover:bg-[#1DB954]/20 text-[#1DB954] rounded-lg border border-[#1DB954]/30 transition-colors"
@@ -342,6 +336,21 @@ export const SettingsView = () => {
                 )}
               </div>
             </div>
+
+            {isElectron && (
+              <div className="bg-card rounded-xl p-6 border border-border">
+                <SectionTitle>Updates</SectionTitle>
+                <Row label="Check for Updates" desc="See if a newer version is available">
+                  <button
+                    onClick={() => (window as any).electronAPI?.checkForUpdates?.()}
+                    className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg border border-primary/30 transition-colors"
+                  >
+                    <Download size={14} />
+                    Check Now
+                  </button>
+                </Row>
+              </div>
+            )}
           </div>
         </div>
       </div>
