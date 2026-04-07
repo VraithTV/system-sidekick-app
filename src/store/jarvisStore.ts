@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AssistantState, Command, AppShortcut, Routine, Clip, SystemStatus, JarvisSettings } from '@/types/jarvis';
+import type { AssistantState, Command, AppShortcut, Routine, Clip, SystemStatus, JarvisSettings, JarvisMode } from '@/types/jarvis';
 import { getDefaultApps } from '@/lib/commonApps';
 
 const APPS_KEY = 'jarvis_apps';
@@ -44,6 +44,8 @@ interface JarvisStore {
   updateSettings: (s: Partial<JarvisSettings>) => void;
   activeView: string;
   setActiveView: (view: string) => void;
+  mode: JarvisMode;
+  setMode: (mode: JarvisMode) => void;
 }
 
 export const useJarvisStore = create<JarvisStore>((set) => ({
@@ -93,8 +95,11 @@ export const useJarvisStore = create<JarvisStore>((set) => ({
     obsWebsocketPassword: '',
     inputDeviceId: '',
     outputDeviceId: '',
+    dailyLimit: 25,
   },
   updateSettings: (s) => set((prev) => ({ settings: { ...prev.settings, ...s } })),
   activeView: 'dashboard',
   setActiveView: (view) => set({ activeView: view }),
+  mode: 'assistant' as JarvisMode,
+  setMode: (mode) => set({ mode }),
 }));
