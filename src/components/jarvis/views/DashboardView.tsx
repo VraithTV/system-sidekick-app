@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { AssistantOrb } from '../AssistantOrb';
 import { CommandHistory } from '../CommandHistory';
-import { StatusPanel } from '../StatusPanel';
 import { useJarvisStore } from '@/store/jarvisStore';
-import { Mic, MicOff, Zap, Clock, Wifi } from 'lucide-react';
+import { Mic, MicOff, Zap } from 'lucide-react';
 import { getRemainingUses, getDailyLimit } from '@/lib/usageLimit';
 
 export const DashboardView = () => {
@@ -85,34 +84,62 @@ export const DashboardView = () => {
         </div>
       </div>
 
-      <div className="w-56 border-l border-border/40 bg-card/30 backdrop-blur-sm p-4 flex flex-col gap-5 overflow-y-auto">
-        <div className="text-center py-3">
-          <p className="font-display text-2xl tracking-[0.1em] text-primary glow-text">{timeStr}</p>
-          <p className="font-mono text-[10px] text-muted-foreground/50 mt-1 tracking-wider uppercase">{dateStr}</p>
+      <div className="w-52 border-l border-border/40 bg-card/20 backdrop-blur-sm p-5 flex flex-col overflow-y-auto">
+        {/* Clock */}
+        <div className="text-center pt-2 pb-6">
+          <p className="font-display text-3xl tracking-[0.08em] text-primary glow-text">{timeStr}</p>
+          <p className="font-mono text-[10px] text-muted-foreground/40 mt-2 tracking-[0.25em] uppercase">{dateStr}</p>
         </div>
 
-        <div className="h-px bg-border/40" />
+        <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
 
-        <div className="space-y-2">
-          <p className="font-display text-[10px] tracking-[0.2em] text-foreground/50 uppercase">Status</p>
-          <div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground">
-            <Wifi className="h-3.5 w-3.5 text-primary/60" />
-            <span>Connected</span>
-          </div>
-          <div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground">
-            <Clock className="h-3.5 w-3.5 text-primary/60" />
-            <span>Uptime: Active</span>
+        {/* Quick stats */}
+        <div className="py-5 space-y-3">
+          <p className="font-display text-[9px] tracking-[0.25em] text-primary/60 uppercase">Quick Stats</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-border/40 bg-background/40 p-3 text-center">
+              <p className="font-display text-lg text-primary glow-text">{commands.length}</p>
+              <p className="font-mono text-[8px] text-muted-foreground/50 mt-0.5 tracking-wider uppercase">Commands</p>
+            </div>
+            <div className="rounded-lg border border-border/40 bg-background/40 p-3 text-center">
+              <p className="font-display text-lg text-primary glow-text">{remaining}</p>
+              <p className="font-mono text-[8px] text-muted-foreground/50 mt-0.5 tracking-wider uppercase">Remaining</p>
+            </div>
           </div>
         </div>
 
-        <div className="h-px bg-border/40" />
-        <StatusPanel />
-        <div className="h-px bg-border/40" />
+        <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
 
-        <div className="mt-auto text-center py-2">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="font-mono text-[9px] text-primary/70 tracking-widest uppercase">Beta v1.0</span>
+        {/* Session info */}
+        <div className="py-5 space-y-2.5">
+          <p className="font-display text-[9px] tracking-[0.25em] text-primary/60 uppercase">Session</p>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] text-muted-foreground/60">Status</span>
+              <div className="flex items-center gap-1.5">
+                <div className={`w-1.5 h-1.5 rounded-full ${micOn ? 'bg-success shadow-[0_0_6px_hsl(var(--success)/0.5)]' : 'bg-muted-foreground/30'}`} />
+                <span className="font-mono text-[10px] text-muted-foreground">{micOn ? 'Active' : 'Idle'}</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] text-muted-foreground/60">Engine</span>
+              <span className="font-mono text-[10px] text-primary/70">Online</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] text-muted-foreground/60">Latency</span>
+              <span className="font-mono text-[10px] text-muted-foreground">~120ms</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-auto pt-4">
+          <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent mb-4" />
+          <div className="text-center">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/5 px-3 py-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="font-mono text-[8px] text-primary/60 tracking-[0.2em] uppercase">Beta v1.0</span>
+            </div>
           </div>
         </div>
       </div>
