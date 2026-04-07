@@ -14,6 +14,18 @@ import {
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
+/** Launch the Spotify desktop app via Electron */
+function launchSpotifyApp() {
+  if (isElectron && (window as any).electronAPI?.openApp) {
+    (window as any).electronAPI.openApp('spotify');
+  }
+}
+
+/** Wait ms milliseconds */
+function wait(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
 export interface AppCommandResult {
   handled: boolean;
   response?: string;
