@@ -268,7 +268,7 @@ const AppsStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }
 // ── Step 4: Voice Selection ──
 const VoiceStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
   const { settings, updateSettings } = useJarvisStore();
-  const { previewVoice } = useVoiceAssistant();
+  const { previewVoice } = useVoiceAssistant({ previewOnly: true });
   const [previewing, setPreviewing] = useState<string | null>(null);
 
   const handlePreview = async (id: string, elId: string) => {

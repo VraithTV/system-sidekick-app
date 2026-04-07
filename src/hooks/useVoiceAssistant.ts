@@ -181,7 +181,8 @@ async function getAIResponse(text: string, mode?: string): Promise<string> {
   }
 }
 
-export function useVoiceAssistant() {
+export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
+  const previewOnly = options.previewOnly ?? false;
   const { setState, addCommand, settings, setSystemStatus, mode } = useJarvisStore();
   const isListeningRef = useRef(false);
   const isCaptureLoopActiveRef = useRef(false);
@@ -381,7 +382,10 @@ export function useVoiceAssistant() {
     speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
   }, []);
 
-  useEffect(() => stopListening, [stopListening]);
+  useEffect(() => {
+    if (previewOnly) return;
+    return stopListening;
+  }, [previewOnly, stopListening]);
 
   return { startListening, stopListening, previewVoice };
 }

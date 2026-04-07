@@ -4,12 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const isElectron = typeof window !== "undefined" && !!(window as any).electronAPI;
-
-/**
- * Maintenance mode is now fetched from the database (app_config table).
- * Set the key "maintenance_enabled" to "true" or "false" in the app_config table.
- * This way the Electron app checks on startup without needing a rebuild.
- */
+export const LOCAL_MAINTENANCE_OVERRIDE: boolean | null = null;
 
 export function useMaintenanceMode() {
   const [isMaintenance, setIsMaintenance] = useState(false);
@@ -17,6 +12,12 @@ export function useMaintenanceMode() {
 
   useEffect(() => {
     let cancelled = false;
+
+    if (LOCAL_MAINTENANCE_OVERRIDE !== null) {
+      setIsMaintenance(LOCAL_MAINTENANCE_OVERRIDE);
+      setLoading(false);
+      return;
+    }
 
     async function check() {
       try {
@@ -30,17 +31,17 @@ export function useMaintenanceMode() {
           setIsMaintenance(data?.value === 'true');
         }
       } catch {
-        // If fetch fails (offline, etc.), don't block the app
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
     check();
-
-    // Re-check every 60 seconds so Electron picks up changes
     const interval = setInterval(check, 60_000);
-    return () => { cancelled = true; clearInterval(interval); };
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   return { isMaintenance: isElectron && isMaintenance, loading };
