@@ -80,11 +80,13 @@ function createWindow() {
     },
   });
 
-  const isDev = !app.isPackaged;
-  if (isDev) {
+  const distPath = path.join(__dirname, '..', 'dist', 'index.html');
+  const hasDist = fs.existsSync(distPath);
+
+  if (!app.isPackaged && !hasDist) {
     mainWindow.loadURL('http://localhost:8080');
   } else {
-    mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
+    mainWindow.loadFile(distPath);
   }
 
   mainWindow.on('maximize', () => {
