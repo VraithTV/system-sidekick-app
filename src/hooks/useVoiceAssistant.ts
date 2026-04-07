@@ -5,6 +5,7 @@ import { matchWakeWord } from '@/lib/fuzzyWake';
 import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 import { startSpeechRecognition } from '@/lib/speechRecognition';
 import { processAppCommand } from '@/lib/appCommands';
+import { processVoiceCommand } from '@/lib/voiceCommands';
 import { canUseVoice, incrementUsage } from '@/lib/usageLimit';
 import { getModeSystemPromptAddition } from '@/lib/modes';
 import { toast } from 'sonner';
@@ -241,18 +242,29 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
       incrementUsage();
       setState('thinking');
 
-      // Check for app-specific commands first (Spotify, URLs, etc.)
-      const appResult = processAppCommand(cleanedText);
+      // Check built-in voice commands first (timer, time, math, etc.)
+      const voiceResult = processVoiceCommand(cleanedText);
       let response: string;
 
-      if (appResult.handled) {
-        response = appResult.response || 'Done.';
-        tryLaunchApp(cleanedText);
+      if (voiceResult.handled) {
+        response = voiceResult.response || 'Done.';
       } else {
-        addToHistory('user', cleanedText);
-        response = await getAIResponse(cleanedText, mode);
-        addToHistory('assistant', response);
-        tryLaunchApp(cleanedText);
+        // Check for app-specific commands (Spotify, URLs, etc.)
+        const appResult = processAppCommand(cleanedText);
+
+        if (appResult.handled) {
+          if (appResult.async && appResult.asyncResponse) {
+            response = await appResult.asyncResponse;
+          } else {
+            response = appResult.response || 'Done.';
+          }
+          tryLaunchApp(cleanedText);
+        } else {
+          addToHistory('user', cleanedText);
+          response = await getAIResponse(cleanedText, mode);
+          addToHistory('assistant', response);
+          tryLaunchApp(cleanedText);
+        }
       }
 
       setState('speaking');
