@@ -59,6 +59,18 @@ function handleSpotifyCommand(text: string): AppCommandResult {
   const lower = text.toLowerCase();
   const hasSpotifyAPI = isSpotifyConnected();
 
+  // "what's playing" / "what song is this" / "currently playing"
+  if (/\b(what('?s| is)\s+(playing|this song|the song)|currently playing|what song|which song)\b/i.test(lower)) {
+    if (hasSpotifyAPI) {
+      return {
+        handled: true,
+        async: true,
+        asyncResponse: spotifyNowPlaying().then((r) => r.message),
+      };
+    }
+    return { handled: true, response: 'Connect Spotify in Settings to see what is playing.' };
+  }
+
   // "play [song/artist] on spotify" or just "play [song]"
   const playMatch = lower.match(/(?:play|put on|queue)\s+(.+?)(?:\s+on\s+spotify)?$/i);
   if (playMatch && (lower.includes('spotify') || lower.includes('music') || lower.includes('play'))) {
