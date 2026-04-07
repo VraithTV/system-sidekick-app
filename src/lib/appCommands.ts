@@ -75,12 +75,14 @@ function handleSpotifyCommand(text: string): AppCommandResult {
   }
 
   // "play [song/artist] on spotify" or just "play [song]"
-  const playMatch = lower.match(/(?:play|put on|queue)\s+(.+?)(?:\s+on\s+spotify)?$/i);
-  if (playMatch && (lower.includes('spotify') || lower.includes('music') || lower.includes('play'))) {
+  // Broad regex: handles "play X", "can you play X", "I want to hear X", "put on X", etc.
+  const playMatch = lower.match(/(?:play|put on|queue|listen to|hear)\s+(.+?)(?:\s+on\s+spotify)?[\s.!?]*$/i);
+  if (playMatch && (lower.includes('spotify') || lower.includes('music') || lower.includes('play') || lower.includes('listen') || lower.includes('hear') || lower.includes('put on') || lower.includes('queue'))) {
     const query = playMatch[1]
       .replace(/\s*on\s*spotify\s*/i, '')
       .replace(/\s*for\s*me\s*/i, '')
       .replace(/\s*please\s*/i, '')
+      .replace(/[.!?]+$/, '')
       .trim();
 
     if (query && query !== 'music' && query !== 'some music' && query !== 'something') {
