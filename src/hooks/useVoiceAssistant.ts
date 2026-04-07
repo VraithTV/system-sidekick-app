@@ -347,8 +347,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
             console.log('[Jarvis] Transcript:', JSON.stringify(transcript));
             if (!isListeningRef.current) continue;
             if (!transcript) {
-              // Small delay to prevent tight empty-result loops
-              await pause(300);
+              await pause(100);
               continue;
             }
 
