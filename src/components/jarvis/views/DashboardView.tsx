@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { AssistantOrb } from '../AssistantOrb';
 import { CommandHistory } from '../CommandHistory';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, Zap } from 'lucide-react';
+import { getRemainingUses, getDailyLimit } from '@/lib/usageLimit';
 
 export const DashboardView = () => {
   const { commands, settings, systemStatus, state } = useJarvisStore();
