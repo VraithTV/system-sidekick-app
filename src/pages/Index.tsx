@@ -2,6 +2,7 @@ import { Sidebar } from '@/components/jarvis/Sidebar';
 import { WindowControls } from '@/components/jarvis/WindowControls';
 import { OnboardingWizard, useOnboarding } from '@/components/jarvis/OnboardingWizard';
 import { MaintenanceScreen, useMaintenanceMode } from '@/components/jarvis/MaintenanceScreen';
+import { VoiceAssistantManager } from '@/components/jarvis/VoiceAssistantManager';
 import { DashboardView } from '@/components/jarvis/views/DashboardView';
 import { AppsView } from '@/components/jarvis/views/AppsView';
 import { ClipsView } from '@/components/jarvis/views/ClipsView';
@@ -47,6 +48,7 @@ const Index = () => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
+      <VoiceAssistantManager />
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <WindowControls />

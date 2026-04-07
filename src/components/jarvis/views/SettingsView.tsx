@@ -43,7 +43,7 @@ const clipDurations = [15, 30, 45, 60, 90, 120];
 
 export const SettingsView = () => {
   const { settings, updateSettings } = useJarvisStore();
-  const { previewVoice } = useVoiceAssistant();
+  const { previewVoice } = useVoiceAssistant({ previewOnly: true });
   const { inputs, outputs, refresh: refreshDevices } = useAudioDevices();
   const [previewing, setPreviewing] = useState<string | null>(null);
 

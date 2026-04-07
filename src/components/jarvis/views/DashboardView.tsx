@@ -3,13 +3,11 @@ import { AssistantOrb } from '../AssistantOrb';
 import { CommandHistory } from '../CommandHistory';
 import { StatusPanel } from '../StatusPanel';
 import { useJarvisStore } from '@/store/jarvisStore';
-import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { Mic, MicOff, Zap, Clock, Wifi } from 'lucide-react';
 import { getRemainingUses, getDailyLimit } from '@/lib/usageLimit';
 
 export const DashboardView = () => {
-  const { commands, settings, systemStatus, state } = useJarvisStore();
-  const { startListening, stopListening } = useVoiceAssistant();
+  const { commands, settings, systemStatus, state, setSystemStatus } = useJarvisStore();
   const micOn = systemStatus.micActive;
   const limit = getDailyLimit();
   const [remaining, setRemaining] = useState(getRemainingUses());
@@ -19,15 +17,13 @@ export const DashboardView = () => {
     setRemaining(getRemainingUses());
   }, [commands.length]);
 
-  // Live clock
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
   const toggleMic = () => {
-    if (micOn) stopListening();
-    else startListening();
+    setSystemStatus({ micActive: !micOn });
   };
 
   const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -35,7 +31,6 @@ export const DashboardView = () => {
 
   return (
     <div className="flex-1 flex bg-background overflow-hidden">
-      {/* Main area with orb */}
       <div className="flex-1 flex flex-col items-center justify-center relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.06)_0%,transparent_50%)]" />
 
@@ -74,14 +69,11 @@ export const DashboardView = () => {
           </p>
         </div>
 
-        {/* Bottom info bar */}
         <div className="absolute bottom-5 left-5 right-5 flex items-end gap-3">
-          {/* Command log */}
           <div className="flex-1 min-w-0">
             {commands.length > 0 && <CommandHistory />}
           </div>
 
-          {/* Quick stats */}
           <div className="flex flex-col gap-2 shrink-0">
             <div className="flex items-center gap-2 rounded-full border border-border/50 bg-card/60 backdrop-blur-sm px-3.5 py-1.5">
               <Zap className={`h-3.5 w-3.5 ${remaining === 0 ? 'text-destructive' : 'text-primary'}`} />
@@ -93,9 +85,7 @@ export const DashboardView = () => {
         </div>
       </div>
 
-      {/* Right sidebar panel */}
       <div className="w-56 border-l border-border/40 bg-card/30 backdrop-blur-sm p-4 flex flex-col gap-5 overflow-y-auto">
-        {/* Clock widget */}
         <div className="text-center py-3">
           <p className="font-display text-2xl tracking-[0.1em] text-primary glow-text">{timeStr}</p>
           <p className="font-mono text-[10px] text-muted-foreground/50 mt-1 tracking-wider uppercase">{dateStr}</p>
@@ -103,7 +93,6 @@ export const DashboardView = () => {
 
         <div className="h-px bg-border/40" />
 
-        {/* Connection status */}
         <div className="space-y-2">
           <p className="font-display text-[10px] tracking-[0.2em] text-foreground/50 uppercase">Status</p>
           <div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground">
@@ -117,13 +106,9 @@ export const DashboardView = () => {
         </div>
 
         <div className="h-px bg-border/40" />
-
-        {/* System stats */}
         <StatusPanel />
-
         <div className="h-px bg-border/40" />
 
-        {/* Beta badge */}
         <div className="mt-auto text-center py-2">
           <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1">
             <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
