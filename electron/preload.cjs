@@ -15,7 +15,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   quit: invokeWindowCommand('app-quit'),
   isMaximized: () => ipcRenderer.invoke('window-is-maximized'),
   onMaximizedChange: (callback) => {
-    ipcRenderer.on('window-maximized', (_event, value) => callback(value));
+    const handler = (_event, value) => callback(value);
+    ipcRenderer.on('window-maximized', handler);
+    return () => ipcRenderer.removeListener('window-maximized', handler);
+  },
+  onRequestCloseAction: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('request-close-action', handler);
+    return () => ipcRenderer.removeListener('request-close-action', handler);
   },
 
   // URLs & media
@@ -33,12 +40,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   deleteClip: (clipId) => ipcRenderer.send('delete-clip', clipId),
   getClipsFolder: () => ipcRenderer.invoke('get-clips-folder'),
   onClipSaved: (callback) => {
-    ipcRenderer.on('clip-saved', (_event, clip) => callback(clip));
+    const handler = (_event, clip) => callback(clip);
+    ipcRenderer.on('clip-saved', handler);
+    return () => ipcRenderer.removeListener('clip-saved', handler);
   },
 
   // Keyboard shortcuts
   onShortcut: (callback) => {
-    ipcRenderer.on('shortcut', (_event, action) => callback(action));
+    const handler = (_event, action) => callback(action);
+    ipcRenderer.on('shortcut', handler);
+    return () => ipcRenderer.removeListener('shortcut', handler);
   },
 
   // Auto-updater

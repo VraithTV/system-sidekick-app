@@ -179,8 +179,11 @@ function createWindow() {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     mainWindow.webContents.send('window-maximized', false);
   });
-  mainWindow.on('close', () => {
-    // Just quit — no prompt
+  mainWindow.on('close', (event) => {
+    if (forceQuit || !mainWindow || mainWindow.isDestroyed()) return;
+    event.preventDefault();
+    showMainWindow();
+    mainWindow.webContents.send('request-close-action');
   });
   mainWindow.on('closed', () => { mainWindow = null; });
 }
