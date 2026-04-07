@@ -1,5 +1,7 @@
 export type AssistantState = 'idle' | 'standby' | 'listening' | 'thinking' | 'speaking' | 'executing';
 
+export type JarvisMode = 'assistant' | 'task' | 'private' | 'action' | 'animation';
+
 export interface Command {
   id: string;
   text: string;
@@ -65,4 +67,12 @@ export interface JarvisSettings {
   obsWebsocketPassword: string;
   inputDeviceId: string;
   outputDeviceId: string;
+  dailyLimit: number;
+}
+
+export interface ModeInfo {
+  id: JarvisMode;
+  label: string;
+  description: string;
+  icon: string;
 }

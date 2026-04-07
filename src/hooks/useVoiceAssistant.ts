@@ -6,6 +6,7 @@ import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 import { startSpeechRecognition } from '@/lib/speechRecognition';
 import { processAppCommand } from '@/lib/appCommands';
 import { canUseVoice, incrementUsage } from '@/lib/usageLimit';
+import { getModeSystemPromptAddition } from '@/lib/modes';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -146,9 +147,9 @@ function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string):
   });
 }
 
-async function getAIResponse(text: string): Promise<string> {
+async function getAIResponse(text: string, mode?: string): Promise<string> {
   try {
-    const memories = formatMemoriesForPrompt();
+    const memories = mode === 'private' ? '' : formatMemoriesForPrompt();
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     let data: any;
@@ -156,7 +157,7 @@ async function getAIResponse(text: string): Promise<string> {
 
     try {
       const result = await supabase.functions.invoke('jarvis-chat', {
-        body: { message: text, memories, timezone },
+        body: { message: text, memories, timezone, mode: mode || 'assistant' },
       });
       data = result.data;
       error = result.error;
@@ -181,7 +182,7 @@ async function getAIResponse(text: string): Promise<string> {
 }
 
 export function useVoiceAssistant() {
-  const { setState, addCommand, settings, setSystemStatus } = useJarvisStore();
+  const { setState, addCommand, settings, setSystemStatus, mode } = useJarvisStore();
   const isListeningRef = useRef(false);
   const isCaptureLoopActiveRef = useRef(false);
   const wakeWordHeard = useRef(false);
@@ -197,7 +198,7 @@ export function useVoiceAssistant() {
       }
 
       // Check daily usage limit
-      if (!canUseVoice()) {
+      if (!canUseVoice(settings.dailyLimit)) {
         setState('speaking');
         const limitMsg = "You've reached your daily command limit. It resets at midnight.";
         addCommand({
@@ -224,19 +225,22 @@ export function useVoiceAssistant() {
         // Also try to launch the app if needed
         tryLaunchApp(cleanedText);
       } else {
-        response = await getAIResponse(cleanedText);
+        response = await getAIResponse(cleanedText, mode);
         // Try to launch the app if the user asked to open one
         tryLaunchApp(cleanedText);
       }
 
       setState('speaking');
-      addCommand({
-        id: Date.now().toString(),
-        text: cleanedText,
-        response,
-        timestamp: new Date(),
-        type: 'voice',
-      });
+      // In private mode, don't log commands
+      if (mode !== 'private') {
+        addCommand({
+          id: Date.now().toString(),
+          text: cleanedText,
+          response,
+          timestamp: new Date(),
+          type: 'voice',
+        });
+      }
 
       await speakWithElevenLabs(response, settings.voiceId, settings.outputDeviceId || undefined, settings.voice);
 
