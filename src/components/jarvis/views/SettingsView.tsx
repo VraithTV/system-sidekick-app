@@ -226,6 +226,9 @@ export const SettingsView = () => {
                 </div>
               </Row>
             </div>
+
+            <div className="bg-card rounded-xl p-6 border border-border">
+              <SectionTitle>OBS Connection</SectionTitle>
               <Row label="WebSocket URL">
                 <Input value={settings.obsWebsocketUrl} onChange={(e: any) => updateSettings({ obsWebsocketUrl: e.target.value })} className="w-44" />
               </Row>
