@@ -27,7 +27,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, memories, timezone, mode } = await req.json();
+    const { message, memories, timezone, mode, conversationHistory } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -65,6 +65,8 @@ serve(async (req) => {
 - Never be overly childish or robotic
 - Sound sleek and natural
 
+CRITICAL: You are having a live voice conversation. When the user gives a short reply (like a city name, "yes", "no", a number, etc.), treat it as an answer to your last question. Never ask "what do you want me to do with that?" when the context is obvious. Just act on it.
+
 You can control these things on the user's PC:
 - Open applications (Chrome, Spotify, Discord, OBS, Steam, VS Code, etc.)
 - Control Spotify (play/pause/skip/previous music)
@@ -100,6 +102,7 @@ Examples of your tone:
           model: "openai/gpt-5-mini",
           messages: [
             { role: "system", content: systemPrompt },
+            ...(Array.isArray(conversationHistory) ? conversationHistory.slice(-10) : []),
             { role: "user", content: message },
           ],
         }),
