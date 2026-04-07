@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { AssistantOrb } from '../AssistantOrb';
 import { CommandHistory } from '../CommandHistory';
-import { StatusPanel } from '../StatusPanel';
 import { useJarvisStore } from '@/store/jarvisStore';
-import { Mic, MicOff, Zap, Clock, Wifi } from 'lucide-react';
+import { Mic, MicOff, Zap } from 'lucide-react';
 import { getRemainingUses, getDailyLimit } from '@/lib/usageLimit';
 
 export const DashboardView = () => {
