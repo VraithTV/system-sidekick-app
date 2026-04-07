@@ -205,29 +205,6 @@ export const SettingsView = () => {
             </div>
 
             <div className="bg-card rounded-xl p-6 border border-border">
-              <SectionTitle>Usage Limits</SectionTitle>
-              <Row label="Daily Command Limit" desc="Max voice commands per day">
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => updateSettings({ dailyLimit: Math.max(5, (settings.dailyLimit || 25) - 5) })}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                  >
-                    <Minus className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="w-14 text-center text-[12px] font-mono text-foreground/70 bg-muted rounded-lg py-1.5 border border-border">
-                    {settings.dailyLimit || 25}
-                  </span>
-                  <button
-                    onClick={() => updateSettings({ dailyLimit: Math.min(500, (settings.dailyLimit || 25) + 5) })}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </Row>
-            </div>
-
-            <div className="bg-card rounded-xl p-6 border border-border">
               <SectionTitle>OBS Connection</SectionTitle>
               <Row label="WebSocket URL">
                 <Input value={settings.obsWebsocketUrl} onChange={(e: any) => updateSettings({ obsWebsocketUrl: e.target.value })} className="w-44" />
