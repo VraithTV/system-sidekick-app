@@ -1,10 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 
 export const VoiceAssistantManager = () => {
   const { settings, systemStatus, setSystemStatus } = useJarvisStore();
   const { startListening, stopListening } = useVoiceAssistant();
+  const startRef = useRef(startListening);
+  const stopRef = useRef(stopListening);
+
+  // Keep refs current without triggering effects
+  startRef.current = startListening;
+  stopRef.current = stopListening;
 
   useEffect(() => {
     if (settings.alwaysListening) {
@@ -14,12 +20,11 @@ export const VoiceAssistantManager = () => {
 
   useEffect(() => {
     if (systemStatus.micActive) {
-      startListening();
-      return;
+      startRef.current();
+    } else {
+      stopRef.current();
     }
-
-    stopListening();
-  }, [systemStatus.micActive, startListening, stopListening]);
+  }, [systemStatus.micActive]);
 
   return null;
 };
