@@ -42,9 +42,14 @@ function handleSpotifyCommand(text: string): AppCommandResult {
       .trim();
 
     if (query && query !== 'music' && query !== 'some music' && query !== 'something') {
-      // Use Spotify web URL which opens in the Spotify app if installed
-      const spotifyWebUrl = `https://open.spotify.com/search/${encodeURIComponent(query)}`;
-      openUrl(spotifyWebUrl);
+      if (isElectron) {
+        // In Electron, use spotify: URI to open the desktop app directly
+        const spotifyUri = `spotify:search:${encodeURIComponent(query)}`;
+        openUrl(spotifyUri);
+      } else {
+        const spotifyWebUrl = `https://open.spotify.com/search/${encodeURIComponent(query)}`;
+        openUrl(spotifyWebUrl);
+      }
       return { handled: true, response: `Searching for "${query}" on Spotify now.` };
     }
 
@@ -52,7 +57,11 @@ function handleSpotifyCommand(text: string): AppCommandResult {
     if (sendMediaKey('play-pause')) {
       return { handled: true, response: 'Resuming playback.' };
     }
-    openUrl('https://open.spotify.com');
+    if (isElectron) {
+      openUrl('spotify:');
+    } else {
+      openUrl('https://open.spotify.com');
+    }
     return { handled: true, response: 'Opening Spotify.' };
   }
 
