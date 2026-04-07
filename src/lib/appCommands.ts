@@ -79,6 +79,9 @@ function handleSpotifyCommand(text: string): AppCommandResult {
   const playMatch = lower.match(/(?:play|put on|queue|listen to|hear)\s+(.+?)(?:\s+on\s+spotify)?[\s.!?]*$/i);
   if (playMatch && (lower.includes('spotify') || lower.includes('music') || lower.includes('play') || lower.includes('listen') || lower.includes('hear') || lower.includes('put on') || lower.includes('queue'))) {
     const query = playMatch[1]
+      .replace(/^it\s+/i, '')
+      .replace(/^the\s+song\s+/i, '')
+      .replace(/^song\s+/i, '')
       .replace(/\s*on\s*spotify\s*/i, '')
       .replace(/\s*for\s*me\s*/i, '')
       .replace(/\s*please\s*/i, '')
