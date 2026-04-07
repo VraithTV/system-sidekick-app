@@ -1,5 +1,5 @@
 const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, shell, globalShortcut, Notification } = require('electron');
-const { execSync } = require('child_process');
+const path = require('path');
 const path = require('path');
 const fs = require('fs');
 const { checkForUpdates, startAutoUpdateSchedule, stopAutoUpdateSchedule, getCurrentVersion } = require('./autoUpdater.cjs');
