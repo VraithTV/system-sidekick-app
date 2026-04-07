@@ -49,37 +49,53 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
     recognition.lang = 'en-US';
     recognition.interimResults = false;
     recognition.maxAlternatives = 3;
-    recognition.continuous = false;
+    recognition.continuous = true;
 
     let settled = false;
+    let gotResult = false;
+    const startTime = Date.now();
+    const MIN_LISTEN_MS = 2000;
+
+    // Auto-stop after 8 seconds if no result
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        try { recognition.stop(); } catch {}
+      }
+    }, 8000);
 
     const finish = (value = '') => {
       if (settled) return;
       settled = true;
+      clearTimeout(timeout);
       resolve(value.trim());
     };
 
     const fail = (error: Error) => {
       if (settled) return;
       settled = true;
+      clearTimeout(timeout);
       reject(error);
     };
 
     recognition.onresult = (event: any) => {
-      // Pick the best transcript from all alternatives
-      const results = event.results?.[0];
+      gotResult = true;
+      // Get the latest final result
       let bestTranscript = '';
       let bestConfidence = 0;
-      if (results) {
-        for (let i = 0; i < results.length; i++) {
-          if (results[i].confidence > bestConfidence) {
-            bestConfidence = results[i].confidence;
-            bestTranscript = results[i].transcript;
+      for (let r = 0; r < event.results.length; r++) {
+        if (!event.results[r].isFinal) continue;
+        for (let i = 0; i < event.results[r].length; i++) {
+          if (event.results[r][i].confidence > bestConfidence) {
+            bestConfidence = event.results[r][i].confidence;
+            bestTranscript = event.results[r][i].transcript;
           }
         }
+        if (!bestTranscript) bestTranscript = event.results[r][0]?.transcript || '';
       }
-      if (!bestTranscript) bestTranscript = results?.[0]?.transcript || '';
-      finish(bestTranscript);
+      if (bestTranscript) {
+        try { recognition.stop(); } catch {}
+        finish(bestTranscript);
+      }
     };
 
     recognition.onerror = (event: any) => {
@@ -96,11 +112,20 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
       );
     };
 
-    recognition.onend = () => finish('');
+    recognition.onend = () => {
+      if (settled) return;
+      // If we got no result and haven't listened long enough, restart
+      if (!gotResult && (Date.now() - startTime) < MIN_LISTEN_MS) {
+        try { recognition.start(); } catch { finish(''); }
+        return;
+      }
+      finish('');
+    };
 
     try {
       recognition.start();
     } catch (error) {
+      clearTimeout(timeout);
       fail(
         new BrowserSpeechRecognitionError(
           'start-failed',
