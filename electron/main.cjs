@@ -94,7 +94,8 @@ function createTray() {
 }
 
 function createWindow() {
-  const iconPath = path.join(__dirname, '..', 'public', 'jarvis-icon.png');
+  const iconExt = process.platform === 'win32' ? 'jarvis-icon.ico' : 'jarvis-icon.png';
+  const iconPath = path.join(__dirname, '..', 'public', iconExt);
   const icon = nativeImage.createFromPath(iconPath);
 
   mainWindow = new BrowserWindow({
