@@ -66,6 +66,14 @@ export const DashboardView = () => {
             ? `Try: "Hey ${settings.wakeName}, what time is it?"`
             : `Try: "${settings.wakeName}, open Chrome" · "${settings.wakeName}, what's the weather?"`}
         </p>
+
+        {/* Daily usage counter */}
+        <div className="mt-4 flex items-center gap-2 rounded-full border border-border/50 bg-card/50 px-4 py-1.5">
+          <Zap className={`h-3.5 w-3.5 ${remaining === 0 ? 'text-destructive' : 'text-primary'}`} />
+          <span className={`font-mono text-[11px] ${remaining === 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+            {remaining}/{limit} commands today
+          </span>
+        </div>
       </div>
 
       {/* Command log */}
