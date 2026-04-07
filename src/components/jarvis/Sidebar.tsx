@@ -20,7 +20,7 @@ export const Sidebar = () => {
       {/* Logo header — draggable region */}
       <div className="flex items-center gap-2.5 px-4 h-14 titlebar-drag">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/20 bg-primary/5 text-primary shrink-0">
-          <JarvisLogo size={24} />
+          <JarvisLogo size={32} />
         </div>
         <div>
           <p className="font-display text-[10px] tracking-[0.15em] text-foreground/70">JARVIS</p>
