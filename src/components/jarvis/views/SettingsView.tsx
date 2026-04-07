@@ -4,7 +4,7 @@ import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useState, useEffect } from 'react';
-import { isSpotifyConnected, clearSpotifyTokens, getSpotifyAuthUrl, exchangeSpotifyCode } from '@/lib/spotifyClient';
+import { isSpotifyConnected, clearSpotifyTokens, exchangeSpotifyCode } from '@/lib/spotifyClient';
 import spotifyLogo from '@/assets/spotify-logo.png';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
