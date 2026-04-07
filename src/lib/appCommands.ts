@@ -68,12 +68,28 @@ function handleSpotifyCommand(text: string): AppCommandResult {
 
     if (query && query !== 'music' && query !== 'some music' && query !== 'something') {
       if (hasSpotifyAPI) {
-        // Use Spotify Web API for direct playback
+        // Launch Spotify desktop app first, then play via API
         return {
           handled: true,
           async: true,
           response: `Searching for "${query}" on Spotify...`,
-          asyncResponse: spotifyPlayTrack(query).then((r) => r.message),
+          asyncResponse: (async () => {
+            // Open Spotify app in background
+            launchSpotifyApp();
+            // Try to play immediately first
+            let result = await spotifyPlayTrack(query);
+            if (result.success) return result.message;
+            // If no device found, wait for Spotify to start and retry
+            if (result.message.includes('No active') || result.message.includes('device')) {
+              await wait(3000);
+              result = await spotifyPlayTrack(query);
+              if (result.success) return result.message;
+              // One more retry with longer wait
+              await wait(4000);
+              result = await spotifyPlayTrack(query);
+            }
+            return result.message;
+          })(),
         };
       }
       // Fallback: open Spotify URI/web
