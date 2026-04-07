@@ -254,6 +254,21 @@ export const SettingsView = () => {
               </div>
             </div>
 
+            {isElectron && (
+              <div className="bg-card rounded-xl p-6 border border-border">
+                <SectionTitle>Updates</SectionTitle>
+                <Row label="Check for Updates" desc="See if a newer version is available">
+                  <button
+                    onClick={() => (window as any).electronAPI?.checkForUpdates?.()}
+                    className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg border border-primary/30 transition-colors"
+                  >
+                    <Download size={14} />
+                    Check Now
+                  </button>
+                </Row>
+              </div>
+            )}
+
             <div className="bg-card rounded-xl p-6 border border-border">
               <SectionTitle>Keyboard Shortcuts</SectionTitle>
               {[
