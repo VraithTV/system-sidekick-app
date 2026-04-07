@@ -64,6 +64,18 @@ async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId
       const errorText = await response.text();
       console.warn('ElevenLabs TTS unavailable, falling back to browser TTS:', errorText);
 
+      let creditIssue = false;
+      try {
+        const errData = JSON.parse(errorText);
+        if (errData?.code === 'detected_unusual_activity' || response.status === 402 || response.status === 403) {
+          creditIssue = true;
+        }
+      } catch {}
+
+      if (creditIssue || response.status === 402) {
+        toast.error('Voice API credits have run out. Using backup voice until credits are restored.', { duration: 8000 });
+      }
+
       if ([401, 402, 403, 429, 500, 502, 503].includes(response.status)) {
         elevenLabsRetryAfter = Date.now() + 5 * 60 * 1000;
       }
