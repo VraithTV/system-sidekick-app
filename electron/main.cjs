@@ -5,6 +5,23 @@ const fs = require('fs');
 
 app.setName('Jarvis AI BETA');
 
+// ─── Fresh-install detection ─────────────────────────────────
+// When the user uninstalls and reinstalls, the exe path changes.
+// We store the exe path in a stamp file; if it differs we wipe
+// localStorage so onboarding runs again.
+const STAMP_FILE = path.join(app.getPath('userData'), '.install-stamp');
+function checkFreshInstall() {
+  const currentExe = app.getPath('exe');
+  try {
+    const saved = fs.readFileSync(STAMP_FILE, 'utf-8').trim();
+    if (saved === currentExe) return; // same install, do nothing
+  } catch {}
+  // New install or first run: write stamp and clear session data on window load
+  fs.writeFileSync(STAMP_FILE, currentExe, 'utf-8');
+  global.__jarvisFreshInstall = true;
+}
+checkFreshInstall();
+
 app.setLoginItemSettings({
   openAtLogin: true,
   path: app.getPath('exe'),
