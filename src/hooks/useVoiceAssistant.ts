@@ -7,6 +7,7 @@ import { processAppCommand } from '@/lib/appCommands';
 import { processVoiceCommand } from '@/lib/voiceCommands';
 import { canUseVoice, incrementUsage } from '@/lib/usageLimit';
 import { getModeSystemPromptAddition } from '@/lib/modes';
+import { commonApps } from '@/lib/commonApps';
 import { toast } from 'sonner';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -21,11 +22,21 @@ function tryLaunchApp(userText: string): void {
   const openMatch = userText.match(/(?:open|launch|start|run|fire up|open up|pull up)\s+(.+)/i);
   if (!openMatch) return;
 
-  const appName = openMatch[1].replace(/^(the|my|up)\s+/i, '').trim().toLowerCase();
-  if (!appName) return;
+  const target = openMatch[1]
+    .replace(/^(the|my|up)\s+/i, '')
+    .replace(/\s+and\s+.*/i, '') // strip "and play ..." etc.
+    .trim()
+    .toLowerCase();
+  if (!target) return;
 
-  console.log('[Jarvis] Detected app launch intent:', appName);
-  api.openApp(appName);
+  // Match against known app aliases for the correct ID
+  const matched = commonApps.find((app) =>
+    app.aliases.some((alias) => target === alias || target.includes(alias))
+  );
+
+  const appId = matched?.id || target;
+  console.log('[Jarvis] Launching app:', appId, matched ? `(matched: ${matched.name})` : '(raw)');
+  api.openApp(appId);
 }
 
 let elevenLabsRetryAfter = 0;
