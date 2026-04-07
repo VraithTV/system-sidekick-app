@@ -349,8 +349,8 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
   };
 
   return (
-    <div className="h-screen w-screen bg-background flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Window controls */}
+    <div className="h-screen w-screen bg-background flex flex-col relative overflow-hidden">
+      {/* Title bar at top */}
       <WindowControls />
 
       {/* Background effects */}
@@ -358,7 +358,7 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
       <div className="absolute inset-0 grid-bg opacity-30" />
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-md px-6 flex-1 flex flex-col">
+      <div className="relative z-10 w-full max-w-md px-6 flex-1 flex flex-col mx-auto items-center justify-center">
         <div className="flex-1 flex flex-col">
           {step === 0 && <WelcomeStep onNext={next} />}
           {step === 1 && <MicStep onNext={next} onBack={back} />}
