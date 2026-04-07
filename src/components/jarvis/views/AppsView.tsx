@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { commonApps, toAppShortcut, type CommonApp } from '@/lib/commonApps';
 import { getAppIcon } from '@/components/jarvis/AppIcons';
@@ -8,39 +8,10 @@ import type { AppShortcut } from '@/types/jarvis';
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 export const AppsView = () => {
-  const { apps, addApp, removeApp, setApps } = useJarvisStore();
+  const { apps, addApp, removeApp } = useJarvisStore();
   const [showAdd, setShowAdd] = useState(false);
-  const [detectedApps, setDetectedApps] = useState<CommonApp[]>([]);
-  const [scanned, setScanned] = useState(false);
 
-  // Auto-scan via Electron on mount
-  useEffect(() => {
-    if (isElectron && (window as any).electronAPI.scanApps) {
-      (window as any).electronAPI.scanApps().then((found: AppShortcut[]) => {
-        // Map scanned results back to CommonApp format for the "add" panel
-        const mapped = found
-          .filter((f) => !apps.some((a) => a.id === f.id))
-          .map((f) => {
-            const known = commonApps.find((c) => c.id === f.id);
-            if (known) return known;
-            return {
-              id: f.id,
-              name: f.name,
-              path: '',
-              aliases: f.aliases,
-              icon: f.icon || '',
-              launchCmd: '',
-            } as CommonApp;
-          });
-        setDetectedApps(mapped);
-        setScanned(true);
-      });
-    } else {
-      // Fallback: use commonApps list
-      setDetectedApps(commonApps.filter((ca) => !apps.some((a) => a.id === ca.id)));
-      setScanned(true);
-    }
-  }, [apps]);
+  const availableApps = commonApps.filter((ca) => !apps.some((a) => a.id === ca.id));
 
   const handleAdd = (ca: CommonApp) => {
     addApp(toAppShortcut(ca));
@@ -66,19 +37,16 @@ export const AppsView = () => {
           </button>
         </div>
 
-        {/* Add app panel */}
         {showAdd && (
           <div className="mb-6 p-4 rounded-xl bg-card border border-border">
             <p className="text-[11px] text-muted-foreground font-mono mb-3 tracking-wide">
-              {isElectron ? 'DETECTED ON YOUR PC' : 'AVAILABLE APPS'}
+              AVAILABLE APPS
             </p>
-            {detectedApps.length === 0 ? (
-              <p className="text-xs text-muted-foreground/50">
-                {scanned ? 'All detected apps have been added' : 'Scanning...'}
-              </p>
+            {availableApps.length === 0 ? (
+              <p className="text-xs text-muted-foreground/50">All apps have been added</p>
             ) : (
               <div className="grid grid-cols-2 xl:grid-cols-3 gap-2">
-                {detectedApps.map((ca) => {
+                {availableApps.map((ca) => {
                   const Icon = getAppIcon(ca.id);
                   return (
                     <button
