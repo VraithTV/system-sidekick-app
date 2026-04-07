@@ -6,6 +6,10 @@ const { checkForUpdates, startAutoUpdateSchedule, stopAutoUpdateSchedule, getCur
 
 app.setName('Jarvis AI BETA');
 
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.jarvis.ai');
+}
+
 // ─── Single Instance Lock ────────────────────────────────────
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -81,7 +85,8 @@ function quitApplication() {
 
 function createTray() {
   if (tray) return;
-  const iconPath = path.join(__dirname, '..', 'public', 'jarvis-icon.png');
+  const trayIconName = process.platform === 'win32' ? 'jarvis-icon.ico' : 'jarvis-icon.png';
+  const iconPath = path.join(__dirname, '..', 'public', trayIconName);
   const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
   tray = new Tray(trayIcon);
   tray.setToolTip('Jarvis AI BETA');

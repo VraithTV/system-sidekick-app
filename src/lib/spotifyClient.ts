@@ -3,8 +3,6 @@
  * Handles OAuth PKCE flow and stores tokens in localStorage.
  */
 
-import { supabase } from '@/integrations/supabase/client';
-
 const SPOTIFY_STORAGE_KEY = 'jarvis_spotify_tokens';
 const SPOTIFY_SCOPES = [
   'user-modify-playback-state',
@@ -17,6 +15,11 @@ interface SpotifyTokens {
   access_token: string;
   refresh_token: string;
   expires_at: number;
+}
+
+async function getSupabaseClient() {
+  const { supabase } = await import('@/integrations/supabase/client');
+  return supabase;
 }
 
 function getStoredTokens(): SpotifyTokens | null {
@@ -53,6 +56,7 @@ async function getAccessToken(): Promise<string | null> {
 
   // Refresh the token
   try {
+    const supabase = await getSupabaseClient();
     const { data, error } = await supabase.functions.invoke('spotify-auth', {
       body: { action: 'refresh', refresh_token: tokens.refresh_token },
     });
@@ -80,6 +84,7 @@ async function getAccessToken(): Promise<string | null> {
 /** Exchange an authorization code for tokens */
 export async function exchangeSpotifyCode(code: string, redirectUri: string): Promise<boolean> {
   try {
+    const supabase = await getSupabaseClient();
     const { data, error } = await supabase.functions.invoke('spotify-auth', {
       body: { action: 'exchange', code, redirect_uri: redirectUri },
     });

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
-import { supabase } from '@/integrations/supabase/client';
 import { matchWakeWord } from '@/lib/fuzzyWake';
 import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 import { startSpeechRecognition } from '@/lib/speechRecognition';
@@ -176,6 +175,7 @@ async function getAIResponse(text: string, mode?: string): Promise<string> {
   try {
     const memories = mode === 'private' ? '' : formatMemoriesForPrompt();
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const { supabase } = await import('@/integrations/supabase/client');
 
     let data: any;
     let error: any;
