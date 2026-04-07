@@ -10,6 +10,13 @@ export const DashboardView = () => {
   const { commands, settings, systemStatus, state } = useJarvisStore();
   const { startListening, stopListening } = useVoiceAssistant();
   const micOn = systemStatus.micActive;
+  const [remaining, setRemaining] = useState(getRemainingUses());
+  const limit = getDailyLimit();
+
+  // Refresh remaining count when commands change (i.e. after each use)
+  useEffect(() => {
+    setRemaining(getRemainingUses());
+  }, [commands.length]);
 
   const toggleMic = () => {
     if (micOn) {
