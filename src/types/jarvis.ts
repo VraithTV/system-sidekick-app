@@ -11,7 +11,6 @@ export interface Command {
 export interface AppShortcut {
   id: string;
   name: string;
-  path: string;
   aliases: string[];
   icon?: string;
 }
