@@ -349,8 +349,8 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
   };
 
   return (
-    <div className="h-screen w-screen bg-background flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Window controls */}
+    <div className="h-screen w-screen bg-background flex flex-col relative overflow-hidden">
+      {/* Title bar at top */}
       <WindowControls />
 
       {/* Background effects */}
