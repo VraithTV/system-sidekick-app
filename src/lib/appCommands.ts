@@ -77,16 +77,18 @@ function handleSpotifyCommand(text: string): AppCommandResult {
           asyncResponse: (async () => {
             // Open Spotify app in background
             launchSpotifyApp();
-            // Try to play immediately first
+            // Wait a moment for Spotify to start before searching
+            await wait(2000);
+            // Try to play
             let result = await spotifyPlayTrack(query);
             if (result.success) return result.message;
-            // If no device found, wait for Spotify to start and retry
-            if (result.message.includes('No active') || result.message.includes('device')) {
-              await wait(3000);
+            // If no device found, wait longer for Spotify to fully start
+            if (result.message.includes('No active') || result.message.includes('device') || result.message.includes('Could not search')) {
+              await wait(4000);
               result = await spotifyPlayTrack(query);
               if (result.success) return result.message;
-              // One more retry with longer wait
-              await wait(4000);
+              // Final retry
+              await wait(5000);
               result = await spotifyPlayTrack(query);
             }
             return result.message;

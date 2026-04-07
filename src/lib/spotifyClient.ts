@@ -119,6 +119,43 @@ export function getSpotifyAuthUrl(clientId: string, redirectUri: string): string
   return `https://accounts.spotify.com/authorize?${params}`;
 }
 
+/** Get available devices and pick the best one to play on */
+async function getActiveDeviceId(token: string): Promise<string | null> {
+  try {
+    const res = await fetch('https://api.spotify.com/v1/me/player/devices', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const devices = data.devices || [];
+    // Prefer an active device, then any computer, then first available
+    const active = devices.find((d: any) => d.is_active);
+    if (active) return active.id;
+    const computer = devices.find((d: any) => d.type === 'Computer');
+    if (computer) return computer.id;
+    return devices[0]?.id || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Transfer playback to a device so it becomes active */
+async function transferPlayback(token: string, deviceId: string): Promise<boolean> {
+  try {
+    const res = await fetch('https://api.spotify.com/v1/me/player', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ device_ids: [deviceId], play: false }),
+    });
+    return res.ok || res.status === 204;
+  } catch {
+    return false;
+  }
+}
+
 /** Search for a track and start playback */
 export async function spotifyPlayTrack(query: string): Promise<{ success: boolean; message: string }> {
   const token = await getAccessToken();
@@ -148,8 +185,22 @@ export async function spotifyPlayTrack(query: string): Promise<{ success: boolea
       return { success: false, message: `I couldn't find "${query}" on Spotify.` };
     }
 
-    // Start playback
-    const playRes = await fetch('https://api.spotify.com/v1/me/player/play', {
+    // Find a device to play on
+    let deviceId = await getActiveDeviceId(token);
+
+    // If no device, we can't play
+    if (!deviceId) {
+      return {
+        success: false,
+        message: 'No active Spotify device found. Open Spotify on your PC first, then try again.',
+      };
+    }
+
+    // Transfer playback to the device first, then play
+    await transferPlayback(token, deviceId);
+
+    // Start playback on that specific device
+    const playRes = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
