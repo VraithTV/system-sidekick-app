@@ -230,6 +230,7 @@ export function useVoiceAssistant() {
         tryLaunchApp(cleanedText);
       }
 
+      setState('speaking');
       // In private mode, don't log commands
       if (mode !== 'private') {
         addCommand({
