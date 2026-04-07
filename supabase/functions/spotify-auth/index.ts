@@ -83,7 +83,7 @@ serve(async (req) => {
 
     if (action === "get-auth-url") {
       const scopes = "user-modify-playback-state user-read-playback-state user-read-currently-playing streaming";
-      const actualRedirect = redirect_uri || "http://localhost:8080";
+      const actualRedirect = redirect_uri || "http://127.0.0.1:8080";
       const params = new URLSearchParams({
         client_id: SPOTIFY_CLIENT_ID,
         response_type: "code",
