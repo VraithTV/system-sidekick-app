@@ -20,17 +20,23 @@ export function useMaintenanceMode() {
 
     async function check() {
       try {
+        // Timeout after 3s so Electron doesn't show a blank screen if offline
         const { supabase } = await import('@/integrations/supabase/client');
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 3000);
         const { data } = await supabase
           .from('app_config')
           .select('value')
           .eq('key', 'maintenance_enabled')
+          .abortSignal(controller.signal)
           .maybeSingle();
+        clearTimeout(timer);
 
         if (!cancelled) {
           setIsMaintenance(data?.value === 'true');
         }
       } catch {
+        // Network failure or timeout: assume not in maintenance
       } finally {
         if (!cancelled) setLoading(false);
       }
