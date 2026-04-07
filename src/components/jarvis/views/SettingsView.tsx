@@ -301,6 +301,53 @@ export const SettingsView = () => {
             </div>
           </div>
         </div>
+
+        {/* Connections section at the bottom */}
+        <div className="mt-5">
+          <div className="bg-card rounded-xl p-6 border border-border">
+            <SectionTitle>Connections</SectionTitle>
+            <div className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-[#1DB954]/10 flex items-center justify-center">
+                  <Music className="w-4.5 h-4.5 text-[#1DB954]" />
+                </div>
+                <div>
+                  <p className="text-[13px] text-foreground/85">Spotify</p>
+                  <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                    {spotifyConnected ? 'Connected. Direct playback enabled.' : 'Control music playback with voice commands.'}
+                  </p>
+                </div>
+              </div>
+              {spotifyConnected ? (
+                <button
+                  onClick={() => { clearSpotifyTokens(); setSpotifyConnected(false); }}
+                  className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg border border-destructive/30 transition-colors"
+                >
+                  <Unlink size={14} />
+                  Disconnect
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID || localStorage.getItem('jarvis_spotify_client_id') || '';
+                    if (!clientId) return;
+                    const redirectUri = window.location.origin + window.location.pathname;
+                    const url = getSpotifyAuthUrl(clientId, redirectUri);
+                    if (isElectron && (window as any).electronAPI?.openUrl) {
+                      (window as any).electronAPI.openUrl(url);
+                    } else {
+                      window.location.href = url;
+                    }
+                  }}
+                  className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-[#1DB954]/10 hover:bg-[#1DB954]/20 text-[#1DB954] rounded-lg border border-[#1DB954]/30 transition-colors"
+                >
+                  <Music size={14} />
+                  Connect
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
