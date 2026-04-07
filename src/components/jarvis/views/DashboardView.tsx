@@ -4,20 +4,20 @@ import { CommandHistory } from '../CommandHistory';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { Mic, MicOff, Zap } from 'lucide-react';
-import { getRemainingUses } from '@/lib/usageLimit';
+import { getRemainingUses, getDailyLimit } from '@/lib/usageLimit';
 import { getModeById } from '@/lib/modes';
 
 export const DashboardView = () => {
   const { commands, settings, systemStatus, state, mode } = useJarvisStore();
   const { startListening, stopListening } = useVoiceAssistant();
   const micOn = systemStatus.micActive;
-  const limit = settings.dailyLimit;
-  const [remaining, setRemaining] = useState(getRemainingUses(limit));
+  const limit = getDailyLimit();
+  const [remaining, setRemaining] = useState(getRemainingUses());
   const modeInfo = getModeById(mode);
 
   useEffect(() => {
-    setRemaining(getRemainingUses(limit));
-  }, [commands.length, limit]);
+    setRemaining(getRemainingUses());
+  }, [commands.length]);
 
   const toggleMic = () => {
     if (micOn) {

@@ -1,7 +1,7 @@
 import { Sidebar } from '@/components/jarvis/Sidebar';
 import { WindowControls } from '@/components/jarvis/WindowControls';
 import { OnboardingWizard, useOnboarding } from '@/components/jarvis/OnboardingWizard';
-import { MaintenanceScreen, isMaintenanceMode } from '@/components/jarvis/MaintenanceScreen';
+import { MaintenanceScreen, useMaintenanceMode } from '@/components/jarvis/MaintenanceScreen';
 import { DashboardView } from '@/components/jarvis/views/DashboardView';
 import { AppsView } from '@/components/jarvis/views/AppsView';
 import { ClipsView } from '@/components/jarvis/views/ClipsView';
@@ -25,10 +25,19 @@ const views: Record<string, React.ComponentType> = {
 const Index = () => {
   const { activeView } = useJarvisStore();
   const { complete, finish } = useOnboarding();
+  const { isMaintenance, loading } = useMaintenanceMode();
   useGlobalShortcuts();
   const View = views[activeView] || DashboardView;
 
-  if (isMaintenanceMode) {
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-background items-center justify-center">
+        <div className="w-6 h-6 border-2 border-primary/60 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (isMaintenance) {
     return <MaintenanceScreen />;
   }
 

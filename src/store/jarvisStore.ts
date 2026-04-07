@@ -95,7 +95,6 @@ export const useJarvisStore = create<JarvisStore>((set) => ({
     obsWebsocketPassword: '',
     inputDeviceId: '',
     outputDeviceId: '',
-    dailyLimit: 25,
   },
   updateSettings: (s) => set((prev) => ({ settings: { ...prev.settings, ...s } })),
   activeView: 'dashboard',

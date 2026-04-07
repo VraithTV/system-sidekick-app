@@ -67,7 +67,6 @@ export interface JarvisSettings {
   obsWebsocketPassword: string;
   inputDeviceId: string;
   outputDeviceId: string;
-  dailyLimit: number;
 }
 
 export interface ModeInfo {

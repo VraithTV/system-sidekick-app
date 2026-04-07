@@ -1,7 +1,8 @@
 const USAGE_KEY = 'jarvis_daily_usage';
+const DAILY_LIMIT = 25;
 
 interface DailyUsage {
-  date: string; // YYYY-MM-DD
+  date: string;
   count: number;
 }
 
@@ -29,16 +30,20 @@ function saveUsage(usage: DailyUsage): void {
   } catch {}
 }
 
+export function getDailyLimit(): number {
+  return DAILY_LIMIT;
+}
+
 export function getUsageCount(): number {
   return getUsage().count;
 }
 
-export function getRemainingUses(limit: number): number {
-  return Math.max(0, limit - getUsage().count);
+export function getRemainingUses(): number {
+  return Math.max(0, DAILY_LIMIT - getUsage().count);
 }
 
-export function canUseVoice(limit: number): boolean {
-  return getUsage().count < limit;
+export function canUseVoice(): boolean {
+  return getUsage().count < DAILY_LIMIT;
 }
 
 export function incrementUsage(): void {

@@ -198,7 +198,7 @@ export function useVoiceAssistant() {
       }
 
       // Check daily usage limit
-      if (!canUseVoice(settings.dailyLimit)) {
+      if (!canUseVoice()) {
         setState('speaking');
         const limitMsg = "You've reached your daily command limit. It resets at midnight.";
         addCommand({
