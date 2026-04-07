@@ -319,8 +319,12 @@ export const SettingsView = () => {
                           console.error('[Spotify] Could not get auth URL:', error);
                           return;
                         }
-                        if (isElectron && (window as any).electronAPI?.openUrl) {
-                          (window as any).electronAPI.openUrl(data.url);
+                        if (isElectron && (window as any).electronAPI?.spotifyAuth) {
+                          const result = await (window as any).electronAPI.spotifyAuth(data.url);
+                          if (result?.code) {
+                            const ok = await exchangeSpotifyCode(result.code, 'http://127.0.0.1:8080');
+                            if (ok) setSpotifyConnected(true);
+                          }
                         } else {
                           window.location.href = data.url;
                         }
