@@ -119,41 +119,77 @@ export function getSpotifyAuthUrl(clientId: string, redirectUri: string): string
   return `https://accounts.spotify.com/authorize?${params}`;
 }
 
+/** Proxy Spotify Web API calls through the backend for better Electron reliability */
+type SpotifyProxyResult<T = any> = {
+  ok: boolean;
+  status: number;
+  data?: T;
+  error?: unknown;
+};
+
+async function invokeSpotifyApi<T = any>(
+  token: string,
+  action: string,
+  body: Record<string, unknown> = {}
+): Promise<SpotifyProxyResult<T>> {
+  try {
+    const supabase = await getSupabaseClient();
+    const { data, error } = await supabase.functions.invoke('spotify-auth', {
+      body: { action, access_token: token, ...body },
+    });
+
+    if (error) {
+      const response = (error as any)?.context;
+      let status = 500;
+      let details: unknown = error;
+
+      if (response) {
+        status = response.status ?? status;
+        try {
+          details = await response.json();
+        } catch {
+          try {
+            details = await response.text();
+          } catch {
+            details = error;
+          }
+        }
+      }
+
+      console.warn(`[Spotify] ${action} failed:`, status, details);
+      return { ok: false, status, error: details };
+    }
+
+    return {
+      ok: true,
+      status: data?.status ?? 200,
+      data: (data?.data ?? data) as T,
+    };
+  } catch (e) {
+    console.warn(`[Spotify] ${action} invoke error:`, e);
+    return { ok: false, status: 500, error: e };
+  }
+}
+
 /** Get available devices and pick the best one to play on */
 async function getActiveDeviceId(token: string): Promise<string | null> {
-  try {
-    const res = await fetch('https://api.spotify.com/v1/me/player/devices', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const devices = data.devices || [];
-    // Prefer an active device, then any computer, then first available
-    const active = devices.find((d: any) => d.is_active);
-    if (active) return active.id;
-    const computer = devices.find((d: any) => d.type === 'Computer');
-    if (computer) return computer.id;
-    return devices[0]?.id || null;
-  } catch {
-    return null;
-  }
+  const result = await invokeSpotifyApi<{ devices?: any[] }>(token, 'get-devices');
+  if (!result.ok) return null;
+
+  const devices = result.data?.devices || [];
+  const active = devices.find((d: any) => d.is_active);
+  if (active) return active.id;
+
+  const computer = devices.find((d: any) => d.type === 'Computer');
+  if (computer) return computer.id;
+
+  return devices[0]?.id || null;
 }
 
 /** Transfer playback to a device so it becomes active */
 async function transferPlayback(token: string, deviceId: string): Promise<boolean> {
-  try {
-    const res = await fetch('https://api.spotify.com/v1/me/player', {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ device_ids: [deviceId], play: false }),
-    });
-    return res.ok || res.status === 204;
-  } catch {
-    return false;
-  }
+  const result = await invokeSpotifyApi(token, 'transfer-playback', { device_id: deviceId });
+  return result.ok;
 }
 
 /** Search for a track and start playback */
@@ -164,31 +200,30 @@ export async function spotifyPlayTrack(query: string): Promise<{ success: boolea
   }
 
   try {
-    // Search for the track
-    const searchRes = await fetch(
-      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=1`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const searchResult = await invokeSpotifyApi<{ tracks?: { items?: any[] } }>(token, 'search-track', {
+      query,
+    });
 
-    if (searchRes.status === 401) {
-      clearSpotifyTokens();
-      return { success: false, message: 'Spotify session expired. Please reconnect in Settings.' };
-    }
-
-    if (!searchRes.ok) {
+    if (!searchResult.ok) {
+      if (searchResult.status === 401) {
+        clearSpotifyTokens();
+        return { success: false, message: 'Spotify session expired. Please reconnect in Settings.' };
+      }
+      if (searchResult.status === 403) {
+        return { success: false, message: 'Spotify denied the search request. Reconnect Spotify in Settings and try again.' };
+      }
+      if (searchResult.status === 429) {
+        return { success: false, message: 'Spotify is rate limiting requests right now. Try again in a moment.' };
+      }
       return { success: false, message: 'Could not search Spotify right now.' };
     }
 
-    const searchData = await searchRes.json();
-    const track = searchData.tracks?.items?.[0];
+    const track = searchResult.data?.tracks?.items?.[0];
     if (!track) {
       return { success: false, message: `I couldn't find "${query}" on Spotify.` };
     }
 
-    // Find a device to play on
     let deviceId = await getActiveDeviceId(token);
-
-    // If no device, we can't play
     if (!deviceId) {
       return {
         success: false,
@@ -196,27 +231,24 @@ export async function spotifyPlayTrack(query: string): Promise<{ success: boolea
       };
     }
 
-    // Transfer playback to the device first, then play
     await transferPlayback(token, deviceId);
 
-    // Start playback on that specific device
-    const playRes = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ uris: [track.uri] }),
+    const playResult = await invokeSpotifyApi(token, 'play-track', {
+      device_id: deviceId,
+      uris: [track.uri],
     });
 
-    if (playRes.status === 404 || playRes.status === 403) {
-      return {
-        success: false,
-        message: 'No active Spotify device found. Open Spotify on your PC first, then try again.',
-      };
-    }
-
-    if (!playRes.ok && playRes.status !== 204) {
+    if (!playResult.ok) {
+      if (playResult.status === 401) {
+        clearSpotifyTokens();
+        return { success: false, message: 'Spotify session expired. Please reconnect in Settings.' };
+      }
+      if (playResult.status === 404 || playResult.status === 403) {
+        return {
+          success: false,
+          message: 'No active Spotify device found. Open Spotify on your PC first, then try again.',
+        };
+      }
       return { success: false, message: 'Could not start playback. Make sure Spotify is open.' };
     }
 
@@ -233,16 +265,13 @@ export async function spotifyPause(): Promise<{ success: boolean; message: strin
   const token = await getAccessToken();
   if (!token) return { success: false, message: 'Spotify is not connected.' };
 
-  try {
-    const res = await fetch('https://api.spotify.com/v1/me/player/pause', {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok || res.status === 204) return { success: true, message: 'Pausing playback.' };
-    return { success: false, message: 'Could not pause. Make sure Spotify is open.' };
-  } catch {
-    return { success: false, message: 'Could not reach Spotify.' };
+  const result = await invokeSpotifyApi(token, 'pause');
+  if (result.ok) return { success: true, message: 'Pausing playback.' };
+  if (result.status === 401) {
+    clearSpotifyTokens();
+    return { success: false, message: 'Spotify session expired. Please reconnect in Settings.' };
   }
+  return { success: false, message: 'Could not pause. Make sure Spotify is open.' };
 }
 
 /** Resume playback */
@@ -250,16 +279,13 @@ export async function spotifyResume(): Promise<{ success: boolean; message: stri
   const token = await getAccessToken();
   if (!token) return { success: false, message: 'Spotify is not connected.' };
 
-  try {
-    const res = await fetch('https://api.spotify.com/v1/me/player/play', {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok || res.status === 204) return { success: true, message: 'Resuming playback.' };
-    return { success: false, message: 'No active device found. Open Spotify first.' };
-  } catch {
-    return { success: false, message: 'Could not reach Spotify.' };
+  const result = await invokeSpotifyApi(token, 'resume');
+  if (result.ok) return { success: true, message: 'Resuming playback.' };
+  if (result.status === 401) {
+    clearSpotifyTokens();
+    return { success: false, message: 'Spotify session expired. Please reconnect in Settings.' };
   }
+  return { success: false, message: 'No active device found. Open Spotify first.' };
 }
 
 /** Skip to next track */
@@ -267,16 +293,13 @@ export async function spotifyNext(): Promise<{ success: boolean; message: string
   const token = await getAccessToken();
   if (!token) return { success: false, message: 'Spotify is not connected.' };
 
-  try {
-    const res = await fetch('https://api.spotify.com/v1/me/player/next', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok || res.status === 204) return { success: true, message: 'Skipping to next track.' };
-    return { success: false, message: 'Could not skip track.' };
-  } catch {
-    return { success: false, message: 'Could not reach Spotify.' };
+  const result = await invokeSpotifyApi(token, 'next');
+  if (result.ok) return { success: true, message: 'Skipping to next track.' };
+  if (result.status === 401) {
+    clearSpotifyTokens();
+    return { success: false, message: 'Spotify session expired. Please reconnect in Settings.' };
   }
+  return { success: false, message: 'Could not skip track.' };
 }
 
 /** Go to previous track */
@@ -284,16 +307,13 @@ export async function spotifyPrevious(): Promise<{ success: boolean; message: st
   const token = await getAccessToken();
   if (!token) return { success: false, message: 'Spotify is not connected.' };
 
-  try {
-    const res = await fetch('https://api.spotify.com/v1/me/player/previous', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok || res.status === 204) return { success: true, message: 'Going to previous track.' };
-    return { success: false, message: 'Could not go back.' };
-  } catch {
-    return { success: false, message: 'Could not reach Spotify.' };
+  const result = await invokeSpotifyApi(token, 'previous');
+  if (result.ok) return { success: true, message: 'Going to previous track.' };
+  if (result.status === 401) {
+    clearSpotifyTokens();
+    return { success: false, message: 'Spotify session expired. Please reconnect in Settings.' };
   }
+  return { success: false, message: 'Could not go back.' };
 }
 
 /** Set playback volume (0-100) */
@@ -302,19 +322,17 @@ export async function spotifySetVolume(percent: number): Promise<{ success: bool
   if (!token) return { success: false, message: 'Spotify is not connected.' };
 
   const vol = Math.max(0, Math.min(100, Math.round(percent)));
-  try {
-    const res = await fetch(
-      `https://api.spotify.com/v1/me/player/volume?volume_percent=${vol}`,
-      { method: 'PUT', headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (res.ok || res.status === 204) return { success: true, message: `Volume set to ${vol}%.` };
-    if (res.status === 403 || res.status === 404) {
-      return { success: false, message: 'No active Spotify device found. Open Spotify first.' };
-    }
-    return { success: false, message: 'Could not change volume.' };
-  } catch {
-    return { success: false, message: 'Could not reach Spotify.' };
+  const result = await invokeSpotifyApi(token, 'set-volume', { volume_percent: vol });
+
+  if (result.ok) return { success: true, message: `Volume set to ${vol}%.` };
+  if (result.status === 401) {
+    clearSpotifyTokens();
+    return { success: false, message: 'Spotify session expired. Please reconnect in Settings.' };
   }
+  if (result.status === 403 || result.status === 404) {
+    return { success: false, message: 'No active Spotify device found. Open Spotify first.' };
+  }
+  return { success: false, message: 'Could not change volume.' };
 }
 
 /** Get currently playing track info */
@@ -322,31 +340,30 @@ export async function spotifyNowPlaying(): Promise<{ success: boolean; message: 
   const token = await getAccessToken();
   if (!token) return { success: false, message: 'Spotify is not connected.' };
 
-  try {
-    const res = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.status === 204 || res.status === 202) {
+  const result = await invokeSpotifyApi<any>(token, 'now-playing');
+  if (!result.ok) {
+    if (result.status === 401) {
+      clearSpotifyTokens();
+      return { success: false, message: 'Spotify session expired. Please reconnect in Settings.' };
+    }
+    if (result.status === 204 || result.status === 202) {
       return { success: true, message: 'Nothing is playing on Spotify right now.' };
     }
-    if (!res.ok) {
-      return { success: false, message: 'Could not check what is playing.' };
-    }
-    const data = await res.json();
-    if (!data.item) {
-      return { success: true, message: 'Nothing is playing on Spotify right now.' };
-    }
-    const track = data.item;
-    const artists = track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist';
-    const album = track.album?.name || '';
-    const isPlaying = data.is_playing ? 'Currently playing' : 'Paused on';
-    return {
-      success: true,
-      message: `${isPlaying}: "${track.name}" by ${artists}${album ? ` from the album "${album}"` : ''}.`,
-    };
-  } catch {
-    return { success: false, message: 'Could not reach Spotify.' };
+    return { success: false, message: 'Could not check what is playing.' };
   }
+
+  if (result.status === 204 || result.status === 202 || !result.data?.item) {
+    return { success: true, message: 'Nothing is playing on Spotify right now.' };
+  }
+
+  const track = result.data.item;
+  const artists = track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist';
+  const album = track.album?.name || '';
+  const isPlaying = result.data.is_playing ? 'Currently playing' : 'Paused on';
+  return {
+    success: true,
+    message: `${isPlaying}: "${track.name}" by ${artists}${album ? ` from the album "${album}"` : ''}.`,
+  };
 }
 
 /** Toggle shuffle on/off */
@@ -355,28 +372,25 @@ export async function spotifyShuffle(state?: boolean): Promise<{ success: boolea
   if (!token) return { success: false, message: 'Spotify is not connected.' };
 
   try {
-    // If no explicit state, get current and toggle
     let newState = state;
     if (newState === undefined) {
-      const res = await fetch('https://api.spotify.com/v1/me/player', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        newState = !data.shuffle_state;
+      const playerState = await invokeSpotifyApi<any>(token, 'player-state');
+      if (playerState.ok) {
+        newState = !playerState.data?.shuffle_state;
       } else {
         newState = true;
       }
     }
 
-    const res = await fetch(
-      `https://api.spotify.com/v1/me/player/shuffle?state=${newState}`,
-      { method: 'PUT', headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (res.ok || res.status === 204) {
+    const result = await invokeSpotifyApi(token, 'shuffle', { state: newState });
+    if (result.ok) {
       return { success: true, message: newState ? 'Shuffle is now on.' : 'Shuffle is now off.' };
     }
-    if (res.status === 403 || res.status === 404) {
+    if (result.status === 401) {
+      clearSpotifyTokens();
+      return { success: false, message: 'Spotify session expired. Please reconnect in Settings.' };
+    }
+    if (result.status === 403 || result.status === 404) {
       return { success: false, message: 'No active Spotify device found. Open Spotify first.' };
     }
     return { success: false, message: 'Could not change shuffle mode.' };
