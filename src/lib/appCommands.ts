@@ -101,19 +101,27 @@ function handleSpotifyCommand(text: string): AppCommandResult {
       return { handled: true, response: `Searching for "${query}" on Spotify now.` };
     }
 
-    // Just "play music" -> resume playback
+    // Just "play music" -> launch app and resume playback
     if (hasSpotifyAPI) {
       return {
         handled: true,
         async: true,
-        asyncResponse: spotifyResume().then((r) => r.message),
+        asyncResponse: (async () => {
+          launchSpotifyApp();
+          let result = await spotifyResume();
+          if (!result.success && (result.message.includes('No active') || result.message.includes('device'))) {
+            await wait(3000);
+            result = await spotifyResume();
+          }
+          return result.message;
+        })(),
       };
     }
     if (sendMediaKey('play-pause')) {
       return { handled: true, response: 'Resuming playback.' };
     }
     if (isElectron) {
-      openUrl('spotify:');
+      launchSpotifyApp();
     } else {
       openUrl('https://open.spotify.com');
     }
