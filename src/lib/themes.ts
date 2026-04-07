@@ -228,11 +228,11 @@ export function loadThemePreference(): { presetId: string; accentId: string; fon
   try {
     return {
       presetId: localStorage.getItem(THEME_KEY) || 'default',
-      accentId: localStorage.getItem(ACCENT_KEY) || 'cyan',
+      accentId: localStorage.getItem(ACCENT_KEY) || 'blue',
       fontId: localStorage.getItem(FONT_KEY) || 'default',
     };
   } catch {
-    return { presetId: 'default', accentId: 'cyan', fontId: 'default' };
+    return { presetId: 'default', accentId: 'blue', fontId: 'default' };
   }
 }
 
