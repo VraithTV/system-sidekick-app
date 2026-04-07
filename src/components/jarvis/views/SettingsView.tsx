@@ -50,7 +50,6 @@ export const SettingsView = () => {
   const { inputs, outputs, refresh: refreshDevices } = useAudioDevices();
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [spotifyConnected, setSpotifyConnected] = useState(isSpotifyConnected());
-  const [spotifyClientId, setSpotifyClientId] = useState(localStorage.getItem('jarvis_spotify_client_id') || '');
 
   // Listen for Spotify OAuth callback
   useEffect(() => {
@@ -234,53 +233,6 @@ export const SettingsView = () => {
             </div>
             </div>
 
-            <div className="bg-card rounded-xl p-6 border border-border">
-              <SectionTitle>Spotify Integration</SectionTitle>
-              {spotifyConnected ? (
-                <Row label="Status" desc="Spotify is connected for direct playback">
-                  <button
-                    onClick={() => { clearSpotifyTokens(); setSpotifyConnected(false); }}
-                    className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg border border-destructive/30 transition-colors"
-                  >
-                    <Unlink size={14} />
-                    Disconnect
-                  </button>
-                </Row>
-              ) : (
-                <>
-                  <Row label="Client ID" desc="From Spotify Developer Dashboard">
-                    <Input
-                      value={spotifyClientId}
-                      onChange={(e: any) => {
-                        setSpotifyClientId(e.target.value);
-                        localStorage.setItem('jarvis_spotify_client_id', e.target.value);
-                      }}
-                      className="w-44"
-                      placeholder="Paste Client ID"
-                    />
-                  </Row>
-                  <Row label="Connect" desc="Authorize Jarvis to control Spotify">
-                    <button
-                      onClick={() => {
-                        if (!spotifyClientId.trim()) return;
-                        const redirectUri = window.location.origin + window.location.pathname;
-                        const url = getSpotifyAuthUrl(spotifyClientId.trim(), redirectUri);
-                        if (isElectron && (window as any).electronAPI?.openUrl) {
-                          (window as any).electronAPI.openUrl(url);
-                        } else {
-                          window.location.href = url;
-                        }
-                      }}
-                      disabled={!spotifyClientId.trim()}
-                      className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-[#1DB954]/10 hover:bg-[#1DB954]/20 text-[#1DB954] rounded-lg border border-[#1DB954]/30 transition-colors disabled:opacity-40"
-                    >
-                      <Music size={14} />
-                      Connect Spotify
-                    </button>
-                  </Row>
-                </>
-              )}
-            </div>
           <div className="space-y-5">
             <div className="bg-card rounded-xl p-6 border border-border">
               <SectionTitle>Voice Selection</SectionTitle>
