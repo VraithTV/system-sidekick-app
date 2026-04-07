@@ -7,6 +7,7 @@ import { startSpeechRecognition } from '@/lib/speechRecognition';
 import { processAppCommand } from '@/lib/appCommands';
 import { canUseVoice, incrementUsage } from '@/lib/usageLimit';
 import { getModeSystemPromptAddition } from '@/lib/modes';
+import { toast } from 'sonner';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -62,6 +63,18 @@ async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId
     if (!response.ok) {
       const errorText = await response.text();
       console.warn('ElevenLabs TTS unavailable, falling back to browser TTS:', errorText);
+
+      let creditIssue = false;
+      try {
+        const errData = JSON.parse(errorText);
+        if (errData?.code === 'detected_unusual_activity' || response.status === 402 || response.status === 403) {
+          creditIssue = true;
+        }
+      } catch {}
+
+      if (creditIssue || response.status === 402) {
+        toast.error('Voice API credits have run out. Using backup voice until credits are restored.', { duration: 8000 });
+      }
 
       if ([401, 402, 403, 429, 500, 502, 503].includes(response.status)) {
         elevenLabsRetryAfter = Date.now() + 5 * 60 * 1000;
@@ -147,6 +160,17 @@ function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string):
   });
 }
 
+// Keep a rolling conversation history for context
+const conversationHistory: { role: 'user' | 'assistant'; content: string }[] = [];
+const MAX_HISTORY = 10;
+
+function addToHistory(role: 'user' | 'assistant', content: string) {
+  conversationHistory.push({ role, content });
+  if (conversationHistory.length > MAX_HISTORY) {
+    conversationHistory.splice(0, conversationHistory.length - MAX_HISTORY);
+  }
+}
+
 async function getAIResponse(text: string, mode?: string): Promise<string> {
   try {
     const memories = mode === 'private' ? '' : formatMemoriesForPrompt();
@@ -157,13 +181,13 @@ async function getAIResponse(text: string, mode?: string): Promise<string> {
 
     try {
       const result = await supabase.functions.invoke('jarvis-chat', {
-        body: { message: text, memories, timezone, mode: mode || 'assistant' },
+        body: { message: text, memories, timezone, mode: mode || 'assistant', conversationHistory },
       });
       data = result.data;
       error = result.error;
     } catch (networkErr) {
-      console.warn('[Jarvis] Network error calling AI — you may be offline or behind a VPN:', networkErr);
-      return "I can't reach the server right now. Check your internet connection or VPN and try again.";
+      console.warn('[Jarvis] Network error calling AI:', networkErr);
+      return "I can't reach the server right now. Check your internet connection and try again.";
     }
 
     if (error) throw error;
@@ -223,11 +247,11 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
 
       if (appResult.handled) {
         response = appResult.response || 'Done.';
-        // Also try to launch the app if needed
         tryLaunchApp(cleanedText);
       } else {
+        addToHistory('user', cleanedText);
         response = await getAIResponse(cleanedText, mode);
-        // Try to launch the app if the user asked to open one
+        addToHistory('assistant', response);
         tryLaunchApp(cleanedText);
       }
 
