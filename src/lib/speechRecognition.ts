@@ -47,21 +47,19 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
 
     recognition = new SpeechRecognitionCtor();
     recognition.lang = 'en-US';
-    recognition.interimResults = false;
+    recognition.interimResults = true;  // Get interim results for faster wake word detection
     recognition.maxAlternatives = 3;
     recognition.continuous = true;
 
     let settled = false;
     let gotResult = false;
-    const startTime = Date.now();
-    const MIN_LISTEN_MS = 2000;
 
-    // Auto-stop after 8 seconds if no result
+    // Auto-stop after 6 seconds if no result
     const timeout = setTimeout(() => {
       if (!settled) {
         try { recognition.stop(); } catch {}
       }
-    }, 8000);
+    }, 6000);
 
     const finish = (value = '') => {
       if (settled) return;
@@ -78,23 +76,36 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
     };
 
     recognition.onresult = (event: any) => {
-      gotResult = true;
-      // Get the latest final result
-      let bestTranscript = '';
-      let bestConfidence = 0;
+      // Check interim results for faster response
       for (let r = 0; r < event.results.length; r++) {
-        if (!event.results[r].isFinal) continue;
-        for (let i = 0; i < event.results[r].length; i++) {
-          if (event.results[r][i].confidence > bestConfidence) {
-            bestConfidence = event.results[r][i].confidence;
-            bestTranscript = event.results[r][i].transcript;
+        const result = event.results[r];
+        const transcript = result[0]?.transcript || '';
+
+        if (result.isFinal) {
+          // Final result: pick best confidence
+          gotResult = true;
+          let bestTranscript = '';
+          let bestConfidence = 0;
+          for (let i = 0; i < result.length; i++) {
+            if (result[i].confidence > bestConfidence) {
+              bestConfidence = result[i].confidence;
+              bestTranscript = result[i].transcript;
+            }
           }
+          if (!bestTranscript) bestTranscript = transcript;
+          if (bestTranscript) {
+            try { recognition.stop(); } catch {}
+            finish(bestTranscript);
+            return;
+          }
+        } else if (transcript.length > 3) {
+          // Interim result with enough text: return it immediately
+          // This makes wake word detection near-instant
+          gotResult = true;
+          try { recognition.stop(); } catch {}
+          finish(transcript);
+          return;
         }
-        if (!bestTranscript) bestTranscript = event.results[r][0]?.transcript || '';
-      }
-      if (bestTranscript) {
-        try { recognition.stop(); } catch {}
-        finish(bestTranscript);
       }
     };
 
@@ -113,12 +124,6 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
     };
 
     recognition.onend = () => {
-      if (settled) return;
-      // If we got no result and haven't listened long enough, restart
-      if (!gotResult && (Date.now() - startTime) < MIN_LISTEN_MS) {
-        try { recognition.start(); } catch { finish(''); }
-        return;
-      }
       finish('');
     };
 
@@ -276,28 +281,18 @@ export function startSpeechRecognition(
   let stopped = false;
 
   const promise = (async () => {
-    const preferLocal = options.preferLocal ?? isElectronApp;
-    const attempts = preferLocal
-      ? [
-          {
-            label: 'local transcription',
-            create: () => createLocalSpeechRecognitionController(deviceId),
-          },
-          {
-            label: 'browser speech recognition',
-            create: () => createBrowserSpeechRecognitionController(),
-          },
-        ]
-      : [
-          {
-            label: 'browser speech recognition',
-            create: () => createBrowserSpeechRecognitionController(),
-          },
-          {
-            label: 'local transcription',
-            create: () => createLocalSpeechRecognitionController(deviceId),
-          },
-        ];
+    // Always try browser SpeechRecognition first: it's real-time and responsive.
+    // Local Whisper is slow (model load + inference) and only used as fallback.
+    const attempts = [
+      {
+        label: 'browser speech recognition',
+        create: () => createBrowserSpeechRecognitionController(),
+      },
+      {
+        label: 'local transcription',
+        create: () => createLocalSpeechRecognitionController(deviceId),
+      },
+    ];
 
     let lastError: unknown = null;
 
