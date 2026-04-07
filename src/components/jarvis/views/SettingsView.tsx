@@ -313,7 +313,7 @@ export const SettingsView = () => {
                       try {
                         const { supabase } = await import('@/integrations/supabase/client');
                         const { data, error } = await supabase.functions.invoke('spotify-auth', {
-                          body: { action: 'get-auth-url', redirect_uri: window.location.origin + window.location.pathname },
+                          body: { action: 'get-auth-url', redirect_uri: 'http://127.0.0.1:8080' },
                         });
                         if (error || !data?.url) {
                           console.error('[Spotify] Could not get auth URL:', error);
