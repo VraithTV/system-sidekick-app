@@ -107,8 +107,7 @@ function createTray() {
 }
 
 function createSplashWindow() {
-  const iconExt = process.platform === 'win32' ? 'jarvis-icon.ico' : 'jarvis-icon.png';
-  const iconPath = path.join(__dirname, '..', 'public', iconExt);
+  const iconPath = getIconPath(process.platform === 'win32' ? 'jarvis-icon.ico' : 'jarvis-icon.png');
   const icon = nativeImage.createFromPath(iconPath);
 
   splashWindow = new BrowserWindow({
@@ -124,8 +123,7 @@ function createSplashWindow() {
 }
 
 function createWindow() {
-  const iconExt = process.platform === 'win32' ? 'jarvis-icon.ico' : 'jarvis-icon.png';
-  const iconPath = path.join(__dirname, '..', 'public', iconExt);
+  const iconPath = getIconPath(process.platform === 'win32' ? 'jarvis-icon.ico' : 'jarvis-icon.png');
   const icon = nativeImage.createFromPath(iconPath);
 
   mainWindow = new BrowserWindow({
