@@ -57,7 +57,7 @@ export const SettingsView = () => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (code) {
-      const redirectUri = window.location.origin + window.location.pathname;
+      const redirectUri = 'http://127.0.0.1:8080';
       exchangeSpotifyCode(code, redirectUri).then((ok) => {
         if (ok) setSpotifyConnected(true);
         // Clean up URL
