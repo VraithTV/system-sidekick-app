@@ -14,6 +14,18 @@ import {
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
+/** Launch the Spotify desktop app via Electron */
+function launchSpotifyApp() {
+  if (isElectron && (window as any).electronAPI?.openApp) {
+    (window as any).electronAPI.openApp('spotify');
+  }
+}
+
+/** Wait ms milliseconds */
+function wait(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
 export interface AppCommandResult {
   handled: boolean;
   response?: string;
@@ -56,12 +68,28 @@ function handleSpotifyCommand(text: string): AppCommandResult {
 
     if (query && query !== 'music' && query !== 'some music' && query !== 'something') {
       if (hasSpotifyAPI) {
-        // Use Spotify Web API for direct playback
+        // Launch Spotify desktop app first, then play via API
         return {
           handled: true,
           async: true,
           response: `Searching for "${query}" on Spotify...`,
-          asyncResponse: spotifyPlayTrack(query).then((r) => r.message),
+          asyncResponse: (async () => {
+            // Open Spotify app in background
+            launchSpotifyApp();
+            // Try to play immediately first
+            let result = await spotifyPlayTrack(query);
+            if (result.success) return result.message;
+            // If no device found, wait for Spotify to start and retry
+            if (result.message.includes('No active') || result.message.includes('device')) {
+              await wait(3000);
+              result = await spotifyPlayTrack(query);
+              if (result.success) return result.message;
+              // One more retry with longer wait
+              await wait(4000);
+              result = await spotifyPlayTrack(query);
+            }
+            return result.message;
+          })(),
         };
       }
       // Fallback: open Spotify URI/web
@@ -73,19 +101,27 @@ function handleSpotifyCommand(text: string): AppCommandResult {
       return { handled: true, response: `Searching for "${query}" on Spotify now.` };
     }
 
-    // Just "play music" -> resume playback
+    // Just "play music" -> launch app and resume playback
     if (hasSpotifyAPI) {
       return {
         handled: true,
         async: true,
-        asyncResponse: spotifyResume().then((r) => r.message),
+        asyncResponse: (async () => {
+          launchSpotifyApp();
+          let result = await spotifyResume();
+          if (!result.success && (result.message.includes('No active') || result.message.includes('device'))) {
+            await wait(3000);
+            result = await spotifyResume();
+          }
+          return result.message;
+        })(),
       };
     }
     if (sendMediaKey('play-pause')) {
       return { handled: true, response: 'Resuming playback.' };
     }
     if (isElectron) {
-      openUrl('spotify:');
+      launchSpotifyApp();
     } else {
       openUrl('https://open.spotify.com');
     }
