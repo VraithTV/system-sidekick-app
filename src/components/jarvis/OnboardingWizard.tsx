@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { WindowControls } from './WindowControls';
 import { JarvisLogo } from './JarvisLogo';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useJarvisStore } from '@/store/jarvisStore';
@@ -349,6 +350,9 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
 
   return (
     <div className="h-screen w-screen bg-background flex flex-col items-center justify-center relative overflow-hidden">
+      {/* Window controls */}
+      <WindowControls />
+
       {/* Background effects */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.04)_0%,transparent_60%)]" />
       <div className="absolute inset-0 grid-bg opacity-30" />
