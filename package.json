@@ -30,14 +30,13 @@
     "directories": {
       "output": "release"
     },
-    "toolsets": {
-      "winCodeSign": "1.1.0"
-    },
     "win": {
       "target": "nsis",
       "icon": "public/jarvis-icon.ico",
-      "signAndEditExecutable": false
+      "signAndEditExecutable": false,
+      "sign": null
     },
+    "forceCodeSigning": false,
     "nsis": {
       "oneClick": false,
       "perMachine": true,
