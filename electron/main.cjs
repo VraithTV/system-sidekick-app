@@ -42,7 +42,6 @@ let mainWindow = null;
 let splashWindow = null;
 let tray = null;
 let forceQuit = false;
-let forceQuit = false;
 
 // Ensure Jarvis clips folder exists
 const JARVIS_FOLDER = path.join('C:', 'Jarvis');
