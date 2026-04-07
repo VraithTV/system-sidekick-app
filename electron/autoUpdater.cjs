@@ -3,9 +3,11 @@ const path = require('path');
 const fs = require('fs');
 
 // ─── Configuration ───────────────────────────────────────────
-// Point this to your GitHub repo's releases API or a custom JSON endpoint.
-// The endpoint should return JSON with: { version: "1.2.0", downloadUrl: "https://..." }
+// Point this to your GitHub repo's releases API.
+// Once you have a GitHub repo, replace YOUR_USERNAME/YOUR_REPO below.
+// The endpoint should return JSON with: { tag_name: "v1.0.0", html_url: "https://..." }
 const UPDATE_CHECK_URL = 'https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/releases/latest';
+const UPDATE_CONFIGURED = !UPDATE_CHECK_URL.includes('YOUR_USERNAME');
 const CHECK_INTERVAL_MS = 60 * 60 * 1000; // Check every hour
 const DISMISSED_FILE = path.join(app.getPath('userData'), '.update-dismissed');
 
@@ -76,10 +78,20 @@ async function checkForUpdates(silent = true) {
   const currentVersion = getCurrentVersion();
   console.log(`[AutoUpdater] Current version: ${currentVersion}`);
 
+  if (!UPDATE_CONFIGURED) {
+    if (!silent) {
+      dialog.showMessageBox({
+        type: 'info',
+        title: 'Jarvis AI',
+        message: `You are running Jarvis AI v${currentVersion}.\n\nAutomatic updates will be available once a GitHub releases repository is configured.`,
+      });
+    }
+    return null;
+  }
+
   try {
     const data = await fetchJSON(UPDATE_CHECK_URL);
 
-    // GitHub Releases API format
     const remoteVersion = (data.tag_name || data.version || '').replace(/^v/, '');
     const downloadUrl = data.html_url || data.downloadUrl || '';
 
@@ -88,7 +100,7 @@ async function checkForUpdates(silent = true) {
         dialog.showMessageBox({
           type: 'info',
           title: 'Update Check',
-          message: 'Could not determine the latest version.',
+          message: `Could not determine the latest version.\nYou are running v${currentVersion}.`,
         });
       }
       return null;
