@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { Cpu, MemoryStick, HardDrive, Thermometer, Monitor, Wifi, Activity, Eye } from 'lucide-react';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -38,13 +38,17 @@ const useMockSystemData = () => {
   return data;
 };
 
-const ProgressBar = ({ value, max = 100, color = 'bg-primary' }: { value: number; max?: number; color?: string }) => (
-  <div className="w-full h-2 rounded-full bg-muted/50 overflow-hidden">
-    <div
-      className={`h-full rounded-full transition-all duration-700 ${color}`}
-      style={{ width: `${Math.min(100, (value / max) * 100)}%` }}
-    />
-  </div>
+const ProgressBar = forwardRef<HTMLDivElement, { value: number; max?: number; color?: string }>(
+  function ProgressBar({ value, max = 100, color = 'bg-primary' }, ref) {
+    return (
+      <div ref={ref} className="w-full h-2 rounded-full bg-muted/50 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-700 ${color}`}
+          style={{ width: `${Math.min(100, (value / max) * 100)}%` }}
+        />
+      </div>
+    );
+  }
 );
 
 const getUsageColor = (percent: number) => {
