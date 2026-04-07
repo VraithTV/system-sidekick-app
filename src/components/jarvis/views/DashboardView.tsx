@@ -1,13 +1,22 @@
+import { useState, useEffect } from 'react';
 import { AssistantOrb } from '../AssistantOrb';
 import { CommandHistory } from '../CommandHistory';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, Zap } from 'lucide-react';
+import { getRemainingUses, getDailyLimit } from '@/lib/usageLimit';
 
 export const DashboardView = () => {
   const { commands, settings, systemStatus, state } = useJarvisStore();
   const { startListening, stopListening } = useVoiceAssistant();
   const micOn = systemStatus.micActive;
+  const [remaining, setRemaining] = useState(getRemainingUses());
+  const limit = getDailyLimit();
+
+  // Refresh remaining count when commands change (i.e. after each use)
+  useEffect(() => {
+    setRemaining(getRemainingUses());
+  }, [commands.length]);
 
   const toggleMic = () => {
     if (micOn) {
@@ -57,6 +66,14 @@ export const DashboardView = () => {
             ? `Try: "Hey ${settings.wakeName}, what time is it?"`
             : `Try: "${settings.wakeName}, open Chrome" · "${settings.wakeName}, what's the weather?"`}
         </p>
+
+        {/* Daily usage counter */}
+        <div className="mt-4 flex items-center gap-2 rounded-full border border-border/50 bg-card/50 px-4 py-1.5">
+          <Zap className={`h-3.5 w-3.5 ${remaining === 0 ? 'text-destructive' : 'text-primary'}`} />
+          <span className={`font-mono text-[11px] ${remaining === 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+            {remaining}/{limit} commands today
+          </span>
+        </div>
       </div>
 
       {/* Command log */}

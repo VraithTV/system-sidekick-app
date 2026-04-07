@@ -5,6 +5,7 @@ import { matchWakeWord } from '@/lib/fuzzyWake';
 import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 import { startSpeechRecognition } from '@/lib/speechRecognition';
 import { processAppCommand } from '@/lib/appCommands';
+import { canUseVoice, incrementUsage } from '@/lib/usageLimit';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -195,6 +196,23 @@ export function useVoiceAssistant() {
         return;
       }
 
+      // Check daily usage limit
+      if (!canUseVoice()) {
+        setState('speaking');
+        const limitMsg = "You've reached your daily command limit. It resets at midnight.";
+        addCommand({
+          id: Date.now().toString(),
+          text: cleanedText,
+          response: limitMsg,
+          timestamp: new Date(),
+          type: 'voice',
+        });
+        await speakWithElevenLabs(limitMsg, settings.voiceId, settings.outputDeviceId || undefined, settings.voice);
+        if (isListeningRef.current) setState('standby');
+        return;
+      }
+
+      incrementUsage();
       setState('thinking');
 
       // Check for app-specific commands first (Spotify, URLs, etc.)
