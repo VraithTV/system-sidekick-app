@@ -125,58 +125,10 @@ function handleTimeCommand(text: string): VoiceCommandResult {
   return { handled: false };
 }
 
-/** Handle volume commands (Electron only) */
+/** Handle volume commands - uses Spotify API instead of system shell commands */
 function handleVolumeCommand(text: string): VoiceCommandResult {
-  const lower = text.toLowerCase();
-
-  if (!isElectron) return { handled: false };
-
-  // "mute", "unmute"
-  if (/\b(mute|silence)\b/i.test(lower) && !/unmute/i.test(lower)) {
-    try {
-      const { execSync } = (window as any).require?.('child_process') || {};
-      if (execSync) {
-        execSync('powershell -Command "(New-Object -ComObject WScript.Shell).SendKeys([char]173)"', { stdio: 'ignore' });
-      }
-    } catch {}
-    return { handled: true, response: 'System muted.' };
-  }
-
-  if (/\bunmute\b/i.test(lower)) {
-    try {
-      const { execSync } = (window as any).require?.('child_process') || {};
-      if (execSync) {
-        execSync('powershell -Command "(New-Object -ComObject WScript.Shell).SendKeys([char]173)"', { stdio: 'ignore' });
-      }
-    } catch {}
-    return { handled: true, response: 'System unmuted.' };
-  }
-
-  // "volume up", "volume down"
-  if (/\bvolume\s*(up|louder|increase|raise)\b/i.test(lower)) {
-    try {
-      const { execSync } = (window as any).require?.('child_process') || {};
-      if (execSync) {
-        for (let i = 0; i < 5; i++) {
-          execSync('powershell -Command "(New-Object -ComObject WScript.Shell).SendKeys([char]175)"', { stdio: 'ignore' });
-        }
-      }
-    } catch {}
-    return { handled: true, response: 'Turning the volume up.' };
-  }
-
-  if (/\bvolume\s*(down|lower|decrease|quieter|softer)\b/i.test(lower)) {
-    try {
-      const { execSync } = (window as any).require?.('child_process') || {};
-      if (execSync) {
-        for (let i = 0; i < 5; i++) {
-          execSync('powershell -Command "(New-Object -ComObject WScript.Shell).SendKeys([char]174)"', { stdio: 'ignore' });
-        }
-      }
-    } catch {}
-    return { handled: true, response: 'Turning the volume down.' };
-  }
-
+  // Volume control is now handled by Spotify API commands in appCommands.ts
+  // System volume manipulation via PowerShell has been removed to avoid AV flags
   return { handled: false };
 }
 

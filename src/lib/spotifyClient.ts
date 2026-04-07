@@ -348,3 +348,39 @@ export async function spotifyNowPlaying(): Promise<{ success: boolean; message: 
     return { success: false, message: 'Could not reach Spotify.' };
   }
 }
+
+/** Toggle shuffle on/off */
+export async function spotifyShuffle(state?: boolean): Promise<{ success: boolean; message: string }> {
+  const token = await getAccessToken();
+  if (!token) return { success: false, message: 'Spotify is not connected.' };
+
+  try {
+    // If no explicit state, get current and toggle
+    let newState = state;
+    if (newState === undefined) {
+      const res = await fetch('https://api.spotify.com/v1/me/player', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        newState = !data.shuffle_state;
+      } else {
+        newState = true;
+      }
+    }
+
+    const res = await fetch(
+      `https://api.spotify.com/v1/me/player/shuffle?state=${newState}`,
+      { method: 'PUT', headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (res.ok || res.status === 204) {
+      return { success: true, message: newState ? 'Shuffle is now on.' : 'Shuffle is now off.' };
+    }
+    if (res.status === 403 || res.status === 404) {
+      return { success: false, message: 'No active Spotify device found. Open Spotify first.' };
+    }
+    return { success: false, message: 'Could not change shuffle mode.' };
+  } catch {
+    return { success: false, message: 'Could not reach Spotify.' };
+  }
+}

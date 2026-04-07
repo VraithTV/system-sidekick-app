@@ -14,6 +14,7 @@ import {
   spotifyPrevious,
   spotifySetVolume,
   spotifyNowPlaying,
+  spotifyShuffle,
 } from '@/lib/spotifyClient';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -191,6 +192,21 @@ function handleSpotifyCommand(text: string): AppCommandResult {
       return { handled: true, response: 'Going to previous track.' };
     }
     return { handled: true, response: 'Going back.' };
+  }
+
+  // Shuffle: "shuffle my playlist", "turn on shuffle", "shuffle mode"
+  if (/\b(shuffle|shuffl)\b/i.test(lower)) {
+    if (hasSpotifyAPI) {
+      const wantOn = /\b(on|enable|start|activate)\b/i.test(lower);
+      const wantOff = /\b(off|disable|stop|deactivate)\b/i.test(lower);
+      const explicit = wantOn ? true : wantOff ? false : undefined;
+      return {
+        handled: true,
+        async: true,
+        asyncResponse: spotifyShuffle(explicit).then((r) => r.message),
+      };
+    }
+    return { handled: true, response: 'Connect Spotify in Settings to use shuffle.' };
   }
 
   // Volume control: "set volume to 50%", "volume 80", "turn it up/down"

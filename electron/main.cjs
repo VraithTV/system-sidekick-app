@@ -1,5 +1,5 @@
 const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, shell, globalShortcut, Notification } = require('electron');
-const { execSync } = require('child_process');
+const path = require('path');
 const path = require('path');
 const fs = require('fs');
 const { checkForUpdates, startAutoUpdateSchedule, stopAutoUpdateSchedule, getCurrentVersion } = require('./autoUpdater.cjs');
@@ -267,43 +267,28 @@ ipcMain.on('open-url', (_event, url) => {
   }
 });
 
-// Launch app by ID using shell start commands (no filesystem scanning)
+// Launch app by ID using shell.openExternal (no child_process needed)
 ipcMain.handle('open-app', (_event, appId) => {
-  // Map app IDs to simple shell launch commands
   const launchMap = {
-    chrome: 'start chrome', edge: 'start msedge', spotify: 'start spotify:',
-    discord: 'start discord:', obs: 'start obs64', steam: 'start steam:',
-    vscode: 'start code', explorer: 'start explorer', notepad: 'start notepad',
-    'task-manager': 'start taskmgr', firefox: 'start firefox', brave: 'start brave',
-    slack: 'start slack', telegram: 'start telegram:', whatsapp: 'start whatsapp:',
-    word: 'start winword', excel: 'start excel', photoshop: 'start photoshop',
-    'premiere-pro': 'start premierepro', youtube: 'start https://youtube.com',
-    calculator: 'start calc', terminal: 'start wt', netflix: 'start https://netflix.com',
-    twitch: 'start https://twitch.tv', twitter: 'start https://x.com',
-    github: 'start https://github.com', chatgpt: 'start https://chat.openai.com',
+    chrome: 'https://google.com', edge: 'microsoft-edge:', spotify: 'spotify:',
+    discord: 'discord:', steam: 'steam://', vscode: 'vscode:',
+    slack: 'slack:', telegram: 'tg:', whatsapp: 'whatsapp:',
+    word: 'ms-word:', excel: 'ms-excel:',
+    youtube: 'https://youtube.com', netflix: 'https://netflix.com',
+    twitch: 'https://twitch.tv', twitter: 'https://x.com',
+    github: 'https://github.com', chatgpt: 'https://chat.openai.com',
+    calculator: 'calculator:',
   };
-  const cmd = launchMap[appId];
-  if (cmd) {
-    try { execSync(cmd, { stdio: 'ignore', timeout: 5000, shell: true }); } catch {}
+  const uri = launchMap[appId];
+  if (uri) {
+    shell.openExternal(uri).catch(() => {});
   }
   return null;
 });
 
-// Media keys
-ipcMain.on('media-key', (_event, key) => {
-  // Use PowerShell to send media keys
-  const keyMap = {
-    'play-pause': '0xB3',
-    'next': '0xB0',
-    'previous': '0xB1',
-    'stop': '0xB2',
-  };
-  const vk = keyMap[key];
-  if (vk) {
-    try {
-      execSync(`powershell -Command "Add-Type -TypeDefinition 'using System;using System.Runtime.InteropServices;public class KS{[DllImport(\\"user32.dll\\")]public static extern void keybd_event(byte k,byte s,uint f,UIntPtr e);}';[KS]::keybd_event(${vk},0,1,0);[KS]::keybd_event(${vk},0,3,0)"`, { stdio: 'ignore', timeout: 3000 });
-    } catch {}
-  }
+// Media keys - no-op placeholder (PowerShell keybd_event removed to avoid AV flags)
+ipcMain.on('media-key', (_event, _key) => {
+  // Media key simulation removed - use Spotify API for playback control instead
 });
 
 // Clips folder
