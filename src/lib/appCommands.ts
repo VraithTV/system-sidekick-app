@@ -10,6 +10,7 @@ import {
   spotifyResume,
   spotifyNext,
   spotifyPrevious,
+  spotifySetVolume,
 } from '@/lib/spotifyClient';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -173,6 +174,51 @@ function handleSpotifyCommand(text: string): AppCommandResult {
       return { handled: true, response: 'Going to previous track.' };
     }
     return { handled: true, response: 'Going back.' };
+  }
+
+  // Volume control: "set volume to 50%", "volume 80", "turn it up/down"
+  const volMatch = lower.match(/(?:set\s+)?(?:spotify\s+)?volume\s+(?:to\s+)?(\d+)\s*%?/i);
+  if (volMatch) {
+    const vol = parseInt(volMatch[1], 10);
+    if (hasSpotifyAPI) {
+      return {
+        handled: true,
+        async: true,
+        asyncResponse: spotifySetVolume(vol).then((r) => r.message),
+      };
+    }
+    return { handled: true, response: `I need Spotify connected to change volume. Connect it in Settings.` };
+  }
+
+  // "turn it up" / "turn it down" / "louder" / "quieter"
+  if (/\b(turn\s*(it\s*)?(up|down)|louder|quieter|lower\s*the\s*volume|raise\s*the\s*volume)\b/i.test(lower)) {
+    if (hasSpotifyAPI) {
+      const isUp = /\b(up|louder|raise)\b/i.test(lower);
+      return {
+        handled: true,
+        async: true,
+        asyncResponse: (async () => {
+          // Get current volume, adjust by 20%
+          const token = localStorage.getItem('jarvis_spotify_tokens');
+          let currentVol = 50;
+          try {
+            const tokens = token ? JSON.parse(token) : null;
+            if (tokens?.access_token) {
+              const res = await fetch('https://api.spotify.com/v1/me/player', {
+                headers: { Authorization: `Bearer ${tokens.access_token}` },
+              });
+              if (res.ok) {
+                const data = await res.json();
+                currentVol = data?.device?.volume_percent ?? 50;
+              }
+            }
+          } catch {}
+          const newVol = isUp ? Math.min(100, currentVol + 20) : Math.max(0, currentVol - 20);
+          return (await spotifySetVolume(newVol)).message;
+        })(),
+      };
+    }
+    return { handled: true, response: `I need Spotify connected to change volume.` };
   }
 
   return { handled: false };

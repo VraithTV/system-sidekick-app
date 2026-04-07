@@ -244,3 +244,24 @@ export async function spotifyPrevious(): Promise<{ success: boolean; message: st
     return { success: false, message: 'Could not reach Spotify.' };
   }
 }
+
+/** Set playback volume (0-100) */
+export async function spotifySetVolume(percent: number): Promise<{ success: boolean; message: string }> {
+  const token = await getAccessToken();
+  if (!token) return { success: false, message: 'Spotify is not connected.' };
+
+  const vol = Math.max(0, Math.min(100, Math.round(percent)));
+  try {
+    const res = await fetch(
+      `https://api.spotify.com/v1/me/player/volume?volume_percent=${vol}`,
+      { method: 'PUT', headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (res.ok || res.status === 204) return { success: true, message: `Volume set to ${vol}%.` };
+    if (res.status === 403 || res.status === 404) {
+      return { success: false, message: 'No active Spotify device found. Open Spotify first.' };
+    }
+    return { success: false, message: 'Could not change volume.' };
+  } catch {
+    return { success: false, message: 'Could not reach Spotify.' };
+  }
+}
