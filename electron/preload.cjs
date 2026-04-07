@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // URLs & media
   openUrl: (url) => ipcRenderer.send('open-url', url),
   mediaKey: (key) => ipcRenderer.send('media-key', key),
+  openApp: (appId) => ipcRenderer.invoke('open-app', appId),
 
   // Clips
   clipNow: (duration) => ipcRenderer.send('clip-now', duration),

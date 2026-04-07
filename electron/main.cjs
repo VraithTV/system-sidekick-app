@@ -222,6 +222,28 @@ ipcMain.on('open-url', (_event, url) => {
   }
 });
 
+// Launch app by ID using shell start commands (no filesystem scanning)
+ipcMain.handle('open-app', (_event, appId) => {
+  // Map app IDs to simple shell launch commands
+  const launchMap = {
+    chrome: 'start chrome', edge: 'start msedge', spotify: 'start spotify:',
+    discord: 'start discord:', obs: 'start obs64', steam: 'start steam:',
+    vscode: 'start code', explorer: 'start explorer', notepad: 'start notepad',
+    'task-manager': 'start taskmgr', firefox: 'start firefox', brave: 'start brave',
+    slack: 'start slack', telegram: 'start telegram:', whatsapp: 'start whatsapp:',
+    word: 'start winword', excel: 'start excel', photoshop: 'start photoshop',
+    'premiere-pro': 'start premierepro', youtube: 'start https://youtube.com',
+    calculator: 'start calc', terminal: 'start wt', netflix: 'start https://netflix.com',
+    twitch: 'start https://twitch.tv', twitter: 'start https://x.com',
+    github: 'start https://github.com', chatgpt: 'start https://chat.openai.com',
+  };
+  const cmd = launchMap[appId];
+  if (cmd) {
+    try { execSync(cmd, { stdio: 'ignore', timeout: 5000, shell: true }); } catch {}
+  }
+  return null;
+});
+
 // Media keys
 ipcMain.on('media-key', (_event, key) => {
   // Use PowerShell to send media keys
