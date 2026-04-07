@@ -32,34 +32,27 @@ function sendMediaKey(key: 'play-pause' | 'next' | 'previous' | 'stop') {
 function handleSpotifyCommand(text: string): AppCommandResult {
   const lower = text.toLowerCase();
 
-  // "play [song] on spotify" or "play [song]"
+  // "play [song/artist] on spotify" or just "play [song]"
   const playMatch = lower.match(/(?:play|put on|queue)\s+(.+?)(?:\s+on\s+spotify)?$/i);
   if (playMatch && (lower.includes('spotify') || lower.includes('music') || lower.includes('play'))) {
     const query = playMatch[1]
       .replace(/\s*on\s*spotify\s*/i, '')
       .replace(/\s*for\s*me\s*/i, '')
+      .replace(/\s*please\s*/i, '')
       .trim();
 
     if (query && query !== 'music' && query !== 'some music' && query !== 'something') {
-      // Open Spotify search URI with the query
-      const spotifyUri = `spotify:search:${encodeURIComponent(query)}`;
-      if (isElectron && (window as any).electronAPI?.openApp) {
-        (window as any).electronAPI.openApp('spotify');
-        // Small delay then send the search
-        setTimeout(() => openUrl(spotifyUri), 1500);
-      } else {
-        openUrl(`https://open.spotify.com/search/${encodeURIComponent(query)}`);
-      }
-      return { handled: true, response: `Searching for "${query}" on Spotify.` };
+      // Use Spotify web URL which opens in the Spotify app if installed
+      const spotifyWebUrl = `https://open.spotify.com/search/${encodeURIComponent(query)}`;
+      openUrl(spotifyWebUrl);
+      return { handled: true, response: `Searching for "${query}" on Spotify now.` };
     }
 
-    // Just "play music" — resume playback
+    // Just "play music" -> resume playback
     if (sendMediaKey('play-pause')) {
       return { handled: true, response: 'Resuming playback.' };
     }
-    if (isElectron && (window as any).electronAPI?.openApp) {
-      (window as any).electronAPI.openApp('spotify');
-    }
+    openUrl('https://open.spotify.com');
     return { handled: true, response: 'Opening Spotify.' };
   }
 
