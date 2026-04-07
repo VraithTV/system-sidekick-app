@@ -1,7 +1,9 @@
 /**
- * Voice command handlers for app control (Spotify, URLs, etc.)
+ * Voice command handlers for app control (Spotify, URLs, desktop apps, etc.)
  * These run in Electron via IPC or fall back to shell commands.
  */
+
+import { commonApps } from '@/lib/commonApps';
 
 import {
   isSpotifyConnected,
@@ -265,6 +267,18 @@ function handleUrlCommand(text: string): AppCommandResult {
       if (target.includes(key)) {
         openUrl(url);
         return { handled: true, response: `Opening ${name} for you.` };
+      }
+    }
+
+    // Try desktop apps via Electron IPC
+    if (isElectron && (window as any).electronAPI?.openApp) {
+      const cleanTarget = target.replace(/\s+and\s+.*/i, '').trim();
+      const matched = commonApps.find((app) =>
+        app.aliases.some((alias) => cleanTarget === alias || cleanTarget.includes(alias))
+      );
+      if (matched) {
+        (window as any).electronAPI.openApp(matched.id);
+        return { handled: true, response: `Opening ${matched.name} for you.` };
       }
     }
 
