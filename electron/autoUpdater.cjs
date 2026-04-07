@@ -78,10 +78,20 @@ async function checkForUpdates(silent = true) {
   const currentVersion = getCurrentVersion();
   console.log(`[AutoUpdater] Current version: ${currentVersion}`);
 
+  if (!UPDATE_CONFIGURED) {
+    if (!silent) {
+      dialog.showMessageBox({
+        type: 'info',
+        title: 'Jarvis AI',
+        message: `You are running Jarvis AI v${currentVersion}.\n\nAutomatic updates will be available once a GitHub releases repository is configured.`,
+      });
+    }
+    return null;
+  }
+
   try {
     const data = await fetchJSON(UPDATE_CHECK_URL);
 
-    // GitHub Releases API format
     const remoteVersion = (data.tag_name || data.version || '').replace(/^v/, '');
     const downloadUrl = data.html_url || data.downloadUrl || '';
 
@@ -90,7 +100,7 @@ async function checkForUpdates(silent = true) {
         dialog.showMessageBox({
           type: 'info',
           title: 'Update Check',
-          message: 'Could not determine the latest version.',
+          message: `Could not determine the latest version.\nYou are running v${currentVersion}.`,
         });
       }
       return null;
