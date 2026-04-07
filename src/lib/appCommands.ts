@@ -3,11 +3,23 @@
  * These run in Electron via IPC or fall back to shell commands.
  */
 
+import {
+  isSpotifyConnected,
+  spotifyPlayTrack,
+  spotifyPause,
+  spotifyResume,
+  spotifyNext,
+  spotifyPrevious,
+} from '@/lib/spotifyClient';
+
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 export interface AppCommandResult {
   handled: boolean;
   response?: string;
+  /** If true, the response is a Promise that should be awaited */
+  async?: boolean;
+  asyncResponse?: Promise<string>;
 }
 
 /** Open a URL in the user's default browser */
@@ -31,6 +43,7 @@ function sendMediaKey(key: 'play-pause' | 'next' | 'previous' | 'stop') {
 /** Parse and handle Spotify-specific voice commands */
 function handleSpotifyCommand(text: string): AppCommandResult {
   const lower = text.toLowerCase();
+  const hasSpotifyAPI = isSpotifyConnected();
 
   // "play [song/artist] on spotify" or just "play [song]"
   const playMatch = lower.match(/(?:play|put on|queue)\s+(.+?)(?:\s+on\s+spotify)?$/i);
@@ -42,18 +55,32 @@ function handleSpotifyCommand(text: string): AppCommandResult {
       .trim();
 
     if (query && query !== 'music' && query !== 'some music' && query !== 'something') {
+      if (hasSpotifyAPI) {
+        // Use Spotify Web API for direct playback
+        return {
+          handled: true,
+          async: true,
+          response: `Searching for "${query}" on Spotify...`,
+          asyncResponse: spotifyPlayTrack(query).then((r) => r.message),
+        };
+      }
+      // Fallback: open Spotify URI/web
       if (isElectron) {
-        // In Electron, use spotify: URI to open the desktop app directly
-        const spotifyUri = `spotify:search:${encodeURIComponent(query)}`;
-        openUrl(spotifyUri);
+        openUrl(`spotify:search:${encodeURIComponent(query)}`);
       } else {
-        const spotifyWebUrl = `https://open.spotify.com/search/${encodeURIComponent(query)}`;
-        openUrl(spotifyWebUrl);
+        openUrl(`https://open.spotify.com/search/${encodeURIComponent(query)}`);
       }
       return { handled: true, response: `Searching for "${query}" on Spotify now.` };
     }
 
     // Just "play music" -> resume playback
+    if (hasSpotifyAPI) {
+      return {
+        handled: true,
+        async: true,
+        asyncResponse: spotifyResume().then((r) => r.message),
+      };
+    }
     if (sendMediaKey('play-pause')) {
       return { handled: true, response: 'Resuming playback.' };
     }
@@ -68,6 +95,13 @@ function handleSpotifyCommand(text: string): AppCommandResult {
   // Pause / stop music
   if (/\b(pause|stop)\b.*\b(music|spotify|song|playback)\b/i.test(lower) ||
       /\b(music|spotify|song|playback)\b.*\b(pause|stop)\b/i.test(lower)) {
+    if (hasSpotifyAPI) {
+      return {
+        handled: true,
+        async: true,
+        asyncResponse: spotifyPause().then((r) => r.message),
+      };
+    }
     if (sendMediaKey('play-pause')) {
       return { handled: true, response: 'Pausing playback.' };
     }
@@ -76,7 +110,14 @@ function handleSpotifyCommand(text: string): AppCommandResult {
 
   // Skip / next track
   if (/\b(skip|next)\b.*\b(track|song|music)\b/i.test(lower) ||
-      /\b(next|skip)\b/i.test(lower) && lower.includes('spotify')) {
+      (/\b(next|skip)\b/i.test(lower) && lower.includes('spotify'))) {
+    if (hasSpotifyAPI) {
+      return {
+        handled: true,
+        async: true,
+        asyncResponse: spotifyNext().then((r) => r.message),
+      };
+    }
     if (sendMediaKey('next')) {
       return { handled: true, response: 'Skipping to next track.' };
     }
@@ -85,6 +126,13 @@ function handleSpotifyCommand(text: string): AppCommandResult {
 
   // Previous track
   if (/\b(previous|last|go back)\b.*\b(track|song)\b/i.test(lower)) {
+    if (hasSpotifyAPI) {
+      return {
+        handled: true,
+        async: true,
+        asyncResponse: spotifyPrevious().then((r) => r.message),
+      };
+    }
     if (sendMediaKey('previous')) {
       return { handled: true, response: 'Going to previous track.' };
     }
