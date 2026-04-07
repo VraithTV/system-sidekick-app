@@ -98,28 +98,33 @@ function handleSpotifyCommand(text: string): AppCommandResult {
             // Wait a moment for Spotify to start before searching
             await wait(2000);
             // Try to play
+            console.log('[Spotify] Attempting to play:', query);
             let result = await spotifyPlayTrack(query);
+            console.log('[Spotify] First attempt result:', result);
             if (result.success) return result.message;
             // If no device found, wait longer for Spotify to fully start
             if (result.message.includes('No active') || result.message.includes('device') || result.message.includes('Could not search')) {
+              console.log('[Spotify] No device found, retrying...');
               await wait(4000);
               result = await spotifyPlayTrack(query);
+              console.log('[Spotify] Second attempt result:', result);
               if (result.success) return result.message;
               // Final retry
               await wait(5000);
               result = await spotifyPlayTrack(query);
+              console.log('[Spotify] Third attempt result:', result);
             }
             return result.message;
           })(),
         };
       }
-      // Fallback: open Spotify URI/web
+      // Fallback: open Spotify URI/web and tell user to connect for full control
       if (isElectron) {
         openUrl(`spotify:search:${encodeURIComponent(query)}`);
       } else {
         openUrl(`https://open.spotify.com/search/${encodeURIComponent(query)}`);
       }
-      return { handled: true, response: `Searching for "${query}" on Spotify now.` };
+      return { handled: true, response: `Opening "${query}" in Spotify. Connect Spotify in Settings for hands-free playback.` };
     }
 
     // Just "play music" -> launch app and resume playback
