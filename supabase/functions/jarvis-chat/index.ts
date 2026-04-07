@@ -6,13 +6,28 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function getModePrompt(mode: string): string {
+  switch (mode) {
+    case 'task':
+      return '\n\nYou are in TASK MODE. The user has given you a goal. Break it into steps, track progress, and confirm each step. Be structured and action-oriented. Use numbered lists.';
+    case 'private':
+      return '\n\nYou are in PRIVATE MODE. Do not reference any stored memories. Respond helpfully but treat every message as a fresh conversation.';
+    case 'action':
+      return '\n\nYou are in ACTION MODE. Be extremely brief. No small talk. Just confirm what you did in under 10 words. Execute commands instantly.';
+    case 'animation':
+      return '\n\nYou are in ANIMATION MODE. Be dramatic, expressive, and theatrical like a movie AI. Use vivid language, dramatic pauses (with "..."), and add personality. Channel your inner Jarvis from Iron Man.';
+    default:
+      return '';
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { message, memories, timezone } = await req.json();
+    const { message, memories, timezone, mode } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -35,9 +50,11 @@ serve(async (req) => {
       dateTimeStr = now.toUTCString();
     }
 
-    const memoriesSection = memories && memories.length > 0
+    const memoriesSection = memories && memories.length > 0 && mode !== 'private'
       ? `\n\nYou remember these facts about the user:\n${memories}\n\nUse these facts naturally in conversation. For example, greet them by name if you know it.`
       : '';
+
+    const modeAddition = getModePrompt(mode || 'assistant');
 
     const systemPrompt = `You are Jarvis, an AI desktop assistant inspired by Iron Man's Jarvis. You are:
 - Polite, efficient, calm, professional, and slightly witty
@@ -60,7 +77,7 @@ You can control these things on the user's PC:
 When the user asks you to do something, respond as if you're doing it. Be confident and direct.
 
 The current date and time is: ${dateTimeStr} (${tz}).
-${memoriesSection}
+${memoriesSection}${modeAddition}
 
 IMPORTANT: After your reply, if the user revealed any new personal facts about themselves (name, age, preferences, location, job, hobbies, etc.), output them on a new line starting with "MEMORY:" followed by a JSON array of short fact strings. Only include genuinely new facts. If no new facts, don't include a MEMORY line.
 
