@@ -1,9 +1,11 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { Minus, Plus, Play, X, RefreshCw } from 'lucide-react';
+import { Minus, Plus, Play, X, RefreshCw, Download } from 'lucide-react';
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useState } from 'react';
+
+const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <p className="font-display text-[10px] tracking-[0.2em] text-primary/60 uppercase mb-4">{children}</p>
