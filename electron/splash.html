@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jarvis AI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0e1117;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      -webkit-app-region: drag;
+    }
+
+    .orb-container {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin-bottom: 32px;
+    }
+
+    .orb {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #38bdf8, #0ea5e9, #0369a1, #0c4a6e);
+      box-shadow:
+        0 0 40px rgba(14, 165, 233, 0.4),
+        0 0 80px rgba(14, 165, 233, 0.2),
+        inset 0 0 30px rgba(56, 189, 248, 0.3);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .orb-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 1px solid rgba(14, 165, 233, 0.2);
+      animation: ring-pulse 2s ease-in-out infinite 0.5s;
+    }
+
+    .orb-ring-2 {
+      width: 160px;
+      height: 160px;
+      animation-delay: 1s;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+
+    @keyframes ring-pulse {
+      0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.05); }
+    }
+
+    .title {
+      font-size: 18px;
+      letter-spacing: 0.3em;
+      color: #0ea5e9;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: rgba(148, 163, 184, 0.6);
+      text-transform: uppercase;
+    }
+
+    .loading-bar {
+      margin-top: 32px;
+      width: 200px;
+      height: 2px;
+      background: rgba(14, 165, 233, 0.1);
+      border-radius: 1px;
+      overflow: hidden;
+    }
+
+    .loading-bar-fill {
+      height: 100%;
+      width: 30%;
+      background: linear-gradient(90deg, transparent, #0ea5e9, transparent);
+      border-radius: 1px;
+      animation: loading 1.5s ease-in-out infinite;
+    }
+
+    @keyframes loading {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(400%); }
+    }
+
+    .version {
+      position: fixed;
+      bottom: 12px;
+      right: 16px;
+      font-size: 10px;
+      color: rgba(148, 163, 184, 0.3);
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+  <div class="orb-container">
+    <div class="orb"></div>
+    <div class="orb-ring"></div>
+    <div class="orb-ring orb-ring-2"></div>
+  </div>
+  <div class="title">Jarvis AI</div>
+  <div class="subtitle">Initializing Systems</div>
+  <div class="loading-bar">
+    <div class="loading-bar-fill"></div>
+  </div>
+  <div class="version">BETA</div>
+</body>
+</html>
