@@ -147,6 +147,17 @@ function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string):
   });
 }
 
+// Keep a rolling conversation history for context
+const conversationHistory: { role: 'user' | 'assistant'; content: string }[] = [];
+const MAX_HISTORY = 10;
+
+function addToHistory(role: 'user' | 'assistant', content: string) {
+  conversationHistory.push({ role, content });
+  if (conversationHistory.length > MAX_HISTORY) {
+    conversationHistory.splice(0, conversationHistory.length - MAX_HISTORY);
+  }
+}
+
 async function getAIResponse(text: string, mode?: string): Promise<string> {
   try {
     const memories = mode === 'private' ? '' : formatMemoriesForPrompt();
@@ -157,13 +168,13 @@ async function getAIResponse(text: string, mode?: string): Promise<string> {
 
     try {
       const result = await supabase.functions.invoke('jarvis-chat', {
-        body: { message: text, memories, timezone, mode: mode || 'assistant' },
+        body: { message: text, memories, timezone, mode: mode || 'assistant', conversationHistory },
       });
       data = result.data;
       error = result.error;
     } catch (networkErr) {
-      console.warn('[Jarvis] Network error calling AI — you may be offline or behind a VPN:', networkErr);
-      return "I can't reach the server right now. Check your internet connection or VPN and try again.";
+      console.warn('[Jarvis] Network error calling AI:', networkErr);
+      return "I can't reach the server right now. Check your internet connection and try again.";
     }
 
     if (error) throw error;
