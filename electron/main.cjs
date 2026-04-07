@@ -334,6 +334,36 @@ ipcMain.on('clip-now', (_event, duration) => {
 // Get clips folder path
 ipcMain.handle('get-clips-folder', () => CLIPS_FOLDER);
 
+// Spotify OAuth popup flow
+ipcMain.handle('spotify-auth-flow', (_event, authUrl) => {
+  return new Promise((resolve) => {
+    const authWin = new BrowserWindow({
+      width: 500, height: 700,
+      parent: mainWindow,
+      modal: true,
+      webPreferences: { contextIsolation: true, nodeIntegration: false },
+    });
+    authWin.loadURL(authUrl);
+
+    // Intercept the redirect back to 127.0.0.1:8080
+    authWin.webContents.on('will-redirect', (_e, url) => {
+      if (url.startsWith('http://127.0.0.1:8080')) {
+        const code = new URL(url).searchParams.get('code');
+        authWin.close();
+        resolve({ code });
+      }
+    });
+    authWin.webContents.on('will-navigate', (_e, url) => {
+      if (url.startsWith('http://127.0.0.1:8080')) {
+        const code = new URL(url).searchParams.get('code');
+        authWin.close();
+        resolve({ code });
+      }
+    });
+    authWin.on('closed', () => resolve({ code: null }));
+  });
+});
+
 // Auto-updater
 ipcMain.handle('check-for-updates', () => checkForUpdates(false));
 ipcMain.handle('get-app-version', () => getCurrentVersion());
