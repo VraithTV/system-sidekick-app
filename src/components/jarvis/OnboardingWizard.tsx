@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { WindowControls } from './WindowControls';
 import { JarvisLogo } from './JarvisLogo';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useJarvisStore } from '@/store/jarvisStore';
