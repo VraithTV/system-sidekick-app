@@ -247,11 +247,11 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
 
       if (appResult.handled) {
         response = appResult.response || 'Done.';
-        // Also try to launch the app if needed
         tryLaunchApp(cleanedText);
       } else {
+        addToHistory('user', cleanedText);
         response = await getAIResponse(cleanedText, mode);
-        // Try to launch the app if the user asked to open one
+        addToHistory('assistant', response);
         tryLaunchApp(cleanedText);
       }
 
