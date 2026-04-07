@@ -82,12 +82,12 @@ export async function startUtteranceCapture(
     await finish(null);
   };
 
-  recorder.start(250);
+  recorder.start(100);
 
   const startedAt = performance.now();
-  const maxDurationMs = options.maxDurationMs ?? 9000;
-  const silenceDurationMs = options.silenceDurationMs ?? 1200;
-  const levelThreshold = options.levelThreshold ?? 10;
+  const maxDurationMs = options.maxDurationMs ?? 8000;
+  const silenceDurationMs = options.silenceDurationMs ?? 700;
+  const levelThreshold = options.levelThreshold ?? 8;
   let heardSpeech = false;
   let silenceStartedAt = 0;
 
