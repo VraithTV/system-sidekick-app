@@ -85,7 +85,11 @@ function handleSpotifyCommand(text: string): AppCommandResult {
       .replace(/\s*on\s*spotify\s*/i, '')
       .replace(/\s*for\s*me\s*/i, '')
       .replace(/\s*please\s*/i, '')
+      .replace(/\[blank_audio\]/gi, '')
+      .replace(/^i\s+i\s+/i, 'i ')
+      .replace(/^["'""`]+|["'""`]+$/g, '')
       .replace(/[.!?]+$/, '')
+      .replace(/\s+/g, ' ')
       .trim();
 
     if (query && query !== 'music' && query !== 'some music' && query !== 'something') {

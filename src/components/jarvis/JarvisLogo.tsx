@@ -1,4 +1,4 @@
-import jarvisLogo from '@/assets/jarvis-logo.png';
+import jarvisLogo from '@/assets/jarvis-app-icon.png';
 
 type JarvisLogoProps = {
   size?: number;
