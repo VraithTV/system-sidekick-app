@@ -1,7 +1,6 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Activity, Palette, Layers } from 'lucide-react';
+import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Activity, Palette } from 'lucide-react';
 import { JarvisLogo } from './JarvisLogo';
-import { modes } from '@/lib/modes';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -14,7 +13,7 @@ const navItems = [
 ];
 
 export const Sidebar = () => {
-  const { activeView, setActiveView, systemStatus, mode, setMode } = useJarvisStore();
+  const { activeView, setActiveView, systemStatus } = useJarvisStore();
 
   return (
     <aside className="w-52 h-screen bg-card border-r border-border flex flex-col shrink-0 select-none">
@@ -25,25 +24,8 @@ export const Sidebar = () => {
         </div>
         <div>
           <p className="font-display text-[10px] tracking-[0.15em] text-foreground/70">JARVIS</p>
-          <p className="font-mono text-[8px] text-muted-foreground/40 tracking-wider">v1.0</p>
+          <p className="font-mono text-[8px] text-muted-foreground/40 tracking-wider">v1.0 BETA</p>
         </div>
-      </div>
-
-      {/* Mode selector */}
-      <div className="px-2 pb-1">
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 mb-1">
-          <Layers className="h-3 w-3 text-muted-foreground/50" />
-          <span className="text-[9px] font-mono tracking-[0.15em] text-muted-foreground/50 uppercase">Mode</span>
-        </div>
-        <select
-          value={mode}
-          onChange={(e) => setMode(e.target.value as any)}
-          className="w-full bg-muted text-[11px] text-foreground/80 px-2.5 py-1.5 rounded-lg border border-border font-mono outline-none focus:border-primary/50 transition-colors"
-        >
-          {modes.map((m) => (
-            <option key={m.id} value={m.id}>{m.icon} {m.label}</option>
-          ))}
-        </select>
       </div>
 
       {/* Nav items */}
