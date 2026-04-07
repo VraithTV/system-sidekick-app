@@ -39,7 +39,9 @@ app.setLoginItemSettings({
 });
 
 let mainWindow = null;
+let splashWindow = null;
 let tray = null;
+let forceQuit = false;
 let forceQuit = false;
 
 // Ensure Jarvis clips folder exists
@@ -93,6 +95,23 @@ function createTray() {
   tray.on('double-click', showMainWindow);
 }
 
+function createSplashWindow() {
+  const iconExt = process.platform === 'win32' ? 'jarvis-icon.ico' : 'jarvis-icon.png';
+  const iconPath = path.join(__dirname, '..', 'public', iconExt);
+  const icon = nativeImage.createFromPath(iconPath);
+
+  splashWindow = new BrowserWindow({
+    width: 400, height: 350,
+    frame: false, transparent: true, resizable: false,
+    alwaysOnTop: true, icon,
+    skipTaskbar: true,
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  });
+
+  splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+  splashWindow.center();
+}
+
 function createWindow() {
   const iconExt = process.platform === 'win32' ? 'jarvis-icon.ico' : 'jarvis-icon.png';
   const iconPath = path.join(__dirname, '..', 'public', iconExt);
@@ -102,6 +121,7 @@ function createWindow() {
     width: 1280, height: 860, minWidth: 900, minHeight: 600,
     frame: false, titleBarStyle: 'hidden', icon,
     title: 'Jarvis AI BETA', backgroundColor: '#0e1117',
+    show: false, // Don't show until ready
     webPreferences: {
       contextIsolation: true, nodeIntegration: false,
       devTools: !app.isPackaged,
@@ -128,6 +148,20 @@ function createWindow() {
       mainWindow.loadFile(distPath);
     }
   }
+
+  // When the main window is ready, close splash and show main
+  mainWindow.webContents.on('did-finish-load', () => {
+    setTimeout(() => {
+      if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.close();
+        splashWindow = null;
+      }
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }, 1500); // Brief delay so splash feels intentional
+  });
 
   mainWindow.on('maximize', () => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -300,6 +334,7 @@ ipcMain.handle('get-app-version', () => getCurrentVersion());
 app.on('before-quit', () => { forceQuit = true; });
 
 app.whenReady().then(() => {
+  createSplashWindow();
   createTray();
   createWindow();
   registerShortcuts();
