@@ -20,7 +20,7 @@
   },
   "build": {
     "appId": "com.jarvis.ai",
-    "productName": "Jarvis AI BETA 1.2.0",
+    "productName": "Jarvis AI BETA",
     "icon": "public/jarvis-icon.ico",
     "files": [
       "dist/**/*",
