@@ -9,7 +9,7 @@ import spotifyLogo from '@/assets/spotify-logo.png';
 import { UpdatePrompt } from '@/components/jarvis/UpdatePrompt';
 import { UpdateProgressScreen } from '@/components/jarvis/UpdateProgressScreen';
 import { isOllamaAvailable, listOllamaModels, resetOllamaStatus, getOllamaModel } from '@/lib/ollamaClient';
-import { languages } from '@/lib/languages';
+import { languages, getFlagUrl } from '@/lib/languages';
 import { createT } from '@/lib/i18n';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -437,7 +437,7 @@ export const SettingsView = () => {
                         : 'hover:bg-muted border border-transparent'
                     }`}
                   >
-                    <span className="text-lg shrink-0">{lang.flag}</span>
+                    <img src={getFlagUrl(lang.countryCode)} alt={lang.label} className="w-6 h-[18px] rounded-sm object-cover shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] text-foreground/85">{lang.label}</p>
                       <p className="text-[10px] text-muted-foreground font-mono">{lang.nativeLabel}</p>
