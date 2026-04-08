@@ -53,9 +53,10 @@ export const SettingsView = () => {
   const { inputs, outputs, refresh: refreshDevices } = useAudioDevices();
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [spotifyConnected, setSpotifyConnected] = useState(isSpotifyConnected());
-  const [updateState, setUpdateState] = useState<'idle' | 'checking' | 'prompt' | 'updating' | 'no-update' | 'error'>('idle');
+  const [updateState, setUpdateState] = useState<'idle' | 'checking' | 'prompt' | 'downloading' | 'updating' | 'no-update' | 'error'>('idle');
   const [updateVersion, setUpdateVersion] = useState('');
   const [updateUrl, setUpdateUrl] = useState('');
+  const [updateAssetName, setUpdateAssetName] = useState('');
   const [updateError, setUpdateError] = useState('');
   const [currentVersion, setCurrentVersion] = useState('0.0.0');
 
@@ -77,6 +78,7 @@ export const SettingsView = () => {
       if (result?.status === 'available' && result.remoteVersion && result.remoteVersion !== currentVersion) {
         setUpdateVersion(result.remoteVersion);
         setUpdateUrl(result.downloadUrl || '');
+        setUpdateAssetName(result.assetName || '');
         setUpdateState('prompt');
         return;
       }
@@ -97,15 +99,32 @@ export const SettingsView = () => {
     }
   };
 
-  const handleUpdateComplete = useCallback(() => {
-    setUpdateState('idle');
-    // In a real scenario this would relaunch. For now just close the overlay.
-    if (isElectron) {
-      (window as any).electronAPI?.openUrl?.(
-        updateUrl || 'https://github.com/VraithTV/system-sidekick-app/releases/latest'
-      );
+  const handleUpdateNow = useCallback(async () => {
+    setUpdateState('updating');
+    if (!isElectron || !updateUrl) return;
+    try {
+      const result = await (window as any).electronAPI?.downloadUpdate?.(updateUrl, updateAssetName);
+      if (result?.status === 'downloaded' && result.filePath) {
+        // Install and restart
+        await (window as any).electronAPI?.installUpdate?.(result.filePath);
+      } else {
+        setUpdateError(result?.message || 'Download failed.');
+        setUpdateState('error');
+        setTimeout(() => setUpdateState('idle'), 4000);
+      }
+    } catch {
+      setUpdateError('Download failed. Please try again.');
+      setUpdateState('error');
+      setTimeout(() => setUpdateState('idle'), 4000);
     }
-  }, [updateUrl]);
+  }, [updateUrl, updateAssetName]);
+
+  const handleUpdateLater = useCallback(() => {
+    if (isElectron && updateVersion) {
+      (window as any).electronAPI?.dismissUpdate?.(updateVersion);
+    }
+    setUpdateState('idle');
+  }, [updateVersion]);
 
   // Listen for Spotify OAuth callback
   useEffect(() => {
@@ -433,14 +452,14 @@ export const SettingsView = () => {
         currentVersion={currentVersion}
         newVersion={updateVersion}
         onDismiss={() => setUpdateState('idle')}
-        onUpdateNow={() => setUpdateState('updating')}
-        onUpdateLater={() => setUpdateState('idle')}
+        onUpdateNow={handleUpdateNow}
+        onUpdateLater={handleUpdateLater}
       />
 
       <UpdateProgressScreen
         open={updateState === 'updating'}
         newVersion={updateVersion}
-        onComplete={handleUpdateComplete}
+        onComplete={() => {}}
       />
     </div>
   );

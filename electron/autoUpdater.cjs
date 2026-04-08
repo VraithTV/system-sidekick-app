@@ -1,14 +1,12 @@
 const { net, shell, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { spawn } = require('child_process');
 
 // ─── Configuration ───────────────────────────────────────────
-// Point this to your GitHub repo's releases API.
-// Once you have a GitHub repo, replace YOUR_USERNAME/YOUR_REPO below.
-// The endpoint should return JSON with: { tag_name: "v1.0.0", html_url: "https://..." }
 const UPDATE_CHECK_URL = 'https://api.github.com/repos/VraithTV/system-sidekick-app/releases/latest';
 const UPDATE_CONFIGURED = !UPDATE_CHECK_URL.includes('YOUR_USERNAME');
-const CHECK_INTERVAL_MS = 60 * 60 * 1000; // Check every hour
+const CHECK_INTERVAL_MS = 60 * 60 * 1000;
 const DISMISSED_FILE = path.join(app.getPath('userData'), '.update-dismissed');
 
 let checkTimer = null;
@@ -60,6 +58,13 @@ function fetchJSON(url) {
     let body = '';
 
     request.on('response', (response) => {
+      // Follow redirects manually for net.request
+      if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+        const redirectUrl = Array.isArray(response.headers.location) ? response.headers.location[0] : response.headers.location;
+        fetchJSON(redirectUrl).then(resolve).catch(reject);
+        return;
+      }
+
       response.on('data', (chunk) => { body += chunk.toString(); });
       response.on('end', () => {
         let parsed = null;
@@ -87,6 +92,17 @@ function fetchJSON(url) {
   });
 }
 
+function findInstallerAsset(assets) {
+  if (!assets || !Array.isArray(assets)) return null;
+  // Prefer .exe installer, then .zip for Windows
+  const exeAsset = assets.find(a => a.name && a.name.endsWith('.exe'));
+  if (exeAsset) return exeAsset;
+  const zipAsset = assets.find(a => a.name && (a.name.endsWith('.zip') && a.name.toLowerCase().includes('win')));
+  if (zipAsset) return zipAsset;
+  // Fallback: first asset
+  return assets[0] || null;
+}
+
 async function checkForUpdates(silent = true) {
   const currentVersion = getCurrentVersion();
   console.log(`[AutoUpdater] Current version: ${currentVersion}`);
@@ -99,7 +115,10 @@ async function checkForUpdates(silent = true) {
     const data = await fetchJSON(UPDATE_CHECK_URL);
 
     const remoteVersion = (data.tag_name || data.version || '').replace(/^v/, '');
-    const downloadUrl = data.html_url || data.assets?.[0]?.browser_download_url || data.downloadUrl || '';
+    const asset = findInstallerAsset(data.assets);
+    const assetDownloadUrl = asset?.browser_download_url || '';
+    const assetName = asset?.name || '';
+    const releasePageUrl = data.html_url || '';
 
     if (!remoteVersion) {
       return { status: 'error', currentVersion, message: 'Could not determine the latest version.' };
@@ -110,21 +129,25 @@ async function checkForUpdates(silent = true) {
       return { status: 'up-to-date', currentVersion, remoteVersion };
     }
 
-    // Skip if user already dismissed this version (only for silent background checks)
     if (silent && wasDismissed(remoteVersion)) {
       console.log(`[AutoUpdater] Version ${remoteVersion} was dismissed.`);
-      return { status: 'dismissed', currentVersion, remoteVersion, downloadUrl };
+      return { status: 'dismissed', currentVersion, remoteVersion };
     }
 
     console.log(`[AutoUpdater] New version available: ${remoteVersion}`);
 
-    // Always return the result to the renderer; let the in-app UI handle prompts
-    return { status: 'available', currentVersion, remoteVersion, downloadUrl };
+    return {
+      status: 'available',
+      currentVersion,
+      remoteVersion,
+      downloadUrl: assetDownloadUrl,
+      assetName,
+      releasePageUrl,
+    };
   } catch (error) {
     const raw = error instanceof Error ? error.message : 'Could not check for updates.';
     console.warn('[AutoUpdater] Check failed:', raw);
 
-    // Provide a user-friendly message
     let message = 'Could not check for updates. Please check your internet connection.';
     if (raw.includes('Not Found') || raw.includes('404')) {
       message = 'No releases found. The GitHub repo may be private or has no releases yet.';
@@ -134,11 +157,99 @@ async function checkForUpdates(silent = true) {
   }
 }
 
-function startAutoUpdateSchedule() {
-  // Initial check after 10 seconds
-  setTimeout(() => checkForUpdates(true), 10_000);
+/**
+ * Download the update asset to a temp file.
+ * Returns the path to the downloaded file.
+ */
+function downloadFile(url, destPath, onProgress) {
+  return new Promise((resolve, reject) => {
+    const request = net.request(url);
+    request.setHeader('User-Agent', 'JarvisAI-Updater');
 
-  // Periodic checks
+    request.on('response', (response) => {
+      // Follow redirects (GitHub uses 302 for asset downloads)
+      if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+        const redirectUrl = Array.isArray(response.headers.location) ? response.headers.location[0] : response.headers.location;
+        downloadFile(redirectUrl, destPath, onProgress).then(resolve).catch(reject);
+        return;
+      }
+
+      if (response.statusCode >= 400) {
+        reject(new Error(`Download failed: HTTP ${response.statusCode}`));
+        return;
+      }
+
+      const contentLength = parseInt(
+        (Array.isArray(response.headers['content-length']) ? response.headers['content-length'][0] : response.headers['content-length']) || '0',
+        10
+      );
+
+      const file = fs.createWriteStream(destPath);
+      let downloaded = 0;
+
+      response.on('data', (chunk) => {
+        file.write(chunk);
+        downloaded += chunk.length;
+        if (contentLength > 0 && onProgress) {
+          onProgress(Math.min(100, Math.round((downloaded / contentLength) * 100)));
+        }
+      });
+
+      response.on('end', () => {
+        file.end(() => resolve(destPath));
+      });
+
+      response.on('error', (err) => {
+        file.close();
+        fs.unlink(destPath, () => {});
+        reject(err);
+      });
+    });
+
+    request.on('error', reject);
+    request.end();
+  });
+}
+
+async function downloadUpdate(downloadUrl, assetName) {
+  if (!downloadUrl) {
+    throw new Error('No download URL provided.');
+  }
+
+  const tempDir = app.getPath('temp');
+  const fileName = assetName || path.basename(new URL(downloadUrl).pathname) || 'jarvis-update.exe';
+  const destPath = path.join(tempDir, fileName);
+
+  console.log(`[AutoUpdater] Downloading update to: ${destPath}`);
+  await downloadFile(downloadUrl, destPath);
+  console.log(`[AutoUpdater] Download complete: ${destPath}`);
+
+  return destPath;
+}
+
+function installAndRestart(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+
+  if (ext === '.exe') {
+    // Launch the installer and quit the current app
+    console.log(`[AutoUpdater] Launching installer: ${filePath}`);
+    const child = spawn(filePath, [], {
+      detached: true,
+      stdio: 'ignore',
+    });
+    child.unref();
+    setTimeout(() => app.quit(), 1000);
+    return true;
+  }
+
+  // For .zip or other files, open the containing folder
+  console.log(`[AutoUpdater] Opening download folder for: ${filePath}`);
+  shell.showItemInFolder(filePath);
+  return false;
+}
+
+function startAutoUpdateSchedule() {
+  setTimeout(() => checkForUpdates(true), 10_000);
   checkTimer = setInterval(() => checkForUpdates(true), CHECK_INTERVAL_MS);
 }
 
@@ -151,6 +262,9 @@ function stopAutoUpdateSchedule() {
 
 module.exports = {
   checkForUpdates,
+  downloadUpdate,
+  installAndRestart,
+  dismissVersion,
   startAutoUpdateSchedule,
   stopAutoUpdateSchedule,
   getCurrentVersion,
