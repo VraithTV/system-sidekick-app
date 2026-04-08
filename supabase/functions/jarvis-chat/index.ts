@@ -27,7 +27,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, memories, timezone, mode, conversationHistory } = await req.json();
+    const { message, memories, timezone, mode, conversationHistory, language } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -55,6 +55,20 @@ serve(async (req) => {
       : '';
 
     const modeAddition = getModePrompt(mode || 'assistant');
+    const langMap: Record<string, string> = {
+      fr: '\n\nIMPORTANT: Respond entirely in French (Français). All text must be in French.',
+      de: '\n\nIMPORTANT: Respond entirely in German (Deutsch). All text must be in German.',
+      es: '\n\nIMPORTANT: Respond entirely in Spanish (Español). All text must be in Spanish.',
+      pt: '\n\nIMPORTANT: Respond entirely in Portuguese (Português). All text must be in Portuguese.',
+      ru: '\n\nIMPORTANT: Respond entirely in Russian (Русский). All text must be in Russian.',
+      ja: '\n\nIMPORTANT: Respond entirely in Japanese (日本語). All text must be in Japanese.',
+      ko: '\n\nIMPORTANT: Respond entirely in Korean (한국어). All text must be in Korean.',
+      zh: '\n\nIMPORTANT: Respond entirely in Mandarin Chinese (中文). All text must be in Chinese.',
+      ar: '\n\nIMPORTANT: Respond entirely in Arabic (العربية). All text must be in Arabic.',
+      hi: '\n\nIMPORTANT: Respond entirely in Hindi (हिन्दी). All text must be in Hindi.',
+      it: '\n\nIMPORTANT: Respond entirely in Italian (Italiano). All text must be in Italian.',
+    };
+    const langAddition = langMap[language || 'en'] || '';
 
     const systemPrompt = `You are Jarvis, an AI desktop assistant inspired by Iron Man's Jarvis. You are:
 - Polite, efficient, calm, professional, and slightly witty
@@ -79,7 +93,7 @@ You can control these things on the user's PC:
 When the user asks you to do something, respond as if you're doing it. Be confident and direct.
 
 The current date and time is: ${dateTimeStr} (${tz}).
-${memoriesSection}${modeAddition}
+${memoriesSection}${modeAddition}${langAddition}
 
 IMPORTANT: After your reply, if the user revealed any new personal facts about themselves (name, age, preferences, location, job, hobbies, etc.), output them on a new line starting with "MEMORY:" followed by a JSON array of short fact strings. Only include genuinely new facts. If no new facts, don't include a MEMORY line.
 

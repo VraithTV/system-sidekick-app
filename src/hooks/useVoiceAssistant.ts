@@ -9,6 +9,7 @@ import { canUseVoice, incrementUsage } from '@/lib/usageLimit';
 import { getModeSystemPromptAddition } from '@/lib/modes';
 import { commonApps } from '@/lib/commonApps';
 import { isOllamaAvailable, chatWithOllama, getOllamaModel } from '@/lib/ollamaClient';
+import { getLanguage } from '@/lib/languages';
 import { toast } from 'sonner';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -144,14 +145,15 @@ function ensureSpeechSynthesisActive() {
   }, 10000);
 }
 
-function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string): Promise<void> {
+function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string, langCode?: string): Promise<void> {
   return new Promise((resolve) => {
     // Cancel any ongoing speech first
     speechSynthesis.cancel();
     ensureSpeechSynthesisActive();
 
+    const lang = langCode || 'en';
     const utterance = new SpeechSynthesisUtterance(text);
-    const allVoices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith('en'));
+    const allVoices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith(lang));
     const prefs = browserVoiceMap[voiceId || 'daniel'] || browserVoiceMap.daniel;
 
     utterance.rate = prefs.rate;
@@ -164,7 +166,7 @@ function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string):
       matched = allVoices.find((v) => v.name.toLowerCase().includes(kw.toLowerCase()));
       if (matched) break;
     }
-    // Fallback: pick any English voice, preferring the right gender keyword
+    // Fallback: pick any voice in the target language, preferring the right gender
     if (!matched) {
       const genderKw = prefs.gender === 'female' ? 'Female' : 'Male';
       matched =
@@ -172,6 +174,11 @@ function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string):
         allVoices.find((v) => v.name.includes('Google')) ||
         allVoices.find((v) => v.name.includes('Microsoft')) ||
         allVoices[0];
+    }
+    // Last resort: any voice at all if no language-specific voice found
+    if (!matched && lang !== 'en') {
+      const anyVoices = speechSynthesis.getVoices();
+      matched = anyVoices.find((v) => v.lang.startsWith(lang)) || anyVoices[0];
     }
     if (matched) utterance.voice = matched;
 
@@ -207,10 +214,11 @@ function addToHistory(role: 'user' | 'assistant', content: string) {
   }
 }
 
-async function getAIResponse(text: string, mode?: string): Promise<string> {
+async function getAIResponse(text: string, mode?: string, language?: string): Promise<string> {
   try {
     const memories = mode === 'private' ? '' : formatMemoriesForPrompt();
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const lang = getLanguage(language || 'en');
 
     // Build the system prompt for Ollama (same one the edge function uses)
     const now = new Date();
@@ -226,11 +234,13 @@ async function getAIResponse(text: string, mode?: string): Promise<string> {
       ? `\n\nYou remember these facts about the user:\n${memories}\nUse these facts naturally in conversation.`
       : '';
 
+    const langInstruction = lang.code !== 'en' ? `\n\n${lang.aiPrompt}` : '';
+
     const systemPrompt = `You are Jarvis, an AI desktop assistant inspired by Iron Man's Jarvis. You are polite, efficient, calm, professional, and slightly witty. You speak in short, clear sentences. Keep responses under 2 sentences for action commands. For questions or conversations, be helpful but concise. Sound sleek and natural.
 
 CRITICAL: You are having a live voice conversation. When the user gives a short reply, treat it as an answer to your last question. Just act on it.
 
-The current date and time is: ${dateTimeStr} (${timezone}).${memoriesSection}
+The current date and time is: ${dateTimeStr} (${timezone}).${memoriesSection}${langInstruction}
 
 IMPORTANT: After your reply, if the user revealed any new personal facts, output them on a new line starting with "MEMORY:" followed by a JSON array of short fact strings. If no new facts, don't include a MEMORY line.`;
 
@@ -257,7 +267,7 @@ IMPORTANT: After your reply, if the user revealed any new personal facts, output
 
     try {
       const result = await supabase.functions.invoke('jarvis-chat', {
-        body: { message: text, memories, timezone, mode: mode || 'assistant', conversationHistory },
+        body: { message: text, memories, timezone, mode: mode || 'assistant', conversationHistory, language: language || 'en' },
       });
       data = result.data;
       error = result.error;
@@ -354,7 +364,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
           tryLaunchApp(cleanedText);
         } else {
           addToHistory('user', cleanedText);
-          response = await getAIResponse(cleanedText, mode);
+          response = await getAIResponse(cleanedText, mode, settings.language);
           addToHistory('assistant', response);
           tryLaunchApp(cleanedText);
         }
@@ -372,7 +382,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      await speakBrowser(response, settings.outputDeviceId || undefined, settings.voice);
+      await speakBrowser(response, settings.outputDeviceId || undefined, settings.voice, settings.language);
 
       // If the response ends with a question mark, stay in conversation mode
       // so the user doesn't need the wake word for their reply
@@ -419,7 +429,8 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
 
           try {
             console.log('[Jarvis] Listening for speech...');
-            const recognition = startSpeechRecognition(settings.inputDeviceId || undefined);
+            const sttLang = getLanguage(settings.language).sttCode;
+            const recognition = startSpeechRecognition(settings.inputDeviceId || undefined, sttLang);
             captureStopRef.current = recognition.stop;
             const transcript = await recognition.promise;
             captureStopRef.current = null;

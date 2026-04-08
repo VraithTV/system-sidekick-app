@@ -25,7 +25,7 @@ class SpeechRecognitionUnavailableError extends Error {
   }
 }
 
-function createBrowserSpeechRecognitionController(): SpeechRecognitionController {
+function createBrowserSpeechRecognitionController(langCode?: string): SpeechRecognitionController {
   let recognition: any;
 
   const promise = new Promise<string>((resolve, reject) => {
@@ -45,7 +45,7 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
     }
 
     recognition = new SpeechRecognitionCtor();
-    recognition.lang = 'en-US';
+    recognition.lang = langCode || 'en-US';
     recognition.interimResults = true;
     recognition.maxAlternatives = 3;
     recognition.continuous = true;
@@ -132,6 +132,7 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
 
 export function startSpeechRecognition(
   _deviceId?: string,
+  langCode?: string,
 ): SpeechRecognitionController {
   let activeController: SpeechRecognitionController | null = null;
   let stopped = false;
@@ -148,7 +149,7 @@ export function startSpeechRecognition(
       `Speech recognition is not available in ${browser}. Try using Chrome or Edge.`
     );
   }
-  const attempts = [{ label: 'browser speech recognition', create: () => createBrowserSpeechRecognitionController() }];
+  const attempts = [{ label: 'browser speech recognition', create: () => createBrowserSpeechRecognitionController(langCode) }];
 
   const promise = (async () => {
     let lastError: unknown = null;
