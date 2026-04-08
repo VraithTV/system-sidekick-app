@@ -421,6 +421,32 @@ export const SettingsView = () => {
               </div>
             </div>
 
+            <div className="bg-card rounded-xl p-6 border border-border">
+              <SectionTitle>Language</SectionTitle>
+              <p className="text-[10px] text-muted-foreground mb-4">Changes voice recognition, speech output, and AI responses.</p>
+              <div className="space-y-1.5 max-h-[280px] overflow-y-auto pr-1">
+                {languages.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => updateSettings({ language: lang.code })}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
+                      (settings.language || 'en') === lang.code
+                        ? 'bg-primary/10 border border-primary/25'
+                        : 'hover:bg-muted border border-transparent'
+                    }`}
+                  >
+                    <span className="text-lg shrink-0">{lang.flag}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] text-foreground/85">{lang.label}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono">{lang.nativeLabel}</p>
+                    </div>
+                    {(settings.language || 'en') === lang.code && (
+                      <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.5)]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="bg-card rounded-xl p-6 border border-border">
               <SectionTitle>Keyboard Shortcuts</SectionTitle>
