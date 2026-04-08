@@ -50,6 +50,7 @@ export interface VoiceOption {
   label: string;
   elevenLabsId: string;
   description: string;
+  category?: 'jarvis' | 'standard';
 }
 
 export interface JarvisSettings {
