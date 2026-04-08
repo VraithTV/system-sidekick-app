@@ -3,11 +3,11 @@ import jarvisIcon from '@/assets/jarvis-icon-square.png';
 type JarvisLogoProps = {
   size?: number;
   className?: string;
-  /** When true, the logo stays its original colour instead of following the accent */
+  /** When false, the logo follows the accent colour */
   static?: boolean;
 };
 
-export const JarvisLogo = ({ size = 32, className, static: isStatic }: JarvisLogoProps) => (
+export const JarvisLogo = ({ size = 32, className, static: isStatic = true }: JarvisLogoProps) => (
   <div
     className={className}
     style={{ width: size, height: size, position: 'relative' }}
