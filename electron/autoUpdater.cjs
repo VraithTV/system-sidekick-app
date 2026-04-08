@@ -1,7 +1,6 @@
 const { net, shell, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { spawn } = require('child_process');
 
 // ─── Configuration ───────────────────────────────────────────
 const UPDATE_CHECK_URL = 'https://api.github.com/repos/VraithTV/system-sidekick-app/releases/latest';
@@ -227,18 +226,21 @@ async function downloadUpdate(downloadUrl, assetName) {
   return destPath;
 }
 
-function installAndRestart(filePath) {
+async function installAndRestart(filePath) {
   const ext = path.extname(filePath).toLowerCase();
 
   if (ext === '.exe') {
-    // Launch the installer and quit the current app
-    console.log(`[AutoUpdater] Launching installer: ${filePath}`);
-    const child = spawn(filePath, [], {
-      detached: true,
-      stdio: 'ignore',
-    });
-    child.unref();
-    setTimeout(() => app.quit(), 1000);
+    // Use shell.openPath which respects Windows security policies
+    // (spawn can fail with EACCES on downloaded executables)
+    console.log(`[AutoUpdater] Launching installer via shell: ${filePath}`);
+    const error = await shell.openPath(filePath);
+    if (error) {
+      console.error(`[AutoUpdater] Failed to launch installer: ${error}`);
+      // Fallback: show the file in explorer so user can run it manually
+      shell.showItemInFolder(filePath);
+      return false;
+    }
+    setTimeout(() => app.quit(), 1500);
     return true;
   }
 
