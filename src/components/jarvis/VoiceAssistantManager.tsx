@@ -5,8 +5,6 @@ import {
   VOICE_ASSISTANT_STOP_EVENT,
   useVoiceAssistant,
 } from '@/hooks/useVoiceAssistant';
-import { checkElevenLabsHealth, isElevenLabsCreditsExhausted } from '@/lib/elevenLabsTTS';
-import { toast } from 'sonner';
 
 export const VoiceAssistantManager = () => {
   const { settings, systemStatus, setSystemStatus } = useJarvisStore();
@@ -17,18 +15,6 @@ export const VoiceAssistantManager = () => {
   // Keep refs current without triggering effects
   startRef.current = startListening;
   stopRef.current = stopListening;
-
-  // Boot-time ElevenLabs health check
-  useEffect(() => {
-    checkElevenLabsHealth().then((healthy) => {
-      if (!healthy && isElevenLabsCreditsExhausted()) {
-        toast.warning('Voice credits have run out.', {
-          description: 'Jarvis will use the built-in voice until credits are added.',
-          duration: 8000,
-        });
-      }
-    });
-  }, []);
 
   useEffect(() => {
     if (settings.alwaysListening) {
