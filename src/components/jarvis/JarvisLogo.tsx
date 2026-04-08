@@ -23,6 +23,7 @@ export const JarvisLogo = ({ size = 32, className, static: isStatic }: JarvisLog
         width: size,
         height: size,
         objectFit: 'contain',
+        borderRadius: 'inherit',
       }}
     />
     {/* Accent colour overlay using mix-blend-mode (skipped when static) */}
