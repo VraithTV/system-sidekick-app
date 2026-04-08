@@ -452,14 +452,14 @@ export const SettingsView = () => {
         currentVersion={currentVersion}
         newVersion={updateVersion}
         onDismiss={() => setUpdateState('idle')}
-        onUpdateNow={() => setUpdateState('updating')}
-        onUpdateLater={() => setUpdateState('idle')}
+        onUpdateNow={handleUpdateNow}
+        onUpdateLater={handleUpdateLater}
       />
 
       <UpdateProgressScreen
         open={updateState === 'updating'}
         newVersion={updateVersion}
-        onComplete={handleUpdateComplete}
+        onComplete={() => {}}
       />
     </div>
   );
