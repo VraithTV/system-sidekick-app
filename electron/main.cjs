@@ -284,14 +284,31 @@ ipcMain.on('open-url', (_event, url) => {
 // Launch app by ID using shell.openExternal (no child_process needed)
 ipcMain.handle('open-app', (_event, appId) => {
   const launchMap = {
-    chrome: 'https://google.com', edge: 'microsoft-edge:', spotify: 'spotify:',
-    discord: 'discord:', steam: 'steam://', vscode: 'vscode:',
-    slack: 'slack:', telegram: 'tg:', whatsapp: 'whatsapp:',
-    word: 'ms-word:', excel: 'ms-excel:',
-    youtube: 'https://youtube.com', netflix: 'https://netflix.com',
-    twitch: 'https://twitch.tv', twitter: 'https://x.com',
-    github: 'https://github.com', chatgpt: 'https://chat.openai.com',
+    chrome: 'https://google.com',
+    edge: 'microsoft-edge:',
+    firefox: 'firefox',
+    brave: 'brave',
+    spotify: 'spotify:',
+    discord: 'discord:',
+    steam: 'steam://',
+    vscode: 'vscode:',
+    explorer: 'file:///',
+    notepad: 'notepad',
+    'task-manager': 'taskmgr',
+    obs: 'obs64',
+    slack: 'slack:',
+    telegram: 'tg:',
+    whatsapp: 'whatsapp:',
+    word: 'ms-word:',
+    excel: 'ms-excel:',
+    youtube: 'https://youtube.com',
+    netflix: 'https://netflix.com',
+    twitch: 'https://twitch.tv',
+    twitter: 'https://x.com',
+    github: 'https://github.com',
+    chatgpt: 'https://chat.openai.com',
     calculator: 'calculator:',
+    terminal: 'wt',
   };
   const uri = launchMap[appId];
   if (uri) {
