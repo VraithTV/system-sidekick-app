@@ -201,19 +201,19 @@ export const SettingsView = () => {
           <div className="space-y-5">
             <Card>
               <SectionTitle>{t('settings.general')}</SectionTitle>
-              <Row label="Wake Word" desc="Activation trigger name">
+              <Row label={t('settings.wakeWord')} desc={t('settings.wakeWordDesc')}>
                 <Input value={settings.wakeName} onChange={(e: any) => updateSettings({ wakeName: e.target.value })} className="w-28" />
               </Row>
 
               <div className="py-3.5 border-b border-border/40">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <p className="text-[13px] text-foreground/90 font-medium">Wake Aliases</p>
-                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Alt spellings the speech API may hear</p>
+                    <p className="text-[13px] text-foreground/90 font-medium">{t('settings.wakeAliases')}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{t('settings.wakeAliasesDesc')}</p>
                   </div>
                   <button
                     onClick={() => {
-                      const alias = prompt('Add alias (how the speech API hears your wake word):');
+                      const alias = prompt(t('settings.addAlias'));
                       if (alias?.trim()) updateSettings({ wakeAliases: [...settings.wakeAliases, alias.trim()] });
                     }}
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -222,7 +222,7 @@ export const SettingsView = () => {
                   </button>
                 </div>
                 {settings.wakeAliases.length === 0 && (
-                  <p className="text-[10px] text-muted-foreground/50 font-mono">None yet</p>
+                  <p className="text-[10px] text-muted-foreground/50 font-mono">{t('settings.noneYet')}</p>
                 )}
                 <div className="flex flex-wrap gap-1.5">
                   {settings.wakeAliases.map((alias, i) => (
@@ -239,7 +239,7 @@ export const SettingsView = () => {
                 </div>
               </div>
 
-              <Row label="Wake Sensitivity" desc={`${Math.round(settings.wakeSensitivity * 100)}%`}>
+              <Row label={t('settings.wakeSensitivity')} desc={`${Math.round(settings.wakeSensitivity * 100)}%`}>
                 <input
                   type="range" min={0.3} max={1} step={0.05}
                   value={settings.wakeSensitivity}
@@ -248,7 +248,7 @@ export const SettingsView = () => {
                 />
               </Row>
 
-              <Row label="Start on Boot" desc="Auto-launch with Windows">
+              <Row label={t('settings.startOnBoot')} desc={t('settings.startOnBootDesc')}>
                 <Toggle checked={settings.startOnBoot} onChange={() => updateSettings({ startOnBoot: !settings.startOnBoot })} />
               </Row>
             </Card>
