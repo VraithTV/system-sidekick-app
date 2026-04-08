@@ -416,7 +416,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         setState('standby');
       }
     },
-    [setState, addCommand, settings.outputDeviceId, settings.voice]
+    [setState, addCommand, settings.outputDeviceId, settings.voice, settings.voiceId, settings.language, mode]
   );
 
   const startListening = useCallback(() => {
