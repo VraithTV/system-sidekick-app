@@ -3,7 +3,10 @@ import { AssistantOrb } from '../AssistantOrb';
 import { CommandHistory } from '../CommandHistory';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { Mic, MicOff, Zap } from 'lucide-react';
+import { requestVoiceAssistantStart, requestVoiceAssistantStop } from '@/hooks/useVoiceAssistant';
 import { getRemainingUses, getDailyLimit } from '@/lib/usageLimit';
+
+const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 export const DashboardView = () => {
   const { commands, settings, systemStatus, state, setSystemStatus } = useJarvisStore();
@@ -22,6 +25,15 @@ export const DashboardView = () => {
   }, []);
 
   const toggleMic = () => {
+    if (!isElectron) {
+      if (micOn) {
+        requestVoiceAssistantStop();
+      } else {
+        requestVoiceAssistantStart();
+      }
+      return;
+    }
+
     setSystemStatus({ micActive: !micOn });
   };
 

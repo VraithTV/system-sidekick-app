@@ -1,9 +1,25 @@
 import { useJarvisStore } from '@/store/jarvisStore';
 import { Monitor, Circle, Radio, Camera, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { requestVoiceAssistantStart, requestVoiceAssistantStop } from '@/hooks/useVoiceAssistant';
 import { Button } from '@/components/ui/button';
+
+const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 export const OBSView = () => {
   const { systemStatus, setSystemStatus } = useJarvisStore();
+
+  const toggleMic = () => {
+    if (!isElectron) {
+      if (systemStatus.micActive) {
+        requestVoiceAssistantStop();
+      } else {
+        requestVoiceAssistantStart();
+      }
+      return;
+    }
+
+    setSystemStatus({ micActive: !systemStatus.micActive });
+  };
 
   return (
     <div className="flex-1 p-6 overflow-y-auto space-y-6">
@@ -59,7 +75,7 @@ export const OBSView = () => {
           <Button
             variant="jarvis"
             className="justify-start gap-3"
-            onClick={() => setSystemStatus({ micActive: !systemStatus.micActive })}
+            onClick={toggleMic}
           >
             {systemStatus.micActive ? <Mic className="w-4 h-4 text-success" /> : <MicOff className="w-4 h-4 text-destructive" />}
             <span className="text-xs">{systemStatus.micActive ? 'Mute Mic' : 'Unmute Mic'}</span>
