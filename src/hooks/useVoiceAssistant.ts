@@ -10,6 +10,7 @@ import { getModeSystemPromptAddition } from '@/lib/modes';
 import { commonApps } from '@/lib/commonApps';
 import { isOllamaAvailable, chatWithOllama, getOllamaModel } from '@/lib/ollamaClient';
 import { getLanguage } from '@/lib/languages';
+import { speakWithElevenLabs, stopElevenLabsTTS } from '@/lib/elevenLabsTTS';
 import { toast } from 'sonner';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -382,7 +383,11 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      await speakBrowser(response, settings.outputDeviceId || undefined, settings.voice, settings.language);
+      // Try ElevenLabs TTS first, fall back to browser TTS
+      const elevenlabsOk = await speakWithElevenLabs(response, settings.voiceId || undefined, settings.outputDeviceId || undefined);
+      if (!elevenlabsOk) {
+        await speakBrowser(response, settings.outputDeviceId || undefined, settings.voice, settings.language);
+      }
 
       // If the response ends with a question mark, stay in conversation mode
       // so the user doesn't need the wake word for their reply
@@ -510,13 +515,21 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     wakeWordHeard.current = false;
     captureStopRef.current?.();
     captureStopRef.current = null;
+    stopElevenLabsTTS();
     speechSynthesis.cancel();
     setSystemStatus({ micActive: false });
     setState('idle');
   }, [setState, setSystemStatus]);
 
   const previewVoice = useCallback(async (voiceId: string) => {
-    await speakBrowser('At your service. How can I help you today?', settings.outputDeviceId || undefined, voiceId);
+    // Look up the ElevenLabs voice ID from the voice options
+    const { voiceOptions } = await import('@/lib/voices');
+    const voice = voiceOptions.find(v => v.id === voiceId);
+    const elevenLabsId = voice?.elevenLabsId || 'onwK4e9ZLuTAKqWW03F9';
+    const ok = await speakWithElevenLabs('At your service. How can I help you today?', elevenLabsId, settings.outputDeviceId || undefined);
+    if (!ok) {
+      await speakBrowser('At your service. How can I help you today?', settings.outputDeviceId || undefined, voiceId);
+    }
   }, [settings.outputDeviceId]);
 
   useEffect(() => {
