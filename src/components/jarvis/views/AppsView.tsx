@@ -4,11 +4,13 @@ import { commonApps, toAppShortcut, type CommonApp } from '@/lib/commonApps';
 import { getAppIcon } from '@/components/jarvis/AppIcons';
 import { AppWindow, Plus, Trash2, X } from 'lucide-react';
 import type { AppShortcut } from '@/types/jarvis';
+import { createT } from '@/lib/i18n';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 export const AppsView = () => {
-  const { apps, addApp, removeApp } = useJarvisStore();
+  const { apps, addApp, removeApp, settings } = useJarvisStore();
+  const t = createT(settings.language || 'en');
   const [showAdd, setShowAdd] = useState(false);
 
   const availableApps = commonApps.filter((ca) => !apps.some((a) => a.id === ca.id));
@@ -27,23 +29,23 @@ export const AppsView = () => {
     <div className="flex-1 overflow-y-auto bg-background">
       <div className="p-8">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="font-display text-sm text-primary tracking-[0.15em]">APPLICATIONS</h2>
+          <h2 className="font-display text-sm text-primary tracking-[0.15em]">{t('apps.title')}</h2>
           <button
             onClick={() => setShowAdd(!showAdd)}
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary/10 text-primary text-[12px] font-mono border border-primary/20 hover:bg-primary/15 transition-colors"
           >
             {showAdd ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-            {showAdd ? 'Close' : 'Add App'}
+            {showAdd ? t('apps.close') : t('apps.addApp')}
           </button>
         </div>
 
         {showAdd && (
           <div className="mb-6 p-4 rounded-xl bg-card border border-border">
             <p className="text-[11px] text-muted-foreground font-mono mb-3 tracking-wide">
-              AVAILABLE APPS
+              {t('apps.available')}
             </p>
             {availableApps.length === 0 ? (
-              <p className="text-xs text-muted-foreground/50">All apps have been added</p>
+              <p className="text-xs text-muted-foreground/50">{t('apps.allAdded')}</p>
             ) : (
               <div className="grid grid-cols-2 xl:grid-cols-3 gap-2">
                 {availableApps.map((ca) => {
@@ -69,9 +71,9 @@ export const AppsView = () => {
             <div className="w-20 h-20 rounded-2xl bg-card border border-border flex items-center justify-center mb-5">
               <AppWindow className="w-8 h-8 text-muted-foreground/30" />
             </div>
-            <p className="text-foreground/50 text-sm font-medium">No applications mapped</p>
+            <p className="text-foreground/50 text-sm font-medium">{t('apps.noApps')}</p>
             <p className="text-muted-foreground font-mono text-[11px] mt-2 max-w-[260px]">
-              Click "Add App" above to add voice shortcuts and quick-launch aliases
+              {t('apps.noAppsHint')}
             </p>
           </div>
         ) : (

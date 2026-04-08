@@ -1,4 +1,6 @@
 import { Clock, Play, Pause, Repeat, Zap, Eye } from 'lucide-react';
+import { useJarvisStore } from '@/store/jarvisStore';
+import { createT } from '@/lib/i18n';
 
 const mockRoutines = [
   {
@@ -32,26 +34,26 @@ const mockRoutines = [
 ];
 
 export const RoutinesView = () => {
+  const { settings } = useJarvisStore();
+  const t = createT(settings.language || 'en');
+
   return (
     <div className="flex-1 overflow-y-auto bg-background">
       <div className="p-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-sm text-primary tracking-[0.15em]">ROUTINES</h2>
+          <h2 className="font-display text-sm text-primary tracking-[0.15em]">{t('routines.title')}</h2>
         </div>
 
-
-        {/* Preview Notice */}
         <div className="mb-6 flex items-start gap-3 rounded-xl bg-primary/5 border border-primary/20 p-4">
           <Eye className="w-5 h-5 text-primary shrink-0 mt-0.5" />
           <div>
-            <p className="text-[13px] text-primary font-medium">Preview: Routines</p>
+            <p className="text-[13px] text-primary font-medium">{t('routines.preview')}</p>
             <p className="text-[11px] text-muted-foreground font-mono mt-1">
-              Here's a preview of what Routines will look like. Create custom voice-triggered workflows that chain multiple actions together. Coming soon.
+              {t('routines.previewDesc')}
             </p>
           </div>
         </div>
 
-        {/* Mock Routines */}
         <div className="space-y-3">
           {mockRoutines.map((routine) => (
             <div

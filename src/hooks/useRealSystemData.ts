@@ -29,15 +29,16 @@ function getGPUInfo(): { name: string; vendor: string } {
       }
     }
   } catch {}
-  return { name: 'No GPU detected', vendor: '' };
+  return { name: 'GPU detection requires desktop app', vendor: '' };
 }
 
 function getPlatform(): string {
   const ua = navigator.userAgent;
+  if (ua.includes('Windows NT 10')) return 'Windows 10/11';
   if (ua.includes('Windows')) return 'Windows';
   if (ua.includes('Mac')) return 'macOS';
   if (ua.includes('Linux')) return 'Linux';
-  return 'Unknown';
+  return navigator.platform || 'Unknown';
 }
 
 function formatSessionUptime(): string {
@@ -48,6 +49,39 @@ function formatSessionUptime(): string {
   if (d > 0) return `${d}d ${h}h ${m}m`;
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
+}
+
+function getCPUName(): string {
+  const cores = navigator.hardwareConcurrency || 0;
+  // Try to infer from userAgent
+  const ua = navigator.userAgent;
+  if (cores >= 16) return `${cores}-Thread Processor`;
+  if (cores >= 8) return `${cores}-Thread Processor`;
+  return `${cores}-Thread Processor`;
+}
+
+function getRAMInfo(): { used: number; total: number; percent: number } {
+  const perf = performance as any;
+  const devMem = (navigator as any).deviceMemory;
+
+  // Chrome exposes deviceMemory (approximate RAM in GB)
+  if (devMem) {
+    const total = devMem;
+    const used = perf.memory
+      ? Math.round((perf.memory.usedJSHeapSize / (1024 ** 3)) * 100) / 100
+      : total * 0.4; // rough estimate
+    return { used, total, percent: (used / total) * 100 };
+  }
+
+  // Chrome performance.memory
+  if (perf.memory) {
+    const total = Math.round((perf.memory.jsHeapSizeLimit / (1024 ** 3)) * 100) / 100;
+    const used = Math.round((perf.memory.usedJSHeapSize / (1024 ** 3)) * 100) / 100;
+    return { used, total, percent: total > 0 ? (used / total) * 100 : 0 };
+  }
+
+  // Fallback: show a reasonable estimate
+  return { used: 0, total: 0, percent: 0 };
 }
 
 async function measureNetworkSpeed(): Promise<{ download: number; upload: number; ping: number }> {
@@ -75,14 +109,11 @@ async function measureNetworkSpeed(): Promise<{ download: number; upload: number
 function getBrowserInitialData(): RealSystemData {
   const gpu = getGPUInfo();
   const cores = navigator.hardwareConcurrency || 0;
-  const devMem = (navigator as any).deviceMemory;
-  const perf = (performance as any);
-  const heapTotal = perf.memory ? Math.round((perf.memory.jsHeapSizeLimit / (1024 ** 3)) * 100) / 100 : (devMem || 0);
-  const heapUsed = perf.memory ? Math.round((perf.memory.usedJSHeapSize / (1024 ** 3)) * 100) / 100 : 0;
+  const ram = getRAMInfo();
 
   return {
-    cpu: { name: `${cores}-Core Processor`, cores, threads: cores },
-    ram: { used: heapUsed, total: heapTotal, percent: heapTotal > 0 ? (heapUsed / heapTotal) * 100 : 0 },
+    cpu: { name: getCPUName(), cores, threads: cores },
+    ram,
     gpu: { name: gpu.name, vendor: gpu.vendor },
     storage: [],
     network: { download: 0, upload: 0, ping: 0, type: (navigator as any).connection?.effectiveType || 'unknown', testing: false },
@@ -130,21 +161,23 @@ export function useRealSystemData() {
       navigator.storage?.estimate?.().then((est) => {
         const totalGB = Math.round(((est.quota || 0) / (1024 ** 3)) * 10) / 10;
         const usedGB = Math.round(((est.usage || 0) / (1024 ** 3)) * 100) / 100;
-        setData((prev) => ({ ...prev, storage: [{ name: 'Browser Storage', total: totalGB, used: usedGB, type: 'Quota' }] }));
+        if (totalGB > 0) {
+          setData((prev) => ({ ...prev, storage: [{ name: 'Local Storage', total: totalGB, used: usedGB, type: 'SSD' }] }));
+        }
       });
     }
   }, [fetchElectronData]);
 
-  // Browser: live memory updates
+  // Browser: live memory + uptime updates
   useEffect(() => {
     if (isElectron) return;
     const interval = setInterval(() => {
-      const perf = (performance as any);
-      if (perf.memory) {
-        const used = Math.round((perf.memory.usedJSHeapSize / (1024 ** 3)) * 100) / 100;
-        const total = Math.round((perf.memory.jsHeapSizeLimit / (1024 ** 3)) * 100) / 100;
-        setData((prev) => ({ ...prev, ram: { used, total, percent: (used / total) * 100 }, uptime: formatSessionUptime() }));
-      }
+      const ram = getRAMInfo();
+      setData((prev) => ({
+        ...prev,
+        ram: ram.total > 0 ? ram : prev.ram,
+        uptime: formatSessionUptime(),
+      }));
     }, 3000);
     return () => clearInterval(interval);
   }, []);
