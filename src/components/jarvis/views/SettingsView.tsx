@@ -1,6 +1,6 @@
 import { useJarvisStore } from '@/store/jarvisStore';
 import { Minus, Plus, Play, X, RefreshCw, Download, Unlink, Cpu, Globe } from 'lucide-react';
-import { voiceOptions } from '@/lib/voices';
+import { jarvisVoices, standardVoices } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useState, useEffect, useCallback } from 'react';
@@ -389,8 +389,46 @@ export const SettingsView = () => {
           <div className="space-y-5">
             <div className="bg-card rounded-xl p-6 border border-border">
               <SectionTitle>{t('settings.voiceSelection')}</SectionTitle>
+
+              {/* Jarvis section */}
+              <p className="text-[10px] font-mono text-primary/60 uppercase tracking-wider mb-2 mt-1">Jarvis</p>
+              <div className="space-y-1.5 mb-4">
+                {jarvisVoices.map((v) => (
+                  <button
+                    key={v.id}
+                    onClick={() => updateSettings({ voice: v.id, voiceId: v.elevenLabsId })}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
+                      settings.voice === v.id
+                        ? 'bg-primary/10 border border-primary/25'
+                        : 'hover:bg-muted border border-transparent'
+                    }`}
+                  >
+                    <div className={`w-2.5 h-2.5 rounded-full shrink-0 transition-colors ${
+                      settings.voice === v.id ? 'bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.5)]' : 'bg-muted-foreground/25'
+                    }`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] text-foreground/85">{v.label}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono truncate">{v.description}</p>
+                    </div>
+                    <button
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/40 hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
+                      onClick={(e) => { e.stopPropagation(); handlePreview(v.id, v.elevenLabsId); }}
+                      disabled={previewing !== null}
+                    >
+                      {previewing === v.id ? (
+                        <div className="w-3.5 h-3.5 border-2 border-primary/60 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Play className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </button>
+                ))}
+              </div>
+
+              {/* Standard voices section */}
+              <p className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-2">Standard Voices</p>
               <div className="space-y-1.5">
-                {voiceOptions.map((v) => (
+                {standardVoices.map((v) => (
                   <button
                     key={v.id}
                     onClick={() => updateSettings({ voice: v.id, voiceId: v.elevenLabsId })}
