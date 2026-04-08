@@ -331,15 +331,19 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
       // Check daily usage limit
       if (!canUseVoice()) {
         setState('speaking');
-        const limitMsg = "You've reached your daily command limit. It resets at midnight.";
+        const limitMsg = "You've used all 25 commands for today. Your limit resets at midnight, so try again tomorrow.";
         addCommand({
           id: Date.now().toString(),
           text: cleanedText,
           response: limitMsg,
           timestamp: new Date(),
-          type: 'voice',
+          type: 'system',
         });
-        await speakBrowser(limitMsg, settings.outputDeviceId || undefined, settings.voice);
+        toast.error('Daily limit reached', {
+          description: 'You have used all 25 commands for today. Try again after midnight.',
+          duration: 6000,
+        });
+        await speakBrowser(limitMsg, settings.outputDeviceId || undefined, settings.voice, settings.language);
         if (isListeningRef.current) setState('standby');
         return;
       }
