@@ -192,10 +192,13 @@ export function startSpeechRecognition(
   let activeController: SpeechRecognitionController | null = null;
   let stopped = false;
 
-  // Always use free browser Speech Recognition as primary
-  const attempts = SpeechRecognitionCtor
-    ? [{ label: 'browser speech recognition', create: () => createBrowserSpeechRecognitionController() }]
-    : [{ label: 'remote speech recognition', create: () => createElevenLabsSpeechRecognitionController(deviceId) }];
+  // Always use free browser Speech Recognition - never call ElevenLabs
+  if (!SpeechRecognitionCtor) {
+    throw new SpeechRecognitionUnavailableError(
+      'Speech recognition is not supported in this browser. Please use Chrome or Edge.'
+    );
+  }
+  const attempts = [{ label: 'browser speech recognition', create: () => createBrowserSpeechRecognitionController() }];
 
   const promise = (async () => {
     let lastError: unknown = null;
