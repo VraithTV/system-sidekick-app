@@ -258,8 +258,8 @@ export const SettingsView = () => {
               <div className="py-3.5 border-b border-border/40">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <p className="text-[13px] text-foreground/90 font-medium">Microphone</p>
-                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Select your input device</p>
+                    <p className="text-[13px] text-foreground/90 font-medium">{t('settings.microphone')}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{t('settings.micDesc')}</p>
                   </div>
                   <button onClick={refreshDevices} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                     <RefreshCw className="w-3.5 h-3.5" />
@@ -270,17 +270,17 @@ export const SettingsView = () => {
                   onChange={(e) => updateSettings({ inputDeviceId: e.target.value })}
                   className="w-full bg-muted/60 text-[12px] text-foreground/80 px-3 py-2.5 rounded-lg border border-border/60 font-mono outline-none focus:border-primary/50 transition-all"
                 >
-                  <option value="">System Default</option>
+                  <option value="">{t('settings.systemDefault')}</option>
                   {inputs.map((d) => (
                     <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
                   ))}
                 </select>
               </div>
 
-              <Row label="Always Listening" desc="Keep mic active in background">
+              <Row label={t('settings.alwaysListening')} desc={t('settings.alwaysListeningDesc')}>
                 <Toggle checked={settings.alwaysListening} onChange={() => updateSettings({ alwaysListening: !settings.alwaysListening })} />
               </Row>
-              <Row label="Push to Talk" desc="Hold hotkey to speak">
+              <Row label={t('settings.pushToTalk')} desc={t('settings.pushToTalkDesc')}>
                 <Toggle checked={settings.pushToTalk} onChange={() => updateSettings({ pushToTalk: !settings.pushToTalk })} />
               </Row>
             </Card>
