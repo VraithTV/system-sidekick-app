@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Circle, Check } from 'lucide-react';
 import { JarvisLogo } from '@/components/jarvis/JarvisLogo';
+import { createT } from '@/lib/i18n';
 
 type ClipOverlayProps = {
   visible: boolean;
@@ -8,15 +9,12 @@ type ClipOverlayProps = {
   duration: number;
   variant?: 'recording-started' | 'clip-saved';
   onDismiss: () => void;
+  lang?: string;
 };
 
-const titles: Record<string, { title: string; subtitle: string }> = {
-  'recording-started': { title: 'Recording started!', subtitle: 'Your gameplay is being recorded' },
-  'clip-saved': { title: 'Clip Saved!', subtitle: 'Finished recording your gameplay' },
-};
-
-export const ClipOverlay = ({ visible, filename, duration, variant = 'clip-saved', onDismiss }: ClipOverlayProps) => {
+export const ClipOverlay = ({ visible, filename, duration, variant = 'clip-saved', onDismiss, lang = 'en' }: ClipOverlayProps) => {
   const [phase, setPhase] = useState<'enter' | 'show' | 'exit' | 'hidden'>('hidden');
+  const t = createT(lang);
 
   useEffect(() => {
     if (visible) {
@@ -39,8 +37,9 @@ export const ClipOverlay = ({ visible, filename, duration, variant = 'clip-saved
 
   if (phase === 'hidden') return null;
 
-  const info = titles[variant];
   const isRecording = variant === 'recording-started';
+  const title = isRecording ? t('clips.recStarted') : t('clips.saved');
+  const subtitle = isRecording ? t('clips.recStartedSub') : t('clips.savedSub');
 
   return (
     <div
@@ -50,13 +49,9 @@ export const ClipOverlay = ({ visible, filename, duration, variant = 'clip-saved
         'translate-y-0 opacity-100 scale-100'
       }`}
     >
-      {/* Logo - matches Medal's "M" icon */}
       <JarvisLogo size={28} />
 
-      {/* Status icon */}
-      <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-        isRecording ? 'bg-emerald-500/20' : 'bg-emerald-500/20'
-      }`}>
+      <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/20`}>
         {isRecording ? (
           <Circle className="w-4 h-4 text-emerald-400 fill-emerald-400" />
         ) : (
@@ -64,14 +59,9 @@ export const ClipOverlay = ({ visible, filename, duration, variant = 'clip-saved
         )}
       </div>
 
-      {/* Text */}
       <div className="min-w-0">
-        <p className="text-[13px] font-semibold text-white/95 leading-tight">
-          {info.title}
-        </p>
-        <p className="text-[11px] text-white/50 leading-tight mt-0.5">
-          {info.subtitle}
-        </p>
+        <p className="text-[13px] font-semibold text-white/95 leading-tight">{title}</p>
+        <p className="text-[11px] text-white/50 leading-tight mt-0.5">{subtitle}</p>
       </div>
     </div>
   );
