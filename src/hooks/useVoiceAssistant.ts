@@ -124,6 +124,7 @@ function notifyVoiceCaptureError(error: unknown) {
 }
 
 const browserVoiceMap: Record<string, { keywords: string[]; gender: 'male' | 'female'; pitch: number; rate: number }> = {
+  jarvis:  { keywords: ['Daniel', 'Microsoft Mark', 'Google UK English Male'], gender: 'male', pitch: 0.85, rate: 0.92 },
   daniel:  { keywords: ['Daniel', 'Microsoft Mark', 'Google UK English Male'], gender: 'male', pitch: 0.88, rate: 0.94 },
   george:  { keywords: ['George', 'Microsoft George', 'Google UK English Male'], gender: 'male', pitch: 0.92, rate: 0.96 },
   brian:   { keywords: ['David', 'Microsoft David', 'Google US English'], gender: 'male', pitch: 0.85, rate: 0.92 },
@@ -521,14 +522,15 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     setState('idle');
   }, [setState, setSystemStatus]);
 
-  const previewVoice = useCallback(async (voiceId: string) => {
-    // Look up the ElevenLabs voice ID from the voice options
+  const previewVoice = useCallback(async (voiceIdOrElevenLabsId: string) => {
+    // Accept either local voice ID or ElevenLabs ID
     const { voiceOptions } = await import('@/lib/voices');
-    const voice = voiceOptions.find(v => v.id === voiceId);
-    const elevenLabsId = voice?.elevenLabsId || 'onwK4e9ZLuTAKqWW03F9';
+    const voice = voiceOptions.find(v => v.id === voiceIdOrElevenLabsId || v.elevenLabsId === voiceIdOrElevenLabsId);
+    const elevenLabsId = voice?.elevenLabsId || voiceIdOrElevenLabsId;
+    const localId = voice?.id || 'daniel';
     const ok = await speakWithElevenLabs('At your service. How can I help you today?', elevenLabsId, settings.outputDeviceId || undefined);
     if (!ok) {
-      await speakBrowser('At your service. How can I help you today?', settings.outputDeviceId || undefined, voiceId);
+      await speakBrowser('At your service. How can I help you today?', settings.outputDeviceId || undefined, localId);
     }
   }, [settings.outputDeviceId]);
 

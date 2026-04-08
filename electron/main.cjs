@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, shell, globalShortcut, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { exec } = require('child_process');
 const { checkForUpdates, downloadUpdate, installAndRestart, dismissVersion, startAutoUpdateSchedule, stopAutoUpdateSchedule, getCurrentVersion } = require('./autoUpdater.cjs');
 
@@ -410,6 +411,105 @@ ipcMain.handle('dismiss-update', (_event, version) => {
   dismissVersion(version);
   return null;
 });
+
+// ─── System Info IPC ─────────────────────────────────────────
+ipcMain.handle('get-system-info', async () => {
+  const cpus = os.cpus();
+  const cpuName = cpus.length > 0 ? cpus[0].model : 'Unknown CPU';
+  const cores = cpus.length;
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+  const usedMem = totalMem - freeMem;
+  const platform = os.platform();
+  const uptime = os.uptime();
+
+  const result = {
+    cpu: { name: cpuName.trim(), cores, threads: cores },
+    ram: {
+      used: Math.round((usedMem / (1024 ** 3)) * 100) / 100,
+      total: Math.round((totalMem / (1024 ** 3)) * 100) / 100,
+      percent: Math.round((usedMem / totalMem) * 1000) / 10,
+    },
+    gpu: { name: 'Detecting...', vendor: '' },
+    storage: [],
+    network: { type: os.networkInterfaces() ? 'Connected' : 'Unknown' },
+    uptime: formatUptimeSeconds(uptime),
+    platform: platform === 'win32' ? 'Windows' : platform === 'darwin' ? 'macOS' : 'Linux',
+    hostname: os.hostname(),
+  };
+
+  // Get GPU info (Windows)
+  if (platform === 'win32') {
+    try {
+      const gpuInfo = await execPromise('wmic path win32_VideoController get name,adapterram /format:list');
+      const nameMatch = gpuInfo.match(/Name=(.+)/i);
+      if (nameMatch) result.gpu.name = nameMatch[1].trim();
+    } catch {}
+
+    // Get storage drives
+    try {
+      const diskInfo = await execPromise('wmic logicaldisk get name,size,freespace,description /format:csv');
+      const lines = diskInfo.split('\n').filter(l => l.trim() && !l.startsWith('Node'));
+      result.storage = lines.map(line => {
+        const parts = line.split(',');
+        if (parts.length < 4) return null;
+        const desc = parts[1] || '';
+        const free = parseInt(parts[2]) || 0;
+        const name = parts[3] || '';
+        const total = parseInt(parts[4]) || 0;
+        if (total === 0) return null;
+        const totalGB = Math.round((total / (1024 ** 3)) * 10) / 10;
+        const usedGB = Math.round(((total - free) / (1024 ** 3)) * 10) / 10;
+        return { name: name.trim(), total: totalGB, used: usedGB, type: desc.includes('Fixed') ? 'Local Disk' : desc.trim() || 'Drive' };
+      }).filter(Boolean);
+    } catch {}
+
+    // Get top processes
+    try {
+      const procInfo = await execPromise('powershell -command "Get-Process | Sort-Object -Property WorkingSet64 -Descending | Select-Object -First 5 Name,CPU,@{Name=\'MemMB\';Expression={[math]::Round($_.WorkingSet64/1MB,1)}} | ConvertTo-Csv -NoTypeInformation"');
+      const procLines = procInfo.split('\n').filter(l => l.trim() && !l.startsWith('"Name"'));
+      result.processes = procLines.map(line => {
+        const parts = line.replace(/"/g, '').split(',');
+        return { name: (parts[0] || '').trim(), cpu: parseFloat(parts[1]) || 0, ram: parseFloat(parts[2]) || 0 };
+      }).filter(p => p.name);
+    } catch {}
+  }
+
+  // macOS/Linux GPU
+  if (platform === 'darwin') {
+    try {
+      const gpuInfo = await execPromise('system_profiler SPDisplaysDataType 2>/dev/null | grep "Chipset Model"');
+      const match = gpuInfo.match(/Chipset Model:\s*(.+)/i);
+      if (match) result.gpu.name = match[1].trim();
+    } catch {}
+  }
+  if (platform === 'linux') {
+    try {
+      const gpuInfo = await execPromise('lspci | grep -i vga');
+      if (gpuInfo.trim()) result.gpu.name = gpuInfo.split(':').pop().trim();
+    } catch {}
+  }
+
+  return result;
+});
+
+function formatUptimeSeconds(s) {
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function execPromise(cmd) {
+  return new Promise((resolve, reject) => {
+    exec(cmd, { timeout: 5000 }, (err, stdout) => {
+      if (err) reject(err);
+      else resolve(stdout || '');
+    });
+  });
+}
 
 // ─── App Lifecycle ───────────────────────────────────────────
 
