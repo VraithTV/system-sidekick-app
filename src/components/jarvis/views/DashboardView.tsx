@@ -5,6 +5,7 @@ import { useJarvisStore } from '@/store/jarvisStore';
 import { Mic, MicOff, Zap } from 'lucide-react';
 import { requestVoiceAssistantStart, requestVoiceAssistantStop } from '@/hooks/useVoiceAssistant';
 import { getRemainingUses, getDailyLimit } from '@/lib/usageLimit';
+import { createT } from '@/lib/i18n';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -14,6 +15,7 @@ export const DashboardView = () => {
   const limit = getDailyLimit();
   const [remaining, setRemaining] = useState(getRemainingUses());
   const [time, setTime] = useState(new Date());
+  const t = createT(settings.language || 'en');
 
   useEffect(() => {
     setRemaining(getRemainingUses());
@@ -40,6 +42,24 @@ export const DashboardView = () => {
   const timeStr = time.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
   const dateStr = time.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 
+  const wake = settings.wakeName;
+
+  const statusLabel = micOn
+    ? state === 'listening' ? t('dash.listening') : state === 'thinking' ? t('dash.processing') : state === 'speaking' ? t('dash.speaking') : t('dash.standby')
+    : t('dash.enableMic');
+
+  const hintLabel = micOn
+    ? state === 'standby'
+      ? t('dash.sayToActivate', { wake })
+      : state === 'listening'
+        ? t('dash.listeningForCommand')
+        : state === 'thinking'
+          ? t('dash.thinking')
+          : state === 'speaking'
+            ? t('dash.responding')
+            : t('dash.sayToActivate', { wake })
+    : t('dash.tapToStart', { wake });
+
   return (
     <div className="flex-1 flex bg-background overflow-hidden">
       <div className="flex-1 flex flex-col items-center justify-center relative">
@@ -57,26 +77,16 @@ export const DashboardView = () => {
             }`}
           >
             {micOn ? <Mic className="h-4 w-4 animate-pulse" /> : <MicOff className="h-4 w-4" />}
-            {micOn ? (state === 'listening' ? 'Listening…' : state === 'thinking' ? 'Processing…' : state === 'speaking' ? 'Speaking…' : 'Standby') : 'Enable Microphone'}
+            {statusLabel}
           </button>
 
           <p className="mt-5 text-center text-sm text-foreground/50">
-            {micOn
-              ? state === 'standby'
-                ? `Say "${settings.wakeName}" to activate`
-                : state === 'listening'
-                  ? 'Listening for your command…'
-                  : state === 'thinking'
-                    ? 'Thinking…'
-                    : state === 'speaking'
-                      ? 'Responding…'
-                      : `Say "${settings.wakeName}" to activate`
-              : 'Tap the button above to start talking to ' + settings.wakeName}
+            {hintLabel}
           </p>
           <p className="mt-1.5 text-center font-mono text-[11px] text-muted-foreground/40">
             {micOn
-              ? `Try: "Hey ${settings.wakeName}, what time is it?"`
-              : `Try: "${settings.wakeName}, open Chrome" · "${settings.wakeName}, what's the weather?"`}
+              ? `Try: "Hey ${wake}, what time is it?"`
+              : `Try: "${wake}, open Chrome" · "${wake}, what's the weather?"`}
           </p>
         </div>
 
@@ -107,15 +117,15 @@ export const DashboardView = () => {
 
         {/* Quick stats */}
         <div className="py-5 space-y-3">
-          <p className="font-display text-[9px] tracking-[0.25em] text-primary/60 uppercase">Quick Stats</p>
+          <p className="font-display text-[9px] tracking-[0.25em] text-primary/60 uppercase">{t('dash.quickStats')}</p>
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-lg border border-border/40 bg-background/40 p-3 text-center">
               <p className="font-display text-lg text-primary glow-text">{commands.length}</p>
-              <p className="font-mono text-[8px] text-muted-foreground/50 mt-0.5 tracking-wider uppercase">Commands</p>
+              <p className="font-mono text-[8px] text-muted-foreground/50 mt-0.5 tracking-wider uppercase">{t('dash.commands')}</p>
             </div>
             <div className="rounded-lg border border-border/40 bg-background/40 p-3 text-center">
               <p className="font-display text-lg text-primary glow-text">{remaining}</p>
-              <p className="font-mono text-[8px] text-muted-foreground/50 mt-0.5 tracking-wider uppercase">Remaining</p>
+              <p className="font-mono text-[8px] text-muted-foreground/50 mt-0.5 tracking-wider uppercase">{t('dash.remaining')}</p>
             </div>
           </div>
         </div>
@@ -124,21 +134,21 @@ export const DashboardView = () => {
 
         {/* Session info */}
         <div className="py-5 space-y-2.5">
-          <p className="font-display text-[9px] tracking-[0.25em] text-primary/60 uppercase">Session</p>
+          <p className="font-display text-[9px] tracking-[0.25em] text-primary/60 uppercase">{t('dash.session')}</p>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] text-muted-foreground/60">Status</span>
+              <span className="font-mono text-[10px] text-muted-foreground/60">{t('dash.status')}</span>
               <div className="flex items-center gap-1.5">
                 <div className={`w-1.5 h-1.5 rounded-full ${micOn ? 'bg-success shadow-[0_0_6px_hsl(var(--success)/0.5)]' : 'bg-muted-foreground/30'}`} />
-                <span className="font-mono text-[10px] text-muted-foreground">{micOn ? 'Active' : 'Idle'}</span>
+                <span className="font-mono text-[10px] text-muted-foreground">{micOn ? t('dash.active') : t('dash.idle')}</span>
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] text-muted-foreground/60">Engine</span>
-              <span className="font-mono text-[10px] text-primary/70">Online</span>
+              <span className="font-mono text-[10px] text-muted-foreground/60">{t('dash.engine')}</span>
+              <span className="font-mono text-[10px] text-primary/70">{t('status.online')}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] text-muted-foreground/60">Latency</span>
+              <span className="font-mono text-[10px] text-muted-foreground/60">{t('dash.latency')}</span>
               <span className="font-mono text-[10px] text-muted-foreground">~120ms</span>
             </div>
           </div>

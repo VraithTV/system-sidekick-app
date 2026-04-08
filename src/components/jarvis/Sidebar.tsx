@@ -1,19 +1,21 @@
 import { useJarvisStore } from '@/store/jarvisStore';
 import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Activity, Palette } from 'lucide-react';
 import { JarvisLogo } from './JarvisLogo';
+import { createT } from '@/lib/i18n';
 
-const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'apps', label: 'Apps', icon: AppWindow },
-  { id: 'clips', label: 'Clips', icon: Film },
-  { id: 'routines', label: 'Routines', icon: Zap },
-  { id: 'system', label: 'System', icon: Activity },
-  { id: 'themes', label: 'Themes', icon: Palette },
-  { id: 'settings', label: 'Settings', icon: Settings },
+const navKeys = [
+  { id: 'dashboard', key: 'nav.dashboard', icon: LayoutDashboard },
+  { id: 'apps', key: 'nav.apps', icon: AppWindow },
+  { id: 'clips', key: 'nav.clips', icon: Film },
+  { id: 'routines', key: 'nav.routines', icon: Zap },
+  { id: 'system', key: 'nav.system', icon: Activity },
+  { id: 'themes', key: 'nav.themes', icon: Palette },
+  { id: 'settings', key: 'nav.settings', icon: Settings },
 ];
 
 export const Sidebar = () => {
-  const { activeView, setActiveView, systemStatus } = useJarvisStore();
+  const { activeView, setActiveView, systemStatus, settings } = useJarvisStore();
+  const t = createT(settings.language || 'en');
 
   return (
     <aside className="w-52 h-screen bg-card border-r border-border flex flex-col shrink-0 select-none">
@@ -30,7 +32,7 @@ export const Sidebar = () => {
 
       {/* Nav items */}
       <nav className="flex-1 flex flex-col pt-1 pb-3 px-2 gap-px overflow-y-auto">
-        {navItems.map(({ id, label, icon: Icon }) => (
+        {navKeys.map(({ id, key, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setActiveView(id)}
@@ -44,7 +46,7 @@ export const Sidebar = () => {
               <div className="absolute left-0 top-[6px] bottom-[6px] w-[2px] rounded-r bg-primary shadow-[0_0_6px_hsl(var(--primary)/0.4)]" />
             )}
             <Icon className="h-[15px] w-[15px] shrink-0" strokeWidth={activeView === id ? 2 : 1.5} />
-            <span className="text-[11px] tracking-wide">{label}</span>
+            <span className="text-[11px] tracking-wide">{t(key)}</span>
           </button>
         ))}
       </nav>
@@ -61,10 +63,10 @@ export const Sidebar = () => {
               }`}
             />
             <span className="text-[9px] font-mono text-muted-foreground/50">
-              {systemStatus.micActive ? 'MIC ON' : 'MIC OFF'}
+              {systemStatus.micActive ? t('status.micOn') : t('status.micOff')}
             </span>
           </div>
-          <span className="text-[9px] font-mono text-muted-foreground/30">ONLINE</span>
+          <span className="text-[9px] font-mono text-muted-foreground/30">{t('status.online')}</span>
         </div>
       </div>
     </aside>
