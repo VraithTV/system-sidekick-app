@@ -69,7 +69,7 @@ export const Sidebar = () => {
               {systemStatus.micActive ? t('status.micOn') : t('status.micOff')}
             </span>
           </div>
-          <span className="text-[9px] font-mono text-muted-foreground/30">{t('status.online')}</span>
+          <span className="text-[9px] font-mono text-muted-foreground/30">JARVIS v1.1.0</span>
         </div>
       </div>
     </aside>
