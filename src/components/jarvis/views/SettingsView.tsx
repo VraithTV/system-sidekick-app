@@ -290,8 +290,8 @@ export const SettingsView = () => {
               <div className="py-3.5 last:border-0">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <p className="text-[13px] text-foreground/90 font-medium">Speaker</p>
-                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Where Jarvis speaks</p>
+                    <p className="text-[13px] text-foreground/90 font-medium">{t('settings.speaker')}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{t('settings.speakerDesc')}</p>
                   </div>
                   <button onClick={refreshDevices} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                     <RefreshCw className="w-3.5 h-3.5" />
@@ -302,7 +302,7 @@ export const SettingsView = () => {
                   onChange={(e) => updateSettings({ outputDeviceId: e.target.value })}
                   className="w-full bg-muted/60 text-[12px] text-foreground/80 px-3 py-2.5 rounded-lg border border-border/60 font-mono outline-none focus:border-primary/50 transition-all"
                 >
-                  <option value="">System Default</option>
+                  <option value="">{t('settings.systemDefault')}</option>
                   {outputs.map((d) => (
                     <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
                   ))}
@@ -311,8 +311,8 @@ export const SettingsView = () => {
             </Card>
 
             <Card>
-              <SectionTitle>Clip Settings</SectionTitle>
-              <Row label="Buffer Duration" desc="Replay buffer length">
+              <SectionTitle>{t('settings.clipSettings')}</SectionTitle>
+              <Row label={t('settings.bufferDuration')} desc={t('settings.bufferDurationDesc')}>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => adjustClip('down')} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                     <Minus className="w-3.5 h-3.5" />
@@ -325,17 +325,17 @@ export const SettingsView = () => {
                   </button>
                 </div>
               </Row>
-              <Row label="Save Folder">
+              <Row label={t('settings.saveFolder')}>
                 <Input value={settings.clipFolder} onChange={(e: any) => updateSettings({ clipFolder: e.target.value })} className="w-48" />
               </Row>
             </Card>
 
             <Card>
-              <SectionTitle>OBS Connection</SectionTitle>
-              <Row label="WebSocket URL">
+              <SectionTitle>{t('settings.obsConnection')}</SectionTitle>
+              <Row label={t('settings.websocketUrl')}>
                 <Input value={settings.obsWebsocketUrl} onChange={(e: any) => updateSettings({ obsWebsocketUrl: e.target.value })} className="w-44" />
               </Row>
-              <Row label="Password">
+              <Row label={t('settings.password')}>
                 <Input type="password" value={settings.obsWebsocketPassword} onChange={(e: any) => updateSettings({ obsWebsocketPassword: e.target.value })} className="w-44" placeholder="••••••" />
               </Row>
             </Card>
@@ -346,9 +346,9 @@ export const SettingsView = () => {
                 <div className="flex items-center gap-3">
                   <img src={spotifyLogo} alt="Spotify" className="w-9 h-9 rounded-lg" loading="lazy" width={36} height={36} />
                   <div>
-                    <p className="text-[13px] text-foreground/90 font-medium">Spotify</p>
+                    <p className="text-[13px] text-foreground/90 font-medium">{t('settings.spotify')}</p>
                     <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                      {spotifyConnected ? 'Connected. Direct playback enabled.' : 'Control music playback with voice commands.'}
+                      {spotifyConnected ? t('settings.spotifyConnected') : t('settings.spotifyDesc')}
                     </p>
                   </div>
                 </div>
@@ -358,7 +358,7 @@ export const SettingsView = () => {
                     className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg border border-destructive/30 transition-colors"
                   >
                     <Unlink size={14} />
-                    Disconnect
+                    {t('settings.disconnect')}
                   </button>
                 ) : (
                   <button
@@ -388,7 +388,7 @@ export const SettingsView = () => {
                     className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-[#1DB954]/10 hover:bg-[#1DB954]/20 text-[#1DB954] rounded-lg border border-[#1DB954]/30 transition-colors"
                   >
                     <img src={spotifyLogo} alt="" className="w-3.5 h-3.5" width={14} height={14} />
-                    Connect
+                    {t('settings.connect')}
                   </button>
                 )}
               </div>
