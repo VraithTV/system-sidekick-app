@@ -1,6 +1,6 @@
 import { useJarvisStore } from '@/store/jarvisStore';
 import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Activity, Palette } from 'lucide-react';
-import { JarvisLogo } from '@/components/jarvis/JarvisLogo';
+import jarvisFullLogo from '@/assets/jarvis-app-icon.png';
 import { createT } from '@/lib/i18n';
 
 const navKeys = [
@@ -21,7 +21,7 @@ export const Sidebar = () => {
     <aside className="w-52 h-screen bg-card border-r border-border flex flex-col shrink-0 select-none">
       {/* Logo header */}
       <div className="flex items-center gap-3 px-4 h-16 titlebar-drag">
-        <JarvisLogo size={36} className="shrink-0 rounded-md overflow-hidden" />
+        <img src={jarvisFullLogo} alt="Jarvis" draggable={false} className="h-9 w-9 object-contain shrink-0" />
         <div className="flex flex-col">
           <span className="text-[15px] font-semibold tracking-[0.3em] font-display text-muted-foreground/70">JARVIS</span>
           <span className="text-[9px] font-mono text-muted-foreground/30 tracking-wider">V1.2 BETA</span>
