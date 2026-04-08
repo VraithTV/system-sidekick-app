@@ -26,7 +26,7 @@ export const JarvisLogo = ({ size = 32, className, static: isStatic }: JarvisLog
         borderRadius: 'inherit',
       }}
     />
-    {/* Accent colour overlay using mix-blend-mode (skipped when static) */}
+    {/* Accent colour overlay – masked to icon shape so background stays clean */}
     {!isStatic && (
       <div
         style={{
@@ -35,6 +35,14 @@ export const JarvisLogo = ({ size = 32, className, static: isStatic }: JarvisLog
           backgroundColor: 'hsl(var(--primary))',
           mixBlendMode: 'color',
           pointerEvents: 'none',
+          WebkitMaskImage: `url(${jarvisIcon})`,
+          WebkitMaskSize: 'contain',
+          WebkitMaskRepeat: 'no-repeat',
+          WebkitMaskPosition: 'center',
+          maskImage: `url(${jarvisIcon})`,
+          maskSize: 'contain',
+          maskRepeat: 'no-repeat',
+          maskPosition: 'center',
         }}
       />
     )}
