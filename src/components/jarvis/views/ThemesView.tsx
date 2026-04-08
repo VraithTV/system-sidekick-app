@@ -74,6 +74,8 @@ export const ThemesView = () => {
   const [activePreset, setActivePreset] = useState('default');
   const [activeAccent, setActiveAccent] = useState('cyan');
   const [activeFont, setActiveFont] = useState('default');
+  const { settings } = useJarvisStore();
+  const t = createT(settings.language || 'en');
 
   useEffect(() => {
     const { presetId, accentId, fontId } = loadThemePreference();
@@ -111,12 +113,12 @@ export const ThemesView = () => {
               <Palette className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h2 className="font-display text-sm tracking-[0.15em] text-primary">THEMES</h2>
-              <p className="mt-1 text-[11px] font-mono text-muted-foreground">Customise the look and feel of Jarvis</p>
+              <h2 className="font-display text-sm tracking-[0.15em] text-primary">{t('themes.title')}</h2>
+              <p className="mt-1 text-[11px] font-mono text-muted-foreground">{t('themes.subtitle')}</p>
             </div>
           </div>
           <button onClick={resetAll} className="flex items-center gap-2 rounded-xl border border-border bg-card/40 px-4 py-2 text-[11px] font-mono text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground">
-            <RotateCcw className="h-3 w-3" /> Reset
+            <RotateCcw className="h-3 w-3" /> {t('themes.reset')}
           </button>
         </div>
 
