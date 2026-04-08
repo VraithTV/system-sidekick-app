@@ -22,7 +22,7 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
 
   const promise = new Promise<string>((resolve, reject) => {
     if (!SpeechRecognitionCtor) {
-      reject(new BrowserSpeechRecognitionError('unsupported', 'Browser Speech Recognition not supported'));
+      reject(new SpeechRecognitionUnavailableError('Browser Speech Recognition not supported'));
       return;
     }
 
