@@ -51,12 +51,14 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
     recognition.continuous = true;
 
     let settled = false;
+    let lastActivityTime = Date.now();
 
+    // Give the user up to 8 seconds of total silence before giving up
     const timeout = setTimeout(() => {
       if (!settled) {
         try { recognition.stop(); } catch {}
       }
-    }, 5000);
+    }, 8000);
 
     const finish = (value = '') => {
       if (settled) return;
@@ -73,13 +75,19 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
     };
 
     recognition.onresult = (event: any) => {
-      const latestResult = event.results?.[event.resultIndex];
-      const transcript = latestResult?.[0]?.transcript?.trim() || '';
-      if (!transcript) return;
+      lastActivityTime = Date.now();
 
-      if (latestResult.isFinal || transcript.length > 4) {
+      // Collect all final results into one transcript
+      let finalTranscript = '';
+      for (let i = 0; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0]?.transcript || '';
+        }
+      }
+
+      if (finalTranscript.trim()) {
         try { recognition.stop(); } catch {}
-        finish(transcript);
+        finish(finalTranscript);
       }
     };
 
