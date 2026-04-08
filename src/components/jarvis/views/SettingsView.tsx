@@ -400,12 +400,12 @@ export const SettingsView = () => {
             <Card>
               <SectionTitle>{t('settings.voiceSelection')}</SectionTitle>
 
-              <p className="text-[10px] font-mono text-primary/70 uppercase tracking-wider mb-2 mt-1">Jarvis</p>
+              <p className="text-[10px] font-mono text-primary/70 uppercase tracking-wider mb-2 mt-1">{t('settings.jarvisVoices')}</p>
               <div className="space-y-1.5 mb-5">
                 {jarvisVoices.map((v) => <VoiceCard key={v.id} v={v} />)}
               </div>
 
-              <p className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-2">Standard Voices</p>
+              <p className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-2">{t('settings.standardVoices')}</p>
               <div className="space-y-1.5">
                 {standardVoices.map((v) => <VoiceCard key={v.id} v={v} />)}
               </div>
@@ -427,7 +427,7 @@ export const SettingsView = () => {
                   >
                     <img src={getFlagUrl(lang.countryCode)} alt={lang.label} className="w-6 h-[18px] rounded-sm object-cover shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] text-foreground/90 font-medium">{lang.label}</p>
+                      <p className="text-[13px] text-foreground/90 font-medium">{t(`lang.${lang.code}`)}</p>
                       <p className="text-[10px] text-muted-foreground font-mono">{lang.nativeLabel}</p>
                     </div>
                     {(settings.language || 'en') === lang.code && (
@@ -441,13 +441,13 @@ export const SettingsView = () => {
             <Card>
               <SectionTitle>{t('settings.shortcuts')}</SectionTitle>
               {[
-                { label: 'Clip Last 30s', key: 'Ctrl+Shift+C' },
-                { label: 'Toggle Recording', key: 'Ctrl+Shift+R' },
-                { label: 'Toggle Mic', key: 'Ctrl+Shift+M' },
-                { label: 'Push to Talk', key: 'Ctrl+Space' },
-                { label: 'Show / Hide', key: 'Ctrl+Shift+J' },
+                { label: t('settings.clipLast30'), key: 'Ctrl+Shift+C' },
+                { label: t('settings.toggleRecording'), key: 'Ctrl+Shift+R' },
+                { label: t('settings.toggleMic'), key: 'Ctrl+Shift+M' },
+                { label: t('settings.pushToTalk'), key: 'Ctrl+Space' },
+                { label: t('settings.showHide'), key: 'Ctrl+Shift+J' },
               ].map(({ label, key }) => (
-                <Row key={label} label={label}>
+                <Row key={key} label={label}>
                   <kbd className="text-[11px] font-mono px-3 py-1.5 bg-muted/60 rounded-lg border border-border/60 text-muted-foreground">{key}</kbd>
                 </Row>
               ))}
@@ -455,15 +455,15 @@ export const SettingsView = () => {
 
             {isElectron && (
               <Card>
-                <SectionTitle>Updates</SectionTitle>
+                <SectionTitle>{t('settings.updates')}</SectionTitle>
                 <Row
-                  label="Check for Updates"
+                  label={t('settings.checkForUpdates')}
                   desc={
                     updateState === 'error' && updateError
                       ? updateError
                       : currentVersion !== '0.0.0'
-                        ? `Current: v${currentVersion}`
-                        : 'See if a newer version is available'
+                        ? t('settings.currentVersion', { version: currentVersion })
+                        : t('settings.newVersionAvailable')
                   }
                 >
                   <button
@@ -476,7 +476,9 @@ export const SettingsView = () => {
                     ) : (
                       <Download size={14} />
                     )}
-                    {updateState === 'checking' ? 'Checking...' : updateState === 'no-update' ? 'Up to Date' : updateState === 'error' ? 'Check Failed' : 'Check Now'}
+                    {updateState === 'checking' ? t('settings.checking') : updateState === 'no-update' ? t('settings.upToDate') : updateState === 'error' ? t('settings.checkFailed') : t('settings.checkNow')}
+                  </button>
+                </Row>
                   </button>
                 </Row>
               </Card>
