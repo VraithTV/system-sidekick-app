@@ -51,6 +51,73 @@ function pause(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
+export const VOICE_ASSISTANT_START_EVENT = 'jarvis:start-listening';
+export const VOICE_ASSISTANT_STOP_EVENT = 'jarvis:stop-listening';
+
+export function requestVoiceAssistantStart() {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event(VOICE_ASSISTANT_START_EVENT));
+}
+
+export function requestVoiceAssistantStop() {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event(VOICE_ASSISTANT_STOP_EVENT));
+}
+
+function getVoiceCaptureErrorCode(error: unknown) {
+  if (!error || typeof error !== 'object' || !('code' in error)) return '';
+  const code = (error as { code?: unknown }).code;
+  return typeof code === 'string' ? code : '';
+}
+
+function isFatalVoiceCaptureError(error: unknown) {
+  const errorName = error instanceof Error ? error.name : '';
+  return FATAL_CAPTURE_ERRORS.has(errorName) || errorName === 'BrowserSpeechRecognitionError';
+}
+
+function notifyVoiceCaptureError(error: unknown) {
+  const errorName = error instanceof Error ? error.name : '';
+  const errorCode = getVoiceCaptureErrorCode(error);
+
+  if (errorName === 'SpeechRecognitionUnavailableError' || errorCode === 'unsupported') {
+    toast.error('Speech recognition is not available here.', {
+      description: 'Use Chrome or Edge and allow microphone access.',
+    });
+    return;
+  }
+
+  if (
+    errorName === 'NotAllowedError' ||
+    errorName === 'SecurityError' ||
+    errorCode === 'not-allowed' ||
+    errorCode === 'service-not-allowed' ||
+    errorCode === 'start-failed'
+  ) {
+    toast.error('Microphone access was blocked.', {
+      description: 'Click the mic button again and allow access in your browser.',
+    });
+    return;
+  }
+
+  if (errorName === 'NotReadableError') {
+    toast.error('Your microphone is busy.', {
+      description: 'Close any other app using the mic and try again.',
+    });
+    return;
+  }
+
+  if (errorName === 'NotFoundError' || errorCode === 'audio-capture') {
+    toast.error('No working microphone was found.', {
+      description: 'Connect a microphone, then try again.',
+    });
+    return;
+  }
+
+  toast.error('Voice capture failed.', {
+    description: 'Click the mic button again to retry.',
+  });
+}
+
 const browserVoiceMap: Record<string, { keywords: string[]; gender: 'male' | 'female'; pitch: number; rate: number }> = {
   daniel:  { keywords: ['Daniel', 'Google UK English Male', 'British'], gender: 'male', pitch: 0.85, rate: 0.92 },
   george:  { keywords: ['George', 'Google UK English Male', 'British'], gender: 'male', pitch: 0.9, rate: 0.95 },
@@ -310,8 +377,8 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
 
             if (!isListeningRef.current) break;
 
-            const errorName = error instanceof Error ? error.name : '';
-            if (FATAL_CAPTURE_ERRORS.has(errorName)) {
+            if (isFatalVoiceCaptureError(error)) {
+              notifyVoiceCaptureError(error);
               isListeningRef.current = false;
               setSystemStatus({ micActive: false });
               setState('idle');

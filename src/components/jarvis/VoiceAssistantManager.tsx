@@ -1,6 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
-import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
+import {
+  VOICE_ASSISTANT_START_EVENT,
+  VOICE_ASSISTANT_STOP_EVENT,
+  useVoiceAssistant,
+} from '@/hooks/useVoiceAssistant';
 
 export const VoiceAssistantManager = () => {
   const { settings, systemStatus, setSystemStatus } = useJarvisStore();
@@ -25,6 +29,21 @@ export const VoiceAssistantManager = () => {
       stopRef.current();
     }
   }, [systemStatus.micActive]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStart = () => startRef.current();
+    const handleStop = () => stopRef.current();
+
+    window.addEventListener(VOICE_ASSISTANT_START_EVENT, handleStart);
+    window.addEventListener(VOICE_ASSISTANT_STOP_EVENT, handleStop);
+
+    return () => {
+      window.removeEventListener(VOICE_ASSISTANT_START_EVENT, handleStart);
+      window.removeEventListener(VOICE_ASSISTANT_STOP_EVENT, handleStop);
+    };
+  }, []);
 
   return null;
 };
