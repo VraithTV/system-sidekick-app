@@ -267,7 +267,7 @@ IMPORTANT: After your reply, if the user revealed any new personal facts, output
 
     try {
       const result = await supabase.functions.invoke('jarvis-chat', {
-        body: { message: text, memories, timezone, mode: mode || 'assistant', conversationHistory },
+        body: { message: text, memories, timezone, mode: mode || 'assistant', conversationHistory, language: language || 'en' },
       });
       data = result.data;
       error = result.error;
