@@ -175,7 +175,7 @@ export const SettingsView = () => {
       }`} />
       <div className="flex-1 min-w-0">
         <p className="text-[13px] text-foreground/90 font-medium">{v.label}</p>
-        <p className="text-[10px] text-muted-foreground font-mono truncate">{v.description}</p>
+        <p className="text-[10px] text-muted-foreground font-mono truncate">{t(`voice.${v.id}`)}</p>
       </div>
       <button
         className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/30 hover:text-primary hover:bg-primary/10 transition-all shrink-0"
@@ -201,19 +201,19 @@ export const SettingsView = () => {
           <div className="space-y-5">
             <Card>
               <SectionTitle>{t('settings.general')}</SectionTitle>
-              <Row label="Wake Word" desc="Activation trigger name">
+              <Row label={t('settings.wakeWord')} desc={t('settings.wakeWordDesc')}>
                 <Input value={settings.wakeName} onChange={(e: any) => updateSettings({ wakeName: e.target.value })} className="w-28" />
               </Row>
 
               <div className="py-3.5 border-b border-border/40">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <p className="text-[13px] text-foreground/90 font-medium">Wake Aliases</p>
-                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Alt spellings the speech API may hear</p>
+                    <p className="text-[13px] text-foreground/90 font-medium">{t('settings.wakeAliases')}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{t('settings.wakeAliasesDesc')}</p>
                   </div>
                   <button
                     onClick={() => {
-                      const alias = prompt('Add alias (how the speech API hears your wake word):');
+                      const alias = prompt(t('settings.addAlias'));
                       if (alias?.trim()) updateSettings({ wakeAliases: [...settings.wakeAliases, alias.trim()] });
                     }}
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -222,7 +222,7 @@ export const SettingsView = () => {
                   </button>
                 </div>
                 {settings.wakeAliases.length === 0 && (
-                  <p className="text-[10px] text-muted-foreground/50 font-mono">None yet</p>
+                  <p className="text-[10px] text-muted-foreground/50 font-mono">{t('settings.noneYet')}</p>
                 )}
                 <div className="flex flex-wrap gap-1.5">
                   {settings.wakeAliases.map((alias, i) => (
@@ -239,7 +239,7 @@ export const SettingsView = () => {
                 </div>
               </div>
 
-              <Row label="Wake Sensitivity" desc={`${Math.round(settings.wakeSensitivity * 100)}%`}>
+              <Row label={t('settings.wakeSensitivity')} desc={`${Math.round(settings.wakeSensitivity * 100)}%`}>
                 <input
                   type="range" min={0.3} max={1} step={0.05}
                   value={settings.wakeSensitivity}
@@ -248,7 +248,7 @@ export const SettingsView = () => {
                 />
               </Row>
 
-              <Row label="Start on Boot" desc="Auto-launch with Windows">
+              <Row label={t('settings.startOnBoot')} desc={t('settings.startOnBootDesc')}>
                 <Toggle checked={settings.startOnBoot} onChange={() => updateSettings({ startOnBoot: !settings.startOnBoot })} />
               </Row>
             </Card>
@@ -258,8 +258,8 @@ export const SettingsView = () => {
               <div className="py-3.5 border-b border-border/40">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <p className="text-[13px] text-foreground/90 font-medium">Microphone</p>
-                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Select your input device</p>
+                    <p className="text-[13px] text-foreground/90 font-medium">{t('settings.microphone')}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{t('settings.micDesc')}</p>
                   </div>
                   <button onClick={refreshDevices} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                     <RefreshCw className="w-3.5 h-3.5" />
@@ -270,17 +270,17 @@ export const SettingsView = () => {
                   onChange={(e) => updateSettings({ inputDeviceId: e.target.value })}
                   className="w-full bg-muted/60 text-[12px] text-foreground/80 px-3 py-2.5 rounded-lg border border-border/60 font-mono outline-none focus:border-primary/50 transition-all"
                 >
-                  <option value="">System Default</option>
+                  <option value="">{t('settings.systemDefault')}</option>
                   {inputs.map((d) => (
                     <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
                   ))}
                 </select>
               </div>
 
-              <Row label="Always Listening" desc="Keep mic active in background">
+              <Row label={t('settings.alwaysListening')} desc={t('settings.alwaysListeningDesc')}>
                 <Toggle checked={settings.alwaysListening} onChange={() => updateSettings({ alwaysListening: !settings.alwaysListening })} />
               </Row>
-              <Row label="Push to Talk" desc="Hold hotkey to speak">
+              <Row label={t('settings.pushToTalk')} desc={t('settings.pushToTalkDesc')}>
                 <Toggle checked={settings.pushToTalk} onChange={() => updateSettings({ pushToTalk: !settings.pushToTalk })} />
               </Row>
             </Card>
@@ -290,8 +290,8 @@ export const SettingsView = () => {
               <div className="py-3.5 last:border-0">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <p className="text-[13px] text-foreground/90 font-medium">Speaker</p>
-                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Where Jarvis speaks</p>
+                    <p className="text-[13px] text-foreground/90 font-medium">{t('settings.speaker')}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{t('settings.speakerDesc')}</p>
                   </div>
                   <button onClick={refreshDevices} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                     <RefreshCw className="w-3.5 h-3.5" />
@@ -302,7 +302,7 @@ export const SettingsView = () => {
                   onChange={(e) => updateSettings({ outputDeviceId: e.target.value })}
                   className="w-full bg-muted/60 text-[12px] text-foreground/80 px-3 py-2.5 rounded-lg border border-border/60 font-mono outline-none focus:border-primary/50 transition-all"
                 >
-                  <option value="">System Default</option>
+                  <option value="">{t('settings.systemDefault')}</option>
                   {outputs.map((d) => (
                     <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
                   ))}
@@ -311,8 +311,8 @@ export const SettingsView = () => {
             </Card>
 
             <Card>
-              <SectionTitle>Clip Settings</SectionTitle>
-              <Row label="Buffer Duration" desc="Replay buffer length">
+              <SectionTitle>{t('settings.clipSettings')}</SectionTitle>
+              <Row label={t('settings.bufferDuration')} desc={t('settings.bufferDurationDesc')}>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => adjustClip('down')} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                     <Minus className="w-3.5 h-3.5" />
@@ -325,17 +325,17 @@ export const SettingsView = () => {
                   </button>
                 </div>
               </Row>
-              <Row label="Save Folder">
+              <Row label={t('settings.saveFolder')}>
                 <Input value={settings.clipFolder} onChange={(e: any) => updateSettings({ clipFolder: e.target.value })} className="w-48" />
               </Row>
             </Card>
 
             <Card>
-              <SectionTitle>OBS Connection</SectionTitle>
-              <Row label="WebSocket URL">
+              <SectionTitle>{t('settings.obsConnection')}</SectionTitle>
+              <Row label={t('settings.websocketUrl')}>
                 <Input value={settings.obsWebsocketUrl} onChange={(e: any) => updateSettings({ obsWebsocketUrl: e.target.value })} className="w-44" />
               </Row>
-              <Row label="Password">
+              <Row label={t('settings.password')}>
                 <Input type="password" value={settings.obsWebsocketPassword} onChange={(e: any) => updateSettings({ obsWebsocketPassword: e.target.value })} className="w-44" placeholder="••••••" />
               </Row>
             </Card>
@@ -346,9 +346,9 @@ export const SettingsView = () => {
                 <div className="flex items-center gap-3">
                   <img src={spotifyLogo} alt="Spotify" className="w-9 h-9 rounded-lg" loading="lazy" width={36} height={36} />
                   <div>
-                    <p className="text-[13px] text-foreground/90 font-medium">Spotify</p>
+                    <p className="text-[13px] text-foreground/90 font-medium">{t('settings.spotify')}</p>
                     <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                      {spotifyConnected ? 'Connected. Direct playback enabled.' : 'Control music playback with voice commands.'}
+                      {spotifyConnected ? t('settings.spotifyConnected') : t('settings.spotifyDesc')}
                     </p>
                   </div>
                 </div>
@@ -358,7 +358,7 @@ export const SettingsView = () => {
                     className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg border border-destructive/30 transition-colors"
                   >
                     <Unlink size={14} />
-                    Disconnect
+                    {t('settings.disconnect')}
                   </button>
                 ) : (
                   <button
@@ -388,7 +388,7 @@ export const SettingsView = () => {
                     className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-[#1DB954]/10 hover:bg-[#1DB954]/20 text-[#1DB954] rounded-lg border border-[#1DB954]/30 transition-colors"
                   >
                     <img src={spotifyLogo} alt="" className="w-3.5 h-3.5" width={14} height={14} />
-                    Connect
+                    {t('settings.connect')}
                   </button>
                 )}
               </div>
@@ -400,12 +400,12 @@ export const SettingsView = () => {
             <Card>
               <SectionTitle>{t('settings.voiceSelection')}</SectionTitle>
 
-              <p className="text-[10px] font-mono text-primary/70 uppercase tracking-wider mb-2 mt-1">Jarvis</p>
+              <p className="text-[10px] font-mono text-primary/70 uppercase tracking-wider mb-2 mt-1">{t('settings.jarvisVoices')}</p>
               <div className="space-y-1.5 mb-5">
                 {jarvisVoices.map((v) => <VoiceCard key={v.id} v={v} />)}
               </div>
 
-              <p className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-2">Standard Voices</p>
+              <p className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-2">{t('settings.standardVoices')}</p>
               <div className="space-y-1.5">
                 {standardVoices.map((v) => <VoiceCard key={v.id} v={v} />)}
               </div>
@@ -427,7 +427,7 @@ export const SettingsView = () => {
                   >
                     <img src={getFlagUrl(lang.countryCode)} alt={lang.label} className="w-6 h-[18px] rounded-sm object-cover shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] text-foreground/90 font-medium">{lang.label}</p>
+                      <p className="text-[13px] text-foreground/90 font-medium">{t(`lang.${lang.code}`)}</p>
                       <p className="text-[10px] text-muted-foreground font-mono">{lang.nativeLabel}</p>
                     </div>
                     {(settings.language || 'en') === lang.code && (
@@ -441,13 +441,13 @@ export const SettingsView = () => {
             <Card>
               <SectionTitle>{t('settings.shortcuts')}</SectionTitle>
               {[
-                { label: 'Clip Last 30s', key: 'Ctrl+Shift+C' },
-                { label: 'Toggle Recording', key: 'Ctrl+Shift+R' },
-                { label: 'Toggle Mic', key: 'Ctrl+Shift+M' },
-                { label: 'Push to Talk', key: 'Ctrl+Space' },
-                { label: 'Show / Hide', key: 'Ctrl+Shift+J' },
+                { label: t('settings.clipLast30'), key: 'Ctrl+Shift+C' },
+                { label: t('settings.toggleRecording'), key: 'Ctrl+Shift+R' },
+                { label: t('settings.toggleMic'), key: 'Ctrl+Shift+M' },
+                { label: t('settings.pushToTalk'), key: 'Ctrl+Space' },
+                { label: t('settings.showHide'), key: 'Ctrl+Shift+J' },
               ].map(({ label, key }) => (
-                <Row key={label} label={label}>
+                <Row key={key} label={label}>
                   <kbd className="text-[11px] font-mono px-3 py-1.5 bg-muted/60 rounded-lg border border-border/60 text-muted-foreground">{key}</kbd>
                 </Row>
               ))}
@@ -455,15 +455,15 @@ export const SettingsView = () => {
 
             {isElectron && (
               <Card>
-                <SectionTitle>Updates</SectionTitle>
+                <SectionTitle>{t('settings.updates')}</SectionTitle>
                 <Row
-                  label="Check for Updates"
+                  label={t('settings.checkForUpdates')}
                   desc={
                     updateState === 'error' && updateError
                       ? updateError
                       : currentVersion !== '0.0.0'
-                        ? `Current: v${currentVersion}`
-                        : 'See if a newer version is available'
+                        ? t('settings.currentVersion', { version: currentVersion })
+                        : t('settings.newVersionAvailable')
                   }
                 >
                   <button
@@ -476,7 +476,7 @@ export const SettingsView = () => {
                     ) : (
                       <Download size={14} />
                     )}
-                    {updateState === 'checking' ? 'Checking...' : updateState === 'no-update' ? 'Up to Date' : updateState === 'error' ? 'Check Failed' : 'Check Now'}
+                    {updateState === 'checking' ? t('settings.checking') : updateState === 'no-update' ? t('settings.upToDate') : updateState === 'error' ? t('settings.checkFailed') : t('settings.checkNow')}
                   </button>
                 </Row>
               </Card>
