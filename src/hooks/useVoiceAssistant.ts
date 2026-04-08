@@ -10,6 +10,7 @@ import { getModeSystemPromptAddition } from '@/lib/modes';
 import { commonApps } from '@/lib/commonApps';
 import { isOllamaAvailable, chatWithOllama, getOllamaModel } from '@/lib/ollamaClient';
 import { getLanguage } from '@/lib/languages';
+import { speakWithElevenLabs, stopElevenLabsTTS } from '@/lib/elevenLabsTTS';
 import { toast } from 'sonner';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
