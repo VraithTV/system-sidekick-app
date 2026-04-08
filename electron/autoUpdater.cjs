@@ -1,4 +1,4 @@
-const { net, dialog, shell, app } = require('electron');
+const { net, shell, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -92,14 +92,7 @@ async function checkForUpdates(silent = true) {
   console.log(`[AutoUpdater] Current version: ${currentVersion}`);
 
   if (!UPDATE_CONFIGURED) {
-    if (!silent) {
-      dialog.showMessageBox({
-        type: 'info',
-        title: 'Jarvis AI',
-        message: `You are running Jarvis AI v${currentVersion}.\n\nAutomatic updates will be available once a GitHub releases repository is configured.`,
-      });
-    }
-    return { status: 'not-configured', currentVersion };
+    return { status: 'not-configured', currentVersion, message: 'Update URL not configured.' };
   }
 
   try {
@@ -109,29 +102,15 @@ async function checkForUpdates(silent = true) {
     const downloadUrl = data.html_url || data.assets?.[0]?.browser_download_url || data.downloadUrl || '';
 
     if (!remoteVersion) {
-      if (!silent) {
-        dialog.showMessageBox({
-          type: 'info',
-          title: 'Update Check',
-          message: `Could not determine the latest version.\nYou are running v${currentVersion}.`,
-        });
-      }
       return { status: 'error', currentVersion, message: 'Could not determine the latest version.' };
     }
 
     if (!isNewer(remoteVersion, currentVersion)) {
       console.log('[AutoUpdater] Already up to date.');
-      if (!silent) {
-        dialog.showMessageBox({
-          type: 'info',
-          title: 'No Updates',
-          message: `You are running the latest version (${currentVersion}).`,
-        });
-      }
       return { status: 'up-to-date', currentVersion, remoteVersion };
     }
 
-    // Skip if user already dismissed this version (only for silent checks)
+    // Skip if user already dismissed this version (only for silent background checks)
     if (silent && wasDismissed(remoteVersion)) {
       console.log(`[AutoUpdater] Version ${remoteVersion} was dismissed.`);
       return { status: 'dismissed', currentVersion, remoteVersion, downloadUrl };
@@ -139,34 +118,18 @@ async function checkForUpdates(silent = true) {
 
     console.log(`[AutoUpdater] New version available: ${remoteVersion}`);
 
-    const result = await dialog.showMessageBox({
-      type: 'info',
-      title: 'Update Available',
-      message: `A new version of Jarvis AI is available: v${remoteVersion}\nYou are running v${currentVersion}.`,
-      buttons: ['Download Update', 'Remind Me Later', 'Skip This Version'],
-      defaultId: 0,
-      cancelId: 1,
-    });
-
-    if (result.response === 0 && downloadUrl) {
-      shell.openExternal(downloadUrl);
-    } else if (result.response === 2) {
-      dismissVersion(remoteVersion);
-    }
-
+    // Always return the result to the renderer; let the in-app UI handle prompts
     return { status: 'available', currentVersion, remoteVersion, downloadUrl };
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Could not check for updates.';
-    console.warn('[AutoUpdater] Check failed:', message);
-    if (!silent) {
-      dialog.showMessageBox({
-        type: 'error',
-        title: 'Update Check Failed',
-        message: message.includes('404')
-          ? 'Could not find the GitHub release feed. Check that the repository name is correct and the repo is public.'
-          : 'Could not check for updates. Please check your internet connection.',
-      });
+    const raw = error instanceof Error ? error.message : 'Could not check for updates.';
+    console.warn('[AutoUpdater] Check failed:', raw);
+
+    // Provide a user-friendly message
+    let message = 'Could not check for updates. Please check your internet connection.';
+    if (raw.includes('Not Found') || raw.includes('404')) {
+      message = 'No releases found. The GitHub repo may be private or has no releases yet.';
     }
+
     return { status: 'error', currentVersion, message };
   }
 }
