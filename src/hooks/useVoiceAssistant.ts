@@ -364,7 +364,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
           tryLaunchApp(cleanedText);
         } else {
           addToHistory('user', cleanedText);
-          response = await getAIResponse(cleanedText, mode);
+          response = await getAIResponse(cleanedText, mode, settings.language);
           addToHistory('assistant', response);
           tryLaunchApp(cleanedText);
         }
@@ -382,7 +382,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      await speakBrowser(response, settings.outputDeviceId || undefined, settings.voice);
+      await speakBrowser(response, settings.outputDeviceId || undefined, settings.voice, settings.language);
 
       // If the response ends with a question mark, stay in conversation mode
       // so the user doesn't need the wake word for their reply
@@ -429,7 +429,8 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
 
           try {
             console.log('[Jarvis] Listening for speech...');
-            const recognition = startSpeechRecognition(settings.inputDeviceId || undefined);
+            const sttLang = getLanguage(settings.language).sttCode;
+            const recognition = startSpeechRecognition(settings.inputDeviceId || undefined, sttLang);
             captureStopRef.current = recognition.stop;
             const transcript = await recognition.promise;
             captureStopRef.current = null;
