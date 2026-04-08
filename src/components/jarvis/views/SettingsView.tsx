@@ -124,6 +124,7 @@ const OllamaSection = () => {
 
 export const SettingsView = () => {
   const { settings, updateSettings } = useJarvisStore();
+  const t = createT(settings.language || 'en');
   const { previewVoice } = useVoiceAssistant({ previewOnly: true });
   const { inputs, outputs, refresh: refreshDevices } = useAudioDevices();
   const [previewing, setPreviewing] = useState<string | null>(null);
