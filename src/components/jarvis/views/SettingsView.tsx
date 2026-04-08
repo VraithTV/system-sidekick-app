@@ -175,7 +175,7 @@ export const SettingsView = () => {
       }`} />
       <div className="flex-1 min-w-0">
         <p className="text-[13px] text-foreground/90 font-medium">{v.label}</p>
-        <p className="text-[10px] text-muted-foreground font-mono truncate">{v.description}</p>
+        <p className="text-[10px] text-muted-foreground font-mono truncate">{t(`voice.${v.id}`)}</p>
       </div>
       <button
         className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/30 hover:text-primary hover:bg-primary/10 transition-all shrink-0"
