@@ -137,6 +137,14 @@ function createWindow() {
     },
   });
 
+  // Auto-grant microphone and camera permissions in Electron
+  mainWindow.webContents.session.setPermissionRequestHandler((_webContents, permission, callback) => {
+    const allowed = ['media', 'microphone', 'camera', 'audioCapture'].includes(permission);
+    callback(allowed);
+  });
+
+  mainWindow.webContents.session.setDevicePermissionHandler((_details) => true);
+
   if (!icon.isEmpty()) {
     mainWindow.setIcon(icon);
   }
