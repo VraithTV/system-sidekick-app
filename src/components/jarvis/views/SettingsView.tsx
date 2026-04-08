@@ -386,13 +386,18 @@ export const SettingsView = () => {
             {isElectron && (
               <div className="bg-card rounded-xl p-6 border border-border">
                 <SectionTitle>Updates</SectionTitle>
-                <Row label="Check for Updates" desc="See if a newer version is available">
+                <Row label="Check for Updates" desc={currentVersion !== '0.0.0' ? `Current: v${currentVersion}` : 'See if a newer version is available'}>
                   <button
-                    onClick={() => (window as any).electronAPI?.checkForUpdates?.()}
-                    className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg border border-primary/30 transition-colors"
+                    onClick={handleCheckForUpdates}
+                    disabled={updateState === 'checking'}
+                    className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg border border-primary/30 transition-colors disabled:opacity-50"
                   >
-                    <Download size={14} />
-                    Check Now
+                    {updateState === 'checking' ? (
+                      <div className="w-3.5 h-3.5 border-2 border-primary/60 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Download size={14} />
+                    )}
+                    {updateState === 'checking' ? 'Checking...' : updateState === 'no-update' ? 'Up to Date' : 'Check Now'}
                   </button>
                 </Row>
               </div>
@@ -400,6 +405,21 @@ export const SettingsView = () => {
           </div>
         </div>
       </div>
+
+      <UpdatePrompt
+        open={updateState === 'prompt'}
+        currentVersion={currentVersion}
+        newVersion={updateVersion}
+        onDismiss={() => setUpdateState('idle')}
+        onUpdateNow={() => setUpdateState('updating')}
+        onUpdateLater={() => setUpdateState('idle')}
+      />
+
+      <UpdateProgressScreen
+        open={updateState === 'updating'}
+        newVersion={updateVersion}
+        onComplete={handleUpdateComplete}
+      />
     </div>
   );
 };
