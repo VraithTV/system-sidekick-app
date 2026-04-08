@@ -351,8 +351,8 @@ ipcMain.handle('spotify-auth-flow', (_event, authUrl) => {
   });
 });
 
-// Auto-updater
-ipcMain.handle('check-for-updates', () => checkForUpdates(false));
+// Auto-updater — return version info to renderer (no native dialogs)
+ipcMain.handle('check-for-updates', () => checkForUpdates(true));
 ipcMain.handle('get-app-version', () => getCurrentVersion());
 
 // ─── App Lifecycle ───────────────────────────────────────────
