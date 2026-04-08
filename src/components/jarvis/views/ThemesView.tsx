@@ -7,6 +7,8 @@ import {
   loadThemePreference,
   applyTheme,
 } from '@/lib/themes';
+import { useJarvisStore } from '@/store/jarvisStore';
+import { createT } from '@/lib/i18n';
 
 const sectionLabel = 'flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground/60';
 
