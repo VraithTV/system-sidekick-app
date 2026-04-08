@@ -474,10 +474,11 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
       <div className="relative z-10 w-full max-w-md px-6 flex-1 flex flex-col mx-auto items-center justify-center">
         <div className="flex-1 flex flex-col">
           {step === 0 && <WelcomeStep onNext={next} />}
-          {step === 1 && <MicStep onNext={next} onBack={back} />}
-          {step === 2 && <OutputStep onNext={next} onBack={back} />}
-          {step === 3 && <AppsStep onNext={next} onBack={back} />}
-          {step === 4 && <VoiceStep onNext={next} onBack={back} />}
+          {step === 1 && <OllamaStep onNext={next} onBack={back} />}
+          {step === 2 && <MicStep onNext={next} onBack={back} />}
+          {step === 3 && <OutputStep onNext={next} onBack={back} />}
+          {step === 4 && <AppsStep onNext={next} onBack={back} />}
+          {step === 5 && <VoiceStep onNext={next} onBack={back} />}
         </div>
 
         {/* Step dots */}
