@@ -47,7 +47,10 @@ const FATAL_CAPTURE_ERRORS = new Set([
   'SpeechRecognitionUnavailableError',
 ]);
 
-// Map Jarvis voice IDs to browser voice preferences for variety
+function pause(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
 const browserVoiceMap: Record<string, { keywords: string[]; gender: 'male' | 'female'; pitch: number; rate: number }> = {
   daniel:  { keywords: ['Daniel', 'Google UK English Male', 'British'], gender: 'male', pitch: 0.85, rate: 0.92 },
   george:  { keywords: ['George', 'Google UK English Male', 'British'], gender: 'male', pitch: 0.9, rate: 0.95 },
@@ -165,7 +168,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
           timestamp: new Date(),
           type: 'voice',
         });
-        await speakWithElevenLabs(limitMsg, settings.voiceId, settings.outputDeviceId || undefined, settings.voice);
+        await speakBrowser(limitMsg, settings.outputDeviceId || undefined, settings.voice);
         if (isListeningRef.current) setState('standby');
         return;
       }
@@ -210,7 +213,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      await speakWithElevenLabs(response, settings.voiceId, settings.outputDeviceId || undefined, settings.voice);
+      await speakBrowser(response, settings.outputDeviceId || undefined, settings.voice);
 
       // If the response ends with a question mark, stay in conversation mode
       // so the user doesn't need the wake word for their reply
@@ -345,7 +348,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
   }, [setState, setSystemStatus]);
 
   const previewVoice = useCallback(async (voiceId: string) => {
-    await speakWithElevenLabs('At your service. How can I help you today?', voiceId, settings.outputDeviceId || undefined);
+    await speakBrowser('At your service. How can I help you today?', settings.outputDeviceId || undefined, voiceId);
   }, [settings.outputDeviceId]);
 
   useEffect(() => {
