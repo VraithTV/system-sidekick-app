@@ -94,9 +94,9 @@ const OllamaStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void
       <div className="w-16 h-16 rounded-full border border-primary/25 flex items-center justify-center bg-primary/5 mb-6">
         <Cpu className="w-7 h-7 text-primary" />
       </div>
-      <h2 className="font-display text-lg tracking-[0.12em] text-foreground mb-2">AI Engine Setup</h2>
+      <h2 className="font-display text-lg tracking-[0.12em] text-foreground mb-2">AI Engine</h2>
       <p className="text-xs text-muted-foreground mb-6 text-center max-w-xs">
-        Jarvis can use a local AI engine for faster, free, and private responses.
+        Jarvis works out of the box with cloud AI. You can optionally add a local AI engine for offline use.
       </p>
 
       {/* Status card */}
@@ -104,7 +104,7 @@ const OllamaStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void
         {status === 'checking' && (
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 border-2 border-primary/60 border-t-transparent rounded-full animate-spin" />
-            <p className="text-[13px] text-foreground/70">Detecting Ollama on your system...</p>
+            <p className="text-[13px] text-foreground/70">Checking for local AI engine...</p>
           </div>
         )}
         {status === 'found' && (
@@ -118,42 +118,37 @@ const OllamaStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void
               <p className="text-[11px] text-muted-foreground font-mono">{modelCount} model{modelCount !== 1 ? 's' : ''} installed</p>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Jarvis will use your local AI. No internet needed for responses.
+              Jarvis will use your local AI. Free, private, no internet needed.
             </p>
           </div>
         )}
         {status === 'not-found' && (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-muted-foreground/30" />
-              <p className="text-[13px] text-foreground/85">Ollama not detected</p>
+              <div className="w-3 h-3 rounded-full bg-primary/40" />
+              <p className="text-[13px] text-foreground/85">Using cloud AI (default)</p>
             </div>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              For the best experience, install Ollama and download a model. This gives you free, private, offline AI responses.
+              Jarvis is ready to go. Cloud AI handles all your requests over the internet.
             </p>
-            <div className="space-y-2">
-              <a
-                href="https://ollama.com/download"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-primary/30 text-primary text-[12px] font-display tracking-wider uppercase hover:bg-primary/10 transition-all"
+
+            <div className="border-t border-border/50 pt-3 space-y-3">
+              <p className="text-[10px] text-primary/70 font-display tracking-wider uppercase">Optional: enable offline AI</p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Want responses without internet? Follow these steps:
+              </p>
+              <ol className="text-[11px] text-muted-foreground leading-relaxed space-y-2 list-decimal list-inside">
+                <li>Download and install <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Ollama</a></li>
+                <li>Run the installer and <strong className="text-foreground/70">wait for it to finish completely</strong></li>
+                <li>Open a terminal and run: <code className="text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded text-[9px]">ollama pull llama3</code></li>
+                <li>Click "Check again" below once Ollama is running</li>
+              </ol>
+              <button
+                onClick={() => { playClick(); check(); }}
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-border text-muted-foreground text-[11px] hover:text-foreground hover:bg-muted/40 transition-colors"
               >
-                Download Ollama <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-              <p className="text-[10px] text-muted-foreground text-center font-mono">
-                After installing, run: <code className="text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded">ollama pull llama3</code>
-              </p>
-            </div>
-            <button
-              onClick={() => { playClick(); check(); }}
-              className="flex items-center justify-center gap-2 w-full py-2 rounded-lg text-muted-foreground text-[11px] hover:text-foreground hover:bg-muted/40 transition-colors"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Check again
-            </button>
-            <div className="border-t border-border/50 pt-3">
-              <p className="text-[10px] text-muted-foreground/60 text-center">
-                You can skip this step. Jarvis will use cloud AI instead (requires internet).
-              </p>
+                <RefreshCw className="w-3.5 h-3.5" /> Check again
+              </button>
             </div>
           </div>
         )}
@@ -170,7 +165,7 @@ const OllamaStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void
           onClick={() => { playClick(); onNext(); }}
           className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
         >
-          {status === 'found' ? 'Continue' : 'Skip'} <ChevronRight className="w-4 h-4" />
+          Continue <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     </div>
