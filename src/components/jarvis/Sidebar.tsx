@@ -24,7 +24,6 @@ export const Sidebar = () => {
         <span className="text-[15px] font-semibold tracking-[0.3em] font-heading text-muted-foreground/70">JARVIS</span>
         <span className="text-[9px] font-mono text-muted-foreground/30 tracking-wider">V1.2 BETA</span>
       </div>
-      </div>
 
       {/* Nav items */}
       <nav className="flex-1 flex flex-col pt-1 pb-3 px-2 gap-px overflow-y-auto">
