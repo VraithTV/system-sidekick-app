@@ -337,7 +337,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
           text: cleanedText,
           response: limitMsg,
           timestamp: new Date(),
-          type: 'system',
+          type: 'voice',
         });
         toast.error('Daily limit reached', {
           description: 'You have used all 25 commands for today. Try again after midnight.',
