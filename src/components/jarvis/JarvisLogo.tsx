@@ -1,4 +1,4 @@
-import jarvisLogo from '@/assets/jarvis-app-icon.png';
+import jarvisIcon from '@/assets/jarvis-icon-square.png';
 
 type JarvisLogoProps = {
   size?: number;
@@ -13,7 +13,7 @@ export const JarvisLogo = ({ size = 32, className, static: isStatic }: JarvisLog
     style={{ width: size, height: size, position: 'relative' }}
   >
     <img
-      src={jarvisLogo}
+      src={jarvisIcon}
       width={size}
       height={size}
       alt="Jarvis"
