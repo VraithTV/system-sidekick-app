@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, nativeImage, Tray, Menu, shell, globalShortcut, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { exec } = require('child_process');
 const { checkForUpdates, downloadUpdate, installAndRestart, dismissVersion, startAutoUpdateSchedule, stopAutoUpdateSchedule, getCurrentVersion } = require('./autoUpdater.cjs');
 
 app.setName('Jarvis AI BETA');
@@ -283,17 +284,44 @@ ipcMain.on('open-url', (_event, url) => {
 
 // Launch app by ID using shell.openExternal (no child_process needed)
 ipcMain.handle('open-app', (_event, appId) => {
-  const launchMap = {
-    chrome: 'https://google.com', edge: 'microsoft-edge:', spotify: 'spotify:',
-    discord: 'discord:', steam: 'steam://', vscode: 'vscode:',
-    slack: 'slack:', telegram: 'tg:', whatsapp: 'whatsapp:',
-    word: 'ms-word:', excel: 'ms-excel:',
-    youtube: 'https://youtube.com', netflix: 'https://netflix.com',
-    twitch: 'https://twitch.tv', twitter: 'https://x.com',
-    github: 'https://github.com', chatgpt: 'https://chat.openai.com',
+  const windowsCommandMap = {
+    chrome: 'chrome',
+    edge: 'msedge',
+    firefox: 'firefox',
+    brave: 'brave',
+    explorer: 'explorer',
+    notepad: 'notepad',
+    'task-manager': 'taskmgr',
+    obs: 'obs64',
+    terminal: 'wt',
+  };
+
+  const urlLaunchMap = {
+    spotify: 'spotify:',
+    discord: 'discord:',
+    steam: 'steam://',
+    vscode: 'vscode:',
+    slack: 'slack:',
+    telegram: 'tg:',
+    whatsapp: 'whatsapp:',
+    word: 'ms-word:',
+    excel: 'ms-excel:',
+    youtube: 'https://youtube.com',
+    netflix: 'https://netflix.com',
+    twitch: 'https://twitch.tv',
+    twitter: 'https://x.com',
+    github: 'https://github.com',
+    chatgpt: 'https://chat.openai.com',
     calculator: 'calculator:',
   };
-  const uri = launchMap[appId];
+
+  const command = windowsCommandMap[appId];
+  if (process.platform === 'win32' && command) {
+    exec(`start "" ${command}`, { shell: 'cmd.exe' }, () => {});
+    return null;
+  }
+
+  const uri = urlLaunchMap[appId];
   if (uri) {
     shell.openExternal(uri).catch(() => {});
   }

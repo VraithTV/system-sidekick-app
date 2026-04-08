@@ -5,12 +5,30 @@ import { getDefaultApps } from '@/lib/commonApps';
 const APPS_KEY = 'jarvis_apps';
 const APPS_VERSION_KEY = 'jarvis_apps_version';
 const CURRENT_APPS_VERSION = 2; // bump to force re-seed defaults
+const SETTINGS_KEY = 'jarvis_settings';
+
+const defaultSettings: JarvisSettings = {
+  wakeName: 'Jarvis',
+  wakeAliases: [],
+  wakeSensitivity: 0.55,
+  voice: 'daniel',
+  voiceId: 'onwK4e9ZLuTAKqWW03F9',
+  language: 'en',
+  startOnBoot: true,
+  alwaysListening: true,
+  pushToTalk: false,
+  clipDuration: 30,
+  clipFolder: 'C:\\Jarvis\\Clips',
+  obsWebsocketUrl: 'ws://localhost:4455',
+  obsWebsocketPassword: '',
+  inputDeviceId: '',
+  outputDeviceId: '',
+};
 
 function loadApps(): AppShortcut[] {
   try {
     const version = parseInt(localStorage.getItem(APPS_VERSION_KEY) || '0', 10);
     if (version < CURRENT_APPS_VERSION) {
-      // First time or version bump: seed with defaults
       const defaults = getDefaultApps();
       localStorage.setItem(APPS_KEY, JSON.stringify(defaults));
       localStorage.setItem(APPS_VERSION_KEY, String(CURRENT_APPS_VERSION));
@@ -23,6 +41,25 @@ function loadApps(): AppShortcut[] {
 
 function saveApps(apps: AppShortcut[]) {
   try { localStorage.setItem(APPS_KEY, JSON.stringify(apps)); } catch {}
+}
+
+function loadSettings(): JarvisSettings {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return defaultSettings;
+    const parsed = JSON.parse(raw) as Partial<JarvisSettings>;
+    return {
+      ...defaultSettings,
+      ...parsed,
+      wakeAliases: Array.isArray(parsed.wakeAliases) ? parsed.wakeAliases : defaultSettings.wakeAliases,
+    };
+  } catch {
+    return defaultSettings;
+  }
+}
+
+function saveSettings(settings: JarvisSettings) {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {}
 }
 
 interface JarvisStore {
@@ -80,24 +117,12 @@ export const useJarvisStore = create<JarvisStore>((set) => ({
     desktopOnline: true,
   },
   setSystemStatus: (status) => set((s) => ({ systemStatus: { ...s.systemStatus, ...status } })),
-  settings: {
-    wakeName: 'Jarvis',
-    wakeAliases: [],
-    wakeSensitivity: 0.55,
-    voice: 'daniel',
-    voiceId: 'onwK4e9ZLuTAKqWW03F9',
-    language: 'en',
-    startOnBoot: true,
-    alwaysListening: true,
-    pushToTalk: false,
-    clipDuration: 30,
-    clipFolder: 'C:\\Jarvis\\Clips',
-    obsWebsocketUrl: 'ws://localhost:4455',
-    obsWebsocketPassword: '',
-    inputDeviceId: '',
-    outputDeviceId: '',
-  },
-  updateSettings: (s) => set((prev) => ({ settings: { ...prev.settings, ...s } })),
+  settings: loadSettings(),
+  updateSettings: (s) => set((prev) => {
+    const settings = { ...prev.settings, ...s };
+    saveSettings(settings);
+    return { settings };
+  }),
   activeView: 'dashboard',
   setActiveView: (view) => set({ activeView: view }),
   mode: 'assistant' as JarvisMode,
