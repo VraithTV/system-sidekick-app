@@ -99,7 +99,7 @@ Examples of your tone:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "openai/gpt-5.2",
           messages: [
             { role: "system", content: systemPrompt },
             ...(Array.isArray(conversationHistory) ? conversationHistory.slice(-10) : []),
