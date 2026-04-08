@@ -1,5 +1,5 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { Minus, Plus, Play, X, RefreshCw, Download, Unlink } from 'lucide-react';
+import { Minus, Plus, Play, X, RefreshCw, Download, Unlink, Cpu } from 'lucide-react';
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
@@ -8,6 +8,7 @@ import { isSpotifyConnected, clearSpotifyTokens, exchangeSpotifyCode } from '@/l
 import spotifyLogo from '@/assets/spotify-logo.png';
 import { UpdatePrompt } from '@/components/jarvis/UpdatePrompt';
 import { UpdateProgressScreen } from '@/components/jarvis/UpdateProgressScreen';
+import { isOllamaAvailable, listOllamaModels, resetOllamaStatus, getOllamaModel } from '@/lib/ollamaClient';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -306,6 +307,8 @@ export const SettingsView = () => {
                 <Input type="password" value={settings.obsWebsocketPassword} onChange={(e: any) => updateSettings({ obsWebsocketPassword: e.target.value })} className="w-44" placeholder="••••••" />
               </Row>
             </div>
+
+            <OllamaSection />
             </div>
 
           <div className="space-y-5">
