@@ -1,3 +1,5 @@
+const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+
 function getSpeechRecognitionCtor(): any {
   if (typeof window === 'undefined') return undefined;
   return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -8,6 +10,7 @@ function getBrowserName(): string {
   const ua = navigator.userAgent;
   if (ua.includes('Firefox')) return 'Firefox';
   if (ua.includes('Edg/')) return 'Edge';
+  if (ua.includes('Electron')) return 'Electron';
   if (ua.includes('Chrome')) return 'Chrome';
   if (ua.includes('Safari')) return 'Safari';
   return 'unknown';
@@ -24,6 +27,186 @@ class SpeechRecognitionUnavailableError extends Error {
     this.name = 'SpeechRecognitionUnavailableError';
   }
 }
+
+// ─── MediaRecorder + ElevenLabs STT (used in Electron) ──────
+
+let cachedMicStream: MediaStream | null = null;
+
+async function getMicStream(deviceId?: string): Promise<MediaStream> {
+  // Reuse existing stream if tracks are still live
+  if (cachedMicStream && cachedMicStream.getAudioTracks().every(t => t.readyState === 'live')) {
+    return cachedMicStream;
+  }
+
+  const constraints: MediaStreamConstraints = {
+    audio: deviceId
+      ? { deviceId: { exact: deviceId }, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      : { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+  };
+
+  cachedMicStream = await navigator.mediaDevices.getUserMedia(constraints);
+  return cachedMicStream;
+}
+
+function createMediaRecorderSTTController(deviceId?: string, langCode?: string): SpeechRecognitionController {
+  let stopped = false;
+  let recorder: MediaRecorder | null = null;
+  let audioContext: AudioContext | null = null;
+  let analyser: AnalyserNode | null = null;
+  let rafId = 0;
+
+  const promise = new Promise<string>(async (resolve, reject) => {
+    try {
+      const stream = await getMicStream(deviceId);
+      if (stopped) { resolve(''); return; }
+
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : undefined;
+
+      recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const chunks: BlobPart[] = [];
+
+      // Voice activity detection: stop recording after silence
+      audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(stream);
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      source.connect(analyser);
+      const samples = new Uint8Array(analyser.fftSize);
+
+      let heardSpeech = false;
+      let silenceStart = 0;
+      const SILENCE_MS = 1200; // Stop after 1.2s of silence
+      const MAX_DURATION_MS = 10000; // Max 10s per utterance
+      const LEVEL_THRESHOLD = 6;
+      const startTime = performance.now();
+
+      const measure = () => {
+        analyser!.getByteTimeDomainData(samples);
+        let total = 0;
+        for (let i = 0; i < samples.length; i++) total += Math.abs(samples[i] - 128);
+        return total / samples.length;
+      };
+
+      const tick = () => {
+        if (stopped || !recorder || recorder.state !== 'recording') return;
+        const now = performance.now();
+        const level = measure();
+
+        if (level > LEVEL_THRESHOLD) {
+          heardSpeech = true;
+          silenceStart = 0;
+        } else if (heardSpeech) {
+          if (!silenceStart) silenceStart = now;
+          if (now - silenceStart >= SILENCE_MS) {
+            recorder.stop();
+            return;
+          }
+        }
+
+        if (now - startTime >= MAX_DURATION_MS) {
+          recorder.stop();
+          return;
+        }
+
+        rafId = requestAnimationFrame(tick);
+      };
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        cancelAnimationFrame(rafId);
+        if (audioContext && audioContext.state !== 'closed') {
+          try { await audioContext.close(); } catch {}
+        }
+
+        if (stopped || chunks.length === 0) {
+          resolve('');
+          return;
+        }
+
+        const blob = new Blob(chunks, { type: recorder!.mimeType || 'audio/webm' });
+
+        // If blob is very small (< 1KB), likely no real audio
+        if (blob.size < 1000) {
+          resolve('');
+          return;
+        }
+
+        try {
+          const transcript = await transcribeWithElevenLabs(blob, langCode);
+          resolve(transcript);
+        } catch (err) {
+          console.warn('[Jarvis] ElevenLabs STT failed:', err);
+          resolve('');
+        }
+      };
+
+      recorder.onerror = () => {
+        cancelAnimationFrame(rafId);
+        resolve('');
+      };
+
+      recorder.start(250);
+      rafId = requestAnimationFrame(tick);
+
+    } catch (err) {
+      if (err instanceof Error && (err.name === 'NotAllowedError' || err.name === 'NotFoundError' || err.name === 'NotReadableError')) {
+        reject(new SpeechRecognitionUnavailableError(
+          err.name === 'NotAllowedError'
+            ? 'Microphone access was denied. Allow microphone permission and try again.'
+            : err.name === 'NotFoundError'
+              ? 'No microphone found. Connect a microphone and try again.'
+              : 'Microphone is in use by another app.'
+        ));
+      } else {
+        reject(err);
+      }
+    }
+  });
+
+  return {
+    promise,
+    stop: () => {
+      stopped = true;
+      cancelAnimationFrame(rafId);
+      try { recorder?.stop(); } catch {}
+    },
+  };
+}
+
+async function transcribeWithElevenLabs(audioBlob: Blob, langCode?: string): Promise<string> {
+  const { supabase } = await import('@/integrations/supabase/client');
+
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'recording.webm');
+
+  // Map BCP-47 to ElevenLabs ISO 639-3 codes
+  const langMap: Record<string, string> = {
+    'en-US': 'eng', 'en-GB': 'eng', 'fr-FR': 'fra', 'de-DE': 'deu',
+    'es-ES': 'spa', 'pt-BR': 'por', 'ru-RU': 'rus', 'ja-JP': 'jpn',
+    'ko-KR': 'kor', 'zh-CN': 'cmn', 'ar-SA': 'ara', 'hi-IN': 'hin',
+    'it-IT': 'ita',
+  };
+  const elevenLabsLang = langMap[langCode || 'en-US'] || '';
+  if (elevenLabsLang) {
+    formData.append('language', elevenLabsLang);
+  }
+
+  const { data, error } = await supabase.functions.invoke('elevenlabs-transcribe', {
+    body: formData,
+  });
+
+  if (error) throw error;
+  return (data?.text || '').trim();
+}
+
+// ─── Browser Web Speech API (Chrome/Edge only) ─────────────
 
 function createBrowserSpeechRecognitionController(langCode?: string): SpeechRecognitionController {
   let recognition: any;
@@ -53,7 +236,6 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
     let settled = false;
     let lastActivityTime = Date.now();
 
-    // Give the user up to 8 seconds of total silence before giving up
     const timeout = setTimeout(() => {
       if (!settled) {
         try { recognition.stop(); } catch {}
@@ -77,7 +259,6 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
     recognition.onresult = (event: any) => {
       lastActivityTime = Date.now();
 
-      // Collect all final results into one transcript
       let finalTranscript = '';
       for (let i = 0; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
@@ -93,8 +274,16 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
 
     recognition.onerror = (event: any) => {
       const code = event.error || 'unknown';
-      if (code === 'no-speech' || code === 'aborted' || code === 'network') {
+      if (code === 'no-speech' || code === 'aborted') {
         finish('');
+        return;
+      }
+
+      // In Electron, 'network' error means Google's speech service is unavailable
+      if (code === 'network') {
+        fail(new SpeechRecognitionUnavailableError(
+          'Speech recognition network service is unavailable. Using cloud transcription instead.'
+        ));
         return;
       }
 
@@ -105,7 +294,6 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
         return;
       }
 
-      // Treat unknown errors as non-fatal so the loop can retry
       console.warn('[Jarvis] Speech recognition error:', code);
       finish('');
     };
@@ -138,26 +326,45 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
   };
 }
 
+// ─── Public API ─────────────────────────────────────────────
+
 export function startSpeechRecognition(
   _deviceId?: string,
   langCode?: string,
 ): SpeechRecognitionController {
+  // In Electron, always use MediaRecorder + ElevenLabs STT
+  // because Web Speech API requires Google's proprietary service
+  if (isElectron) {
+    return createMediaRecorderSTTController(_deviceId, langCode);
+  }
+
   let activeController: SpeechRecognitionController | null = null;
   let stopped = false;
 
   const SpeechRecognitionCtor = getSpeechRecognitionCtor();
-  if (!SpeechRecognitionCtor) {
+
+  // Build attempt list: try browser speech first, fall back to MediaRecorder
+  const attempts: { label: string; create: () => SpeechRecognitionController }[] = [];
+
+  if (SpeechRecognitionCtor) {
+    attempts.push({
+      label: 'browser speech recognition',
+      create: () => createBrowserSpeechRecognitionController(langCode),
+    });
+  }
+
+  // Always have MediaRecorder + ElevenLabs as fallback
+  attempts.push({
+    label: 'cloud transcription (ElevenLabs)',
+    create: () => createMediaRecorderSTTController(_deviceId, langCode),
+  });
+
+  if (attempts.length === 0) {
     const browser = getBrowserName();
-    if (browser === 'Firefox') {
-      throw new SpeechRecognitionUnavailableError(
-        'Firefox does not support speech recognition yet. Use Chrome or Edge, or install the "Speech Recognition Polyfill" Firefox addon.'
-      );
-    }
     throw new SpeechRecognitionUnavailableError(
       `Speech recognition is not available in ${browser}. Try using Chrome or Edge.`
     );
   }
-  const attempts = [{ label: 'browser speech recognition', create: () => createBrowserSpeechRecognitionController(langCode) }];
 
   const promise = (async () => {
     let lastError: unknown = null;
