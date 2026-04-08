@@ -5,15 +5,9 @@ const SpeechRecognitionCtor: any =
     ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     : undefined;
 
-const isElectronApp = typeof window !== 'undefined' && !!(window as any).electronAPI;
-
 type SpeechRecognitionController = {
   promise: Promise<string>;
   stop: () => void;
-};
-
-type SpeechRecognitionStartOptions = {
-  preferLocal?: boolean;
 };
 
 class SpeechRecognitionUnavailableError extends Error {
@@ -21,41 +15,6 @@ class SpeechRecognitionUnavailableError extends Error {
     super(message);
     this.name = 'SpeechRecognitionUnavailableError';
   }
-}
-
-class BrowserSpeechRecognitionError extends Error {
-  code: string;
-
-  constructor(code: string, message: string) {
-    super(message);
-    this.name = 'BrowserSpeechRecognitionError';
-    this.code = code;
-  }
-}
-
-async function getSupabaseClient() {
-  const { supabase } = await import('@/integrations/supabase/client');
-  return supabase;
-}
-
-async function transcribeWithElevenLabs(blob: Blob): Promise<string> {
-  const formData = new FormData();
-  formData.append('audio', blob, 'utterance.webm');
-  formData.append('language', 'eng');
-
-  const supabase = await getSupabaseClient();
-  const { data, error } = await supabase.functions.invoke('elevenlabs-transcribe', {
-    body: formData,
-  });
-
-  if (error) {
-    const status = (error as any)?.context?.status;
-    throw new SpeechRecognitionUnavailableError(
-      `Remote speech recognition failed${status ? ` (${status})` : ''}.`
-    );
-  }
-
-  return typeof data?.text === 'string' ? data.text.trim() : '';
 }
 
 function createBrowserSpeechRecognitionController(): SpeechRecognitionController {
@@ -113,7 +72,7 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
         return;
       }
 
-      fail(new BrowserSpeechRecognitionError(code, `Speech recognition error: ${code}`));
+      fail(new SpeechRecognitionUnavailableError(`Speech recognition error: ${code}`));
     };
 
     recognition.onend = () => {
@@ -125,8 +84,7 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
     } catch (error) {
       clearTimeout(timeout);
       fail(
-        new BrowserSpeechRecognitionError(
-          'start-failed',
+        new SpeechRecognitionUnavailableError(
           error instanceof Error ? error.message : 'Speech recognition failed to start'
         )
       );
@@ -145,49 +103,8 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
   };
 }
 
-function createElevenLabsSpeechRecognitionController(deviceId?: string): SpeechRecognitionController {
-  let stopCapture = () => undefined;
-  let stopped = false;
-
-  const promise = (async () => {
-    const capture = await startUtteranceCapture({
-      deviceId,
-      maxDurationMs: 8000,
-      silenceDurationMs: 450,
-      levelThreshold: 3,
-    });
-
-    stopCapture = () => {
-      stopped = true;
-      capture.stop();
-    };
-
-    if (stopped) {
-      capture.stop();
-      return '';
-    }
-
-    const audioBlob = await capture.promise;
-    if (stopped || !audioBlob) return '';
-
-    try {
-      return await transcribeWithElevenLabs(audioBlob);
-    } catch (error) {
-      throw new SpeechRecognitionUnavailableError(
-        error instanceof Error ? error.message : 'Remote speech recognition failed.'
-      );
-    }
-  })();
-
-  return {
-    promise,
-    stop: () => stopCapture(),
-  };
-}
-
 export function startSpeechRecognition(
-  deviceId?: string,
-  _options: SpeechRecognitionStartOptions = {}
+  _deviceId?: string,
 ): SpeechRecognitionController {
   let activeController: SpeechRecognitionController | null = null;
   let stopped = false;
