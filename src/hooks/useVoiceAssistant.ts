@@ -14,6 +14,7 @@ import { speakWithElevenLabs, stopElevenLabsTTS } from '@/lib/elevenLabsTTS';
 import { toast } from 'sonner';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+let limitToastShown = false;
 
 /** Try to detect an "open app" intent and actually launch it via Electron */
 function tryLaunchApp(userText: string): void {
@@ -339,10 +340,13 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
           timestamp: new Date(),
           type: 'voice',
         });
-        toast.error('Daily limit reached', {
-          description: 'You have used all 25 commands for today. Try again after midnight.',
-          duration: 6000,
-        });
+        if (!limitToastShown) {
+          limitToastShown = true;
+          toast.error('Daily limit reached', {
+            description: 'You have used all 25 commands for today. Try again after midnight.',
+            duration: 6000,
+          });
+        }
         await speakBrowser(limitMsg, settings.outputDeviceId || undefined, settings.voice, settings.language);
         if (isListeningRef.current) setState('standby');
         return;
