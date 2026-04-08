@@ -53,9 +53,10 @@ export const SettingsView = () => {
   const { inputs, outputs, refresh: refreshDevices } = useAudioDevices();
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [spotifyConnected, setSpotifyConnected] = useState(isSpotifyConnected());
-  const [updateState, setUpdateState] = useState<'idle' | 'checking' | 'prompt' | 'updating' | 'no-update' | 'error'>('idle');
+  const [updateState, setUpdateState] = useState<'idle' | 'checking' | 'prompt' | 'downloading' | 'updating' | 'no-update' | 'error'>('idle');
   const [updateVersion, setUpdateVersion] = useState('');
   const [updateUrl, setUpdateUrl] = useState('');
+  const [updateAssetName, setUpdateAssetName] = useState('');
   const [updateError, setUpdateError] = useState('');
   const [currentVersion, setCurrentVersion] = useState('0.0.0');
 

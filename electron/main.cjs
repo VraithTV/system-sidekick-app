@@ -356,8 +356,24 @@ ipcMain.handle('spotify-auth-flow', (_event, authUrl) => {
 });
 
 // Auto-updater — return version info to renderer (no native dialogs)
-ipcMain.handle('check-for-updates', () => checkForUpdates(true));
+ipcMain.handle('check-for-updates', () => checkForUpdates(false));
 ipcMain.handle('get-app-version', () => getCurrentVersion());
+ipcMain.handle('download-update', async (_event, downloadUrl, assetName) => {
+  try {
+    const filePath = await downloadUpdate(downloadUrl, assetName);
+    return { status: 'downloaded', filePath };
+  } catch (error) {
+    return { status: 'error', message: error instanceof Error ? error.message : 'Download failed.' };
+  }
+});
+ipcMain.handle('install-update', (_event, filePath) => {
+  const launched = installAndRestart(filePath);
+  return { launched };
+});
+ipcMain.handle('dismiss-update', (_event, version) => {
+  dismissVersion(version);
+  return null;
+});
 
 // ─── App Lifecycle ───────────────────────────────────────────
 
