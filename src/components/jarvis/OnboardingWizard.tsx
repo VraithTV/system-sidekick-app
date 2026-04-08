@@ -450,7 +450,7 @@ const VoiceStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void 
 // ── Main Wizard ──
 export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   const next = () => {
     if (step < totalSteps - 1) setStep(step + 1);
