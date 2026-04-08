@@ -72,7 +72,7 @@ function getVoiceCaptureErrorCode(error: unknown) {
 
 function isFatalVoiceCaptureError(error: unknown) {
   const errorName = error instanceof Error ? error.name : '';
-  return FATAL_CAPTURE_ERRORS.has(errorName) || errorName === 'BrowserSpeechRecognitionError';
+  return FATAL_CAPTURE_ERRORS.has(errorName);
 }
 
 function notifyVoiceCaptureError(error: unknown) {
@@ -327,9 +327,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
 
           try {
             console.log('[Jarvis] Listening for speech...');
-            const recognition = startSpeechRecognition(settings.inputDeviceId || undefined, {
-              preferLocal: isElectron,
-            });
+            const recognition = startSpeechRecognition(settings.inputDeviceId || undefined);
             captureStopRef.current = recognition.stop;
             const transcript = await recognition.promise;
             captureStopRef.current = null;
