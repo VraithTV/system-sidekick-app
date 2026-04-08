@@ -868,6 +868,7 @@ const translations: Record<string, Record<string, string>> = {
     'themes.recipeText': 'Superfícies {preset}, cor de sinal {accent}, e tipografia {font}.',
     'themes.pangram': 'À noite, vovô Kowalsky vê o ímã cair no pé do pinguim queixoso.',
   },
+  ru: {
     'nav.dashboard': 'Панель',
     'nav.apps': 'Приложения',
     'nav.clips': 'Клипы',
