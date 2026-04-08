@@ -192,19 +192,10 @@ export function startSpeechRecognition(
   let activeController: SpeechRecognitionController | null = null;
   let stopped = false;
 
-  const browserAttempts = SpeechRecognitionCtor
+  // Always use free browser Speech Recognition as primary
+  const attempts = SpeechRecognitionCtor
     ? [{ label: 'browser speech recognition', create: () => createBrowserSpeechRecognitionController() }]
-    : [];
-
-  const attempts = isElectronApp
-    ? [
-        { label: 'remote speech recognition', create: () => createElevenLabsSpeechRecognitionController(deviceId) },
-        ...browserAttempts,
-      ]
-    : [
-        ...browserAttempts,
-        { label: 'remote speech recognition', create: () => createElevenLabsSpeechRecognitionController(deviceId) },
-      ];
+    : [{ label: 'remote speech recognition', create: () => createElevenLabsSpeechRecognitionController(deviceId) }];
 
   const promise = (async () => {
     let lastError: unknown = null;
