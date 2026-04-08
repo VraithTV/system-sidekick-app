@@ -1,3 +1,9 @@
+import {
+  OperaGXIcon, VivaldiIcon, EpicGamesIcon, TeamsIcon, ZoomIcon,
+  PowerPointIcon, AfterEffectsIcon, BlenderIcon, NotionIcon,
+  FigmaIcon, VLCIcon, SpotifyWebIcon,
+} from './AppIconsExtra';
+
 type IconProps = { className?: string; size?: number };
 
 const s = (size?: number) => size || 20;
@@ -307,37 +313,6 @@ export const appIconMap: Record<string, React.FC<IconProps>> = {
   figma: FigmaIcon,
   vlc: VLCIcon,
   'spotify-web': SpotifyWebIcon,
-};
-
-export const getAppIcon = (id: string) => appIconMap[id] || GenericAppIcon;
-  chrome: ChromeIcon,
-  edge: EdgeIcon,
-  spotify: SpotifyIcon,
-  discord: DiscordIcon,
-  obs: OBSIcon,
-  steam: SteamIcon,
-  vscode: VSCodeIcon,
-  explorer: ExplorerIcon,
-  notepad: NotepadIcon,
-  taskmgr: TaskManagerIcon,
-  'task-manager': TaskManagerIcon,
-  firefox: FirefoxIcon,
-  brave: BraveIcon,
-  slack: SlackIcon,
-  telegram: TelegramIcon,
-  whatsapp: WhatsAppIcon,
-  word: WordIcon,
-  excel: ExcelIcon,
-  photoshop: PhotoshopIcon,
-  'premiere-pro': PremiereProIcon,
-  youtube: YouTubeIcon,
-  calculator: CalculatorIcon,
-  terminal: TerminalIcon,
-  netflix: NetflixIcon,
-  twitch: TwitchIcon,
-  twitter: TwitterIcon,
-  github: GitHubIcon,
-  chatgpt: ChatGPTIcon,
 };
 
 export const getAppIcon = (id: string) => appIconMap[id] || GenericAppIcon;
