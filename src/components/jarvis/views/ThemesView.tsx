@@ -128,19 +128,19 @@ export const ThemesView = () => {
             {/* Left: cockpit summary + live preview */}
             <div className="space-y-5">
               <div>
-                <p className={sectionLabel}><Sparkles className="h-3.5 w-3.5" /> Theme cockpit</p>
+                <p className={sectionLabel}><Sparkles className="h-3.5 w-3.5" /> {t('themes.cockpit')}</p>
                 <h3 className="mt-3 font-display text-[28px] tracking-[0.12em] text-foreground">{currentPreset.name}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">Surface depth, glow colour, and typography all update together.</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t('themes.cockpitDesc')}</p>
               </div>
 
               {/* Live preview panel */}
               <div className="rounded-[1.5rem] border border-border/60 bg-background/80 p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
                   <div>
-                    <p className="text-[11px] font-mono uppercase tracking-[0.22em] text-primary/70">Live shell preview</p>
-                    <p className="mt-1 text-xs text-muted-foreground">How the assistant and sidebar feel with the active mix.</p>
+                    <p className="text-[11px] font-mono uppercase tracking-[0.22em] text-primary/70">{t('themes.livePreview')}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{t('themes.livePreviewDesc')}</p>
                   </div>
-                  <div className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-mono uppercase tracking-[0.18em] text-primary">Active</div>
+                  <div className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-mono uppercase tracking-[0.18em] text-primary">{t('themes.active')}</div>
                 </div>
 
                 <div className="mt-5 overflow-hidden rounded-[1.35rem] border border-border/60 bg-card/80">
@@ -173,23 +173,23 @@ export const ThemesView = () => {
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_200px]">
                       <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
                         <div className="flex items-center justify-between gap-3">
-                          <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-primary/70">Chat</p>
+                          <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-primary/70">{t('themes.chat')}</p>
                           <Eye className="h-4 w-4 text-primary" />
                         </div>
                         <div className="mt-4 space-y-3">
-                          <div className="max-w-[78%] rounded-2xl bg-secondary px-4 py-3 text-[12px] text-secondary-foreground">Hey Jarvis, queue my playlist.</div>
-                          <div className="ml-auto max-w-[82%] rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-[12px] text-foreground">Playlist ready. Everything is previewing live.</div>
+                          <div className="max-w-[78%] rounded-2xl bg-secondary px-4 py-3 text-[12px] text-secondary-foreground">{t('themes.chatBubble1')}</div>
+                          <div className="ml-auto max-w-[82%] rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-[12px] text-foreground">{t('themes.chatBubble2')}</div>
                         </div>
                       </div>
 
                       <div className="space-y-3">
                         <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
-                          <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Accent</p>
+                          <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">{t('themes.accent')}</p>
                           <div className="mt-4 h-2 rounded-full bg-muted"><div className="h-2 rounded-full bg-primary" style={{ width: '72%' }} /></div>
                           <p className="mt-3 text-[11px] text-foreground">{currentAccent.name}</p>
                         </div>
                         <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
-                          <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">Font</p>
+                          <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">{t('themes.font')}</p>
                           <p className="mt-3 text-lg text-foreground" style={{ fontFamily: currentFont.heading }}>JARVIS</p>
                           <p className="text-[11px] text-muted-foreground" style={{ fontFamily: currentFont.body }}>{currentFont.name}</p>
                         </div>
@@ -203,12 +203,12 @@ export const ThemesView = () => {
             {/* Right sidebar: active stack + what changes */}
             <div className="space-y-4">
               <div className="rounded-[1.4rem] border border-border bg-background/75 p-5">
-                <p className={sectionLabel}><Layers3 className="h-3.5 w-3.5" /> Active stack</p>
+                <p className={sectionLabel}><Layers3 className="h-3.5 w-3.5" /> {t('themes.activeStack')}</p>
                 <div className="mt-5 space-y-3">
                   {[
-                    { label: 'Preset', value: currentPreset.name },
-                    { label: 'Accent', value: currentAccent.name, swatch: currentAccent.hsl },
-                    { label: 'Font', value: currentFont.name },
+                    { label: t('themes.preset'), value: currentPreset.name },
+                    { label: t('themes.accent'), value: currentAccent.name, swatch: currentAccent.hsl },
+                    { label: t('themes.font'), value: currentFont.name },
                   ].map((item) => (
                     <div key={item.label} className="rounded-2xl border border-border/60 bg-card/70 px-4 py-3">
                       <div className="flex items-center justify-between gap-3">
@@ -226,12 +226,12 @@ export const ThemesView = () => {
               </div>
 
               <div className="rounded-[1.4rem] border border-border bg-background/75 p-5">
-                <p className={sectionLabel}><Monitor className="h-3.5 w-3.5" /> What changes</p>
+                <p className={sectionLabel}><Monitor className="h-3.5 w-3.5" /> {t('themes.whatChanges')}</p>
                 <div className="mt-4 space-y-3">
                   {[
-                    { label: 'Panels', detail: 'Cards, drawers, and control stacks pick up the preset surfaces.' },
-                    { label: 'Signals', detail: 'Buttons, focus rings, and listening states use the active accent.' },
-                    { label: 'Typography', detail: 'Headings and data labels swap together for a cleaner shell feel.' },
+                    { label: t('themes.panels'), detail: t('themes.panelsDesc') },
+                    { label: t('themes.signals'), detail: t('themes.signalsDesc') },
+                    { label: t('themes.typography'), detail: t('themes.typographyDesc') },
                   ].map((a) => (
                     <div key={a.label} className="rounded-2xl border border-border/60 bg-card/70 px-4 py-3">
                       <p className="text-[12px] text-foreground">{a.label}</p>
@@ -247,22 +247,22 @@ export const ThemesView = () => {
         {/* Presets grid */}
         <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.18fr)_minmax(0,0.92fr)]">
           <section className="rounded-[1.6rem] border border-border bg-card/40 p-6">
-            <p className={sectionLabel}><Moon className="h-3.5 w-3.5" /> Dark themes</p>
-            <p className="mt-2 mb-5 text-sm text-muted-foreground">The main desktop personalities for Jarvis after dark.</p>
+            <p className={sectionLabel}><Moon className="h-3.5 w-3.5" /> {t('themes.darkThemes')}</p>
+            <p className="mt-2 mb-5 text-sm text-muted-foreground">{t('themes.darkDesc')}</p>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {darkPresets.map((p) => <PresetCard key={p.id} preset={p} selected={p.id === activePreset} onSelect={() => selectPreset(p.id)} />)}
             </div>
           </section>
 
           <section className="rounded-[1.6rem] border border-border bg-card/40 p-6">
-            <p className={sectionLabel}><Sun className="h-3.5 w-3.5" /> Light themes</p>
-            <p className="mt-2 mb-5 text-sm text-muted-foreground">Cleaner daytime options with the same Jarvis hierarchy.</p>
+            <p className={sectionLabel}><Sun className="h-3.5 w-3.5" /> {t('themes.lightThemes')}</p>
+            <p className="mt-2 mb-5 text-sm text-muted-foreground">{t('themes.lightDesc')}</p>
             <div className="grid gap-4 md:grid-cols-2">
               {lightPresets.map((p) => <PresetCard key={p.id} preset={p} selected={p.id === activePreset} onSelect={() => selectPreset(p.id)} />)}
             </div>
             <div className="mt-5 rounded-2xl border border-border/60 bg-background/75 p-4">
-              <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-primary/70">Quick note</p>
-              <p className="mt-2 text-[12px] leading-6 text-muted-foreground">Day mode keeps the Jarvis structure intact, so the desktop still looks intentional instead of flipping into a generic app skin.</p>
+              <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-primary/70">{t('themes.quickNote')}</p>
+              <p className="mt-2 text-[12px] leading-6 text-muted-foreground">{t('themes.lightNote')}</p>
             </div>
           </section>
         </div>
@@ -271,8 +271,8 @@ export const ThemesView = () => {
         <div className="grid gap-6 xl:grid-cols-3">
           {/* Accent */}
           <section className="rounded-[1.6rem] border border-border bg-card/40 p-6">
-            <p className={sectionLabel}><SlidersHorizontal className="h-3.5 w-3.5" /> Accent colour</p>
-            <p className="mt-2 mb-5 text-sm text-muted-foreground">Signal colour for focus, highlights, and live states.</p>
+            <p className={sectionLabel}><SlidersHorizontal className="h-3.5 w-3.5" /> {t('themes.accentColour')}</p>
+            <p className="mt-2 mb-5 text-sm text-muted-foreground">{t('themes.accentDesc')}</p>
             <div className="grid grid-cols-4 gap-3">
               {accentOptions.map((accent) => {
                 const sel = accent.id === activeAccent;
@@ -288,8 +288,8 @@ export const ThemesView = () => {
 
           {/* Font */}
           <section className="rounded-[1.6rem] border border-border bg-card/40 p-6">
-            <p className={sectionLabel}><Type className="h-3.5 w-3.5" /> Typography</p>
-            <p className="mt-2 mb-5 text-sm text-muted-foreground">Pick the voice of the UI.</p>
+            <p className={sectionLabel}><Type className="h-3.5 w-3.5" /> {t('themes.typographySection')}</p>
+            <p className="mt-2 mb-5 text-sm text-muted-foreground">{t('themes.typographyPickDesc')}</p>
             <div className="space-y-3">
               {fontOptions.map((font) => {
                 const sel = font.id === activeFont;
@@ -299,7 +299,7 @@ export const ThemesView = () => {
                       {sel ? <Check className="h-3 w-3" /> : <span className="h-2 w-2 rounded-full bg-primary/40" />}
                     </div>
                     <p className="text-[14px] text-foreground" style={{ fontFamily: font.heading }}>{font.name}</p>
-                    <p className="mt-2 text-[11px] text-muted-foreground" style={{ fontFamily: font.body }}>The quick brown fox jumps over the lazy dog.</p>
+                    <p className="mt-2 text-[11px] text-muted-foreground" style={{ fontFamily: font.body }}>{t('themes.pangram')}</p>
                   </button>
                 );
               })}
@@ -308,8 +308,8 @@ export const ThemesView = () => {
 
           {/* Palette */}
           <section className="rounded-[1.6rem] border border-border bg-card/40 p-6">
-            <p className={sectionLabel}><Palette className="h-3.5 w-3.5" /> Surface palette</p>
-            <p className="mt-2 mb-5 text-sm text-muted-foreground">A live read on the semantic colours behind the current preset.</p>
+            <p className={sectionLabel}><Palette className="h-3.5 w-3.5" /> {t('themes.surfacePalette')}</p>
+            <p className="mt-2 mb-5 text-sm text-muted-foreground">{t('themes.surfaceDesc')}</p>
             <div className="grid grid-cols-5 gap-3">
               {paletteSwatches.map((s) => (
                 <div key={s.label} className="space-y-2 text-center">
@@ -319,8 +319,8 @@ export const ThemesView = () => {
               ))}
             </div>
             <div className="mt-5 rounded-2xl border border-border/60 bg-background/75 p-4">
-              <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-primary/70">Current recipe</p>
-              <p className="mt-2 text-[12px] leading-6 text-muted-foreground">{currentPreset.name} surfaces, {currentAccent.name.toLowerCase()} signal colour, and {currentFont.name.toLowerCase()} typography.</p>
+              <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-primary/70">{t('themes.currentRecipe')}</p>
+              <p className="mt-2 text-[12px] leading-6 text-muted-foreground">{t('themes.recipeText', { preset: currentPreset.name, accent: currentAccent.name.toLowerCase(), font: currentFont.name.toLowerCase() })}</p>
             </div>
           </section>
         </div>
