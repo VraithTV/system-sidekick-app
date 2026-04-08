@@ -39,7 +39,6 @@ function tryLaunchApp(userText: string): void {
   api.openApp(appId);
 }
 
-let elevenLabsRetryAfter = 0;
 const FATAL_CAPTURE_ERRORS = new Set([
   'NotAllowedError',
   'NotFoundError',
@@ -52,82 +51,6 @@ function pause(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
-async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId?: string, jarvisVoice?: string): Promise<void> {
-  if (Date.now() < elevenLabsRetryAfter) {
-    return speakBrowser(text, outputDeviceId, jarvisVoice);
-  }
-
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ text, voiceId }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn('ElevenLabs TTS unavailable, falling back to browser TTS:', errorText);
-
-      let creditIssue = false;
-      try {
-        const errData = JSON.parse(errorText);
-        if (errData?.code === 'detected_unusual_activity' || response.status === 402 || response.status === 403) {
-          creditIssue = true;
-        }
-      } catch {}
-
-      if (creditIssue || response.status === 402) {
-        toast.error('Voice API credits have run out. Using backup voice until credits are restored.', { duration: 8000 });
-      }
-
-      if ([401, 402, 403, 429, 500, 502, 503].includes(response.status)) {
-        elevenLabsRetryAfter = Date.now() + 5 * 60 * 1000;
-      }
-
-      return speakBrowser(text, outputDeviceId, jarvisVoice);
-    }
-
-    elevenLabsRetryAfter = 0;
-
-    const audioBlob = await response.blob();
-    const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = new Audio(audioUrl);
-    // Route to selected output device if supported
-    if (outputDeviceId && typeof (audio as any).setSinkId === 'function') {
-      try { await (audio as any).setSinkId(outputDeviceId); } catch {}
-    }
-
-    return new Promise((resolve) => {
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-        resolve();
-      };
-      audio.onerror = async () => {
-        URL.revokeObjectURL(audioUrl);
-        await speakBrowser(text, outputDeviceId, jarvisVoice);
-        resolve();
-      };
-      audio.play().catch(async () => {
-        URL.revokeObjectURL(audioUrl);
-        await speakBrowser(text, outputDeviceId, jarvisVoice);
-        resolve();
-      });
-    });
-  } catch (e) {
-    console.warn('ElevenLabs error, falling back:', e);
-    elevenLabsRetryAfter = Date.now() + 5 * 60 * 1000;
-    return speakBrowser(text, outputDeviceId, jarvisVoice);
-  }
-}
-
-// Map Jarvis voice IDs to browser voice preferences for variety
 const browserVoiceMap: Record<string, { keywords: string[]; gender: 'male' | 'female'; pitch: number; rate: number }> = {
   daniel:  { keywords: ['Daniel', 'Google UK English Male', 'British'], gender: 'male', pitch: 0.85, rate: 0.92 },
   george:  { keywords: ['George', 'Google UK English Male', 'British'], gender: 'male', pitch: 0.9, rate: 0.95 },
@@ -245,7 +168,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
           timestamp: new Date(),
           type: 'voice',
         });
-        await speakWithElevenLabs(limitMsg, settings.voiceId, settings.outputDeviceId || undefined, settings.voice);
+        await speakBrowser(limitMsg, settings.outputDeviceId || undefined, settings.voice);
         if (isListeningRef.current) setState('standby');
         return;
       }
@@ -290,7 +213,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      await speakWithElevenLabs(response, settings.voiceId, settings.outputDeviceId || undefined, settings.voice);
+      await speakBrowser(response, settings.outputDeviceId || undefined, settings.voice);
 
       // If the response ends with a question mark, stay in conversation mode
       // so the user doesn't need the wake word for their reply
@@ -310,7 +233,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         setState('standby');
       }
     },
-    [setState, addCommand, settings.voiceId, settings.outputDeviceId]
+    [setState, addCommand, settings.outputDeviceId, settings.voice]
   );
 
   const startListening = useCallback(() => {
@@ -425,7 +348,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
   }, [setState, setSystemStatus]);
 
   const previewVoice = useCallback(async (voiceId: string) => {
-    await speakWithElevenLabs('At your service. How can I help you today?', voiceId, settings.outputDeviceId || undefined);
+    await speakBrowser('At your service. How can I help you today?', settings.outputDeviceId || undefined, voiceId);
   }, [settings.outputDeviceId]);
 
   useEffect(() => {
