@@ -522,7 +522,14 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
   }, [setState, setSystemStatus]);
 
   const previewVoice = useCallback(async (voiceId: string) => {
-    await speakBrowser('At your service. How can I help you today?', settings.outputDeviceId || undefined, voiceId);
+    // Look up the ElevenLabs voice ID from the voice options
+    const { voiceOptions } = await import('@/lib/voices');
+    const voice = voiceOptions.find(v => v.id === voiceId);
+    const elevenLabsId = voice?.elevenLabsId || 'onwK4e9ZLuTAKqWW03F9';
+    const ok = await speakWithElevenLabs('At your service. How can I help you today?', elevenLabsId, settings.outputDeviceId || undefined);
+    if (!ok) {
+      await speakBrowser('At your service. How can I help you today?', settings.outputDeviceId || undefined, voiceId);
+    }
   }, [settings.outputDeviceId]);
 
   useEffect(() => {
