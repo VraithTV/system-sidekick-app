@@ -21,6 +21,7 @@
   "build": {
     "appId": "com.jarvis.ai",
     "productName": "Jarvis AI BETA 1.2.0",
+    "icon": "public/jarvis-icon.ico",
     "files": [
       "dist/**/*",
       "electron/**/*",
@@ -32,8 +33,7 @@
     },
     "win": {
       "target": "nsis",
-      "icon": "public/jarvis-icon.ico",
-      "signAndEditExecutable": false
+      "icon": "public/jarvis-icon.ico"
     },
     "forceCodeSigning": false,
     "nsis": {
