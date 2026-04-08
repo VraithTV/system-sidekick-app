@@ -1,0 +1,1 @@
+UPDATE app_config SET value = 'false', updated_at = now() WHERE key = 'maintenance_enabled';
