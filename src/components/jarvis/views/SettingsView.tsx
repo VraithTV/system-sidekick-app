@@ -339,6 +339,60 @@ export const SettingsView = () => {
                 <Input type="password" value={settings.obsWebsocketPassword} onChange={(e: any) => updateSettings({ obsWebsocketPassword: e.target.value })} className="w-44" placeholder="••••••" />
               </Row>
             </Card>
+
+            <Card>
+              <SectionTitle>{t('settings.connections')}</SectionTitle>
+              <div className="flex items-center justify-between py-3.5">
+                <div className="flex items-center gap-3">
+                  <img src={spotifyLogo} alt="Spotify" className="w-9 h-9 rounded-lg" loading="lazy" width={36} height={36} />
+                  <div>
+                    <p className="text-[13px] text-foreground/90 font-medium">Spotify</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                      {spotifyConnected ? 'Connected. Direct playback enabled.' : 'Control music playback with voice commands.'}
+                    </p>
+                  </div>
+                </div>
+                {spotifyConnected ? (
+                  <button
+                    onClick={() => { clearSpotifyTokens(); setSpotifyConnected(false); }}
+                    className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg border border-destructive/30 transition-colors"
+                  >
+                    <Unlink size={14} />
+                    Disconnect
+                  </button>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const { supabase } = await import('@/integrations/supabase/client');
+                        const { data, error } = await supabase.functions.invoke('spotify-auth', {
+                          body: { action: 'get-auth-url', redirect_uri: 'http://127.0.0.1:8080' },
+                        });
+                        if (error || !data?.url) {
+                          console.error('[Spotify] Could not get auth URL:', error);
+                          return;
+                        }
+                        if (isElectron && (window as any).electronAPI?.spotifyAuth) {
+                          const result = await (window as any).electronAPI.spotifyAuth(data.url);
+                          if (result?.code) {
+                            const ok = await exchangeSpotifyCode(result.code, 'http://127.0.0.1:8080');
+                            if (ok) setSpotifyConnected(true);
+                          }
+                        } else {
+                          window.location.href = data.url;
+                        }
+                      } catch (e) {
+                        console.error('[Spotify] Auth error:', e);
+                      }
+                    }}
+                    className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-[#1DB954]/10 hover:bg-[#1DB954]/20 text-[#1DB954] rounded-lg border border-[#1DB954]/30 transition-colors"
+                  >
+                    <img src={spotifyLogo} alt="" className="w-3.5 h-3.5" width={14} height={14} />
+                    Connect
+                  </button>
+                )}
+              </div>
+            </Card>
           </div>
 
           {/* Right column */}
@@ -397,60 +451,6 @@ export const SettingsView = () => {
                   <kbd className="text-[11px] font-mono px-3 py-1.5 bg-muted/60 rounded-lg border border-border/60 text-muted-foreground">{key}</kbd>
                 </Row>
               ))}
-            </Card>
-
-            <Card>
-              <SectionTitle>{t('settings.connections')}</SectionTitle>
-              <div className="flex items-center justify-between py-3.5">
-                <div className="flex items-center gap-3">
-                  <img src={spotifyLogo} alt="Spotify" className="w-9 h-9 rounded-lg" loading="lazy" width={36} height={36} />
-                  <div>
-                    <p className="text-[13px] text-foreground/90 font-medium">Spotify</p>
-                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                      {spotifyConnected ? 'Connected. Direct playback enabled.' : 'Control music playback with voice commands.'}
-                    </p>
-                  </div>
-                </div>
-                {spotifyConnected ? (
-                  <button
-                    onClick={() => { clearSpotifyTokens(); setSpotifyConnected(false); }}
-                    className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg border border-destructive/30 transition-colors"
-                  >
-                    <Unlink size={14} />
-                    Disconnect
-                  </button>
-                ) : (
-                  <button
-                    onClick={async () => {
-                      try {
-                        const { supabase } = await import('@/integrations/supabase/client');
-                        const { data, error } = await supabase.functions.invoke('spotify-auth', {
-                          body: { action: 'get-auth-url', redirect_uri: 'http://127.0.0.1:8080' },
-                        });
-                        if (error || !data?.url) {
-                          console.error('[Spotify] Could not get auth URL:', error);
-                          return;
-                        }
-                        if (isElectron && (window as any).electronAPI?.spotifyAuth) {
-                          const result = await (window as any).electronAPI.spotifyAuth(data.url);
-                          if (result?.code) {
-                            const ok = await exchangeSpotifyCode(result.code, 'http://127.0.0.1:8080');
-                            if (ok) setSpotifyConnected(true);
-                          }
-                        } else {
-                          window.location.href = data.url;
-                        }
-                      } catch (e) {
-                        console.error('[Spotify] Auth error:', e);
-                      }
-                    }}
-                    className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-[#1DB954]/10 hover:bg-[#1DB954]/20 text-[#1DB954] rounded-lg border border-[#1DB954]/30 transition-colors"
-                  >
-                    <img src={spotifyLogo} alt="" className="w-3.5 h-3.5" width={14} height={14} />
-                    Connect
-                  </button>
-                )}
-              </div>
             </Card>
 
             {isElectron && (
