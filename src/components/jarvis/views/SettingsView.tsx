@@ -479,8 +479,6 @@ export const SettingsView = () => {
                     {updateState === 'checking' ? t('settings.checking') : updateState === 'no-update' ? t('settings.upToDate') : updateState === 'error' ? t('settings.checkFailed') : t('settings.checkNow')}
                   </button>
                 </Row>
-                  </button>
-                </Row>
               </Card>
             )}
           </div>
