@@ -717,6 +717,7 @@ const translations: Record<string, Record<string, string>> = {
     'themes.recipeText': 'Superficies {preset}, color de señal {accent}, y tipografía {font}.',
     'themes.pangram': 'El veloz murciélago hindú comía feliz cardillo y kiwi.',
   },
+  pt: {
     'nav.dashboard': 'Painel',
     'nav.apps': 'Aplicativos',
     'nav.clips': 'Clipes',
