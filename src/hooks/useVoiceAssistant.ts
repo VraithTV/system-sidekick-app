@@ -124,6 +124,7 @@ function notifyVoiceCaptureError(error: unknown) {
 }
 
 const browserVoiceMap: Record<string, { keywords: string[]; gender: 'male' | 'female'; pitch: number; rate: number }> = {
+  jarvis:  { keywords: ['Daniel', 'Microsoft Mark', 'Google UK English Male'], gender: 'male', pitch: 0.85, rate: 0.92 },
   daniel:  { keywords: ['Daniel', 'Microsoft Mark', 'Google UK English Male'], gender: 'male', pitch: 0.88, rate: 0.94 },
   george:  { keywords: ['George', 'Microsoft George', 'Google UK English Male'], gender: 'male', pitch: 0.92, rate: 0.96 },
   brian:   { keywords: ['David', 'Microsoft David', 'Google US English'], gender: 'male', pitch: 0.85, rate: 0.92 },
