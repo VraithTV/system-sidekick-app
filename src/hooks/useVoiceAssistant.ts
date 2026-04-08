@@ -9,6 +9,7 @@ import { canUseVoice, incrementUsage } from '@/lib/usageLimit';
 import { getModeSystemPromptAddition } from '@/lib/modes';
 import { commonApps } from '@/lib/commonApps';
 import { isOllamaAvailable, chatWithOllama, getOllamaModel } from '@/lib/ollamaClient';
+import { getLanguage } from '@/lib/languages';
 import { toast } from 'sonner';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -144,14 +145,15 @@ function ensureSpeechSynthesisActive() {
   }, 10000);
 }
 
-function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string): Promise<void> {
+function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string, langCode?: string): Promise<void> {
   return new Promise((resolve) => {
     // Cancel any ongoing speech first
     speechSynthesis.cancel();
     ensureSpeechSynthesisActive();
 
+    const lang = langCode || 'en';
     const utterance = new SpeechSynthesisUtterance(text);
-    const allVoices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith('en'));
+    const allVoices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith(lang));
     const prefs = browserVoiceMap[voiceId || 'daniel'] || browserVoiceMap.daniel;
 
     utterance.rate = prefs.rate;
@@ -164,7 +166,7 @@ function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string):
       matched = allVoices.find((v) => v.name.toLowerCase().includes(kw.toLowerCase()));
       if (matched) break;
     }
-    // Fallback: pick any English voice, preferring the right gender keyword
+    // Fallback: pick any voice in the target language, preferring the right gender
     if (!matched) {
       const genderKw = prefs.gender === 'female' ? 'Female' : 'Male';
       matched =
@@ -172,6 +174,11 @@ function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string):
         allVoices.find((v) => v.name.includes('Google')) ||
         allVoices.find((v) => v.name.includes('Microsoft')) ||
         allVoices[0];
+    }
+    // Last resort: any voice at all if no language-specific voice found
+    if (!matched && lang !== 'en') {
+      const anyVoices = speechSynthesis.getVoices();
+      matched = anyVoices.find((v) => v.lang.startsWith(lang)) || anyVoices[0];
     }
     if (matched) utterance.voice = matched;
 
