@@ -53,8 +53,10 @@ export const SettingsView = () => {
   const { inputs, outputs, refresh: refreshDevices } = useAudioDevices();
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [spotifyConnected, setSpotifyConnected] = useState(isSpotifyConnected());
-  const [updateState, setUpdateState] = useState<'idle' | 'checking' | 'prompt' | 'updating' | 'no-update'>('idle');
+  const [updateState, setUpdateState] = useState<'idle' | 'checking' | 'prompt' | 'updating' | 'no-update' | 'error'>('idle');
   const [updateVersion, setUpdateVersion] = useState('');
+  const [updateUrl, setUpdateUrl] = useState('');
+  const [updateError, setUpdateError] = useState('');
   const [currentVersion, setCurrentVersion] = useState('0.0.0');
 
   // Fetch current version on mount (Electron only)
@@ -68,19 +70,30 @@ export const SettingsView = () => {
 
   const handleCheckForUpdates = async () => {
     if (!isElectron) return;
+    setUpdateError('');
     setUpdateState('checking');
     try {
       const result = await (window as any).electronAPI?.checkForUpdates?.();
-      if (result && result !== currentVersion) {
-        setUpdateVersion(result);
+      if (result?.status === 'available' && result.remoteVersion && result.remoteVersion !== currentVersion) {
+        setUpdateVersion(result.remoteVersion);
+        setUpdateUrl(result.downloadUrl || '');
         setUpdateState('prompt');
-      } else {
+        return;
+      }
+
+      if (result?.status === 'up-to-date') {
         setUpdateState('no-update');
         setTimeout(() => setUpdateState('idle'), 2500);
+        return;
       }
+
+      setUpdateError(result?.message || 'Could not reach the GitHub releases feed.');
+      setUpdateState('error');
+      setTimeout(() => setUpdateState('idle'), 4000);
     } catch {
-      setUpdateState('no-update');
-      setTimeout(() => setUpdateState('idle'), 2500);
+      setUpdateError('Could not reach the GitHub releases feed.');
+      setUpdateState('error');
+      setTimeout(() => setUpdateState('idle'), 4000);
     }
   };
 
@@ -89,10 +102,10 @@ export const SettingsView = () => {
     // In a real scenario this would relaunch. For now just close the overlay.
     if (isElectron) {
       (window as any).electronAPI?.openUrl?.(
-        `https://github.com/VraithTV/system-sidekick-app/releases/latest`
+        updateUrl || 'https://github.com/VraithTV/system-sidekick-app/releases/latest'
       );
     }
-  }, []);
+  }, [updateUrl]);
 
   // Listen for Spotify OAuth callback
   useEffect(() => {
@@ -386,7 +399,16 @@ export const SettingsView = () => {
             {isElectron && (
               <div className="bg-card rounded-xl p-6 border border-border">
                 <SectionTitle>Updates</SectionTitle>
-                <Row label="Check for Updates" desc={currentVersion !== '0.0.0' ? `Current: v${currentVersion}` : 'See if a newer version is available'}>
+                <Row
+                  label="Check for Updates"
+                  desc={
+                    updateState === 'error' && updateError
+                      ? updateError
+                      : currentVersion !== '0.0.0'
+                        ? `Current: v${currentVersion}`
+                        : 'See if a newer version is available'
+                  }
+                >
                   <button
                     onClick={handleCheckForUpdates}
                     disabled={updateState === 'checking'}
@@ -397,7 +419,7 @@ export const SettingsView = () => {
                     ) : (
                       <Download size={14} />
                     )}
-                    {updateState === 'checking' ? 'Checking...' : updateState === 'no-update' ? 'Up to Date' : 'Check Now'}
+                    {updateState === 'checking' ? 'Checking...' : updateState === 'no-update' ? 'Up to Date' : updateState === 'error' ? 'Check Failed' : 'Check Now'}
                   </button>
                 </Row>
               </div>

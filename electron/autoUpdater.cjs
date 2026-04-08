@@ -56,16 +56,29 @@ function fetchJSON(url) {
   return new Promise((resolve, reject) => {
     const request = net.request(url);
     request.setHeader('User-Agent', 'JarvisAI-Updater');
+    request.setHeader('Accept', 'application/vnd.github+json');
     let body = '';
 
     request.on('response', (response) => {
       response.on('data', (chunk) => { body += chunk.toString(); });
       response.on('end', () => {
+        let parsed = null;
+
         try {
-          resolve(JSON.parse(body));
-        } catch (e) {
-          reject(new Error('Invalid JSON response'));
+          parsed = JSON.parse(body);
+        } catch (e) {}
+
+        if (response.statusCode >= 400) {
+          reject(new Error(parsed?.message || `HTTP ${response.statusCode}`));
+          return;
         }
+
+        if (!parsed) {
+          reject(new Error('Invalid JSON response'));
+          return;
+        }
+
+        resolve(parsed);
       });
     });
 
@@ -86,14 +99,14 @@ async function checkForUpdates(silent = true) {
         message: `You are running Jarvis AI v${currentVersion}.\n\nAutomatic updates will be available once a GitHub releases repository is configured.`,
       });
     }
-    return null;
+    return { status: 'not-configured', currentVersion };
   }
 
   try {
     const data = await fetchJSON(UPDATE_CHECK_URL);
 
     const remoteVersion = (data.tag_name || data.version || '').replace(/^v/, '');
-    const downloadUrl = data.html_url || data.downloadUrl || '';
+    const downloadUrl = data.html_url || data.assets?.[0]?.browser_download_url || data.downloadUrl || '';
 
     if (!remoteVersion) {
       if (!silent) {
@@ -103,7 +116,7 @@ async function checkForUpdates(silent = true) {
           message: `Could not determine the latest version.\nYou are running v${currentVersion}.`,
         });
       }
-      return null;
+      return { status: 'error', currentVersion, message: 'Could not determine the latest version.' };
     }
 
     if (!isNewer(remoteVersion, currentVersion)) {
@@ -115,13 +128,13 @@ async function checkForUpdates(silent = true) {
           message: `You are running the latest version (${currentVersion}).`,
         });
       }
-      return null;
+      return { status: 'up-to-date', currentVersion, remoteVersion };
     }
 
     // Skip if user already dismissed this version (only for silent checks)
     if (silent && wasDismissed(remoteVersion)) {
       console.log(`[AutoUpdater] Version ${remoteVersion} was dismissed.`);
-      return null;
+      return { status: 'dismissed', currentVersion, remoteVersion, downloadUrl };
     }
 
     console.log(`[AutoUpdater] New version available: ${remoteVersion}`);
@@ -141,17 +154,20 @@ async function checkForUpdates(silent = true) {
       dismissVersion(remoteVersion);
     }
 
-    return remoteVersion;
+    return { status: 'available', currentVersion, remoteVersion, downloadUrl };
   } catch (error) {
-    console.warn('[AutoUpdater] Check failed:', error.message);
+    const message = error instanceof Error ? error.message : 'Could not check for updates.';
+    console.warn('[AutoUpdater] Check failed:', message);
     if (!silent) {
       dialog.showMessageBox({
         type: 'error',
         title: 'Update Check Failed',
-        message: 'Could not check for updates. Please check your internet connection.',
+        message: message.includes('404')
+          ? 'Could not find the GitHub release feed. Check that the repository name is correct and the repo is public.'
+          : 'Could not check for updates. Please check your internet connection.',
       });
     }
-    return null;
+    return { status: 'error', currentVersion, message };
   }
 }
 

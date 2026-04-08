@@ -137,6 +137,10 @@ function createWindow() {
     },
   });
 
+  if (!icon.isEmpty()) {
+    mainWindow.setIcon(icon);
+  }
+
   // If fresh install, clear localStorage before loading
   if (global.__jarvisFreshInstall) {
     mainWindow.webContents.session.clearStorageData({ storages: ['localstorage'] }).then(() => {
