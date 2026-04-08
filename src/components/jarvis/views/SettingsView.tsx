@@ -1,6 +1,6 @@
 import { useJarvisStore } from '@/store/jarvisStore';
 import { Minus, Plus, Play, X, RefreshCw, Download, Unlink, Cpu, Globe } from 'lucide-react';
-import { voiceOptions } from '@/lib/voices';
+import { jarvisVoices, standardVoices } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useState, useEffect, useCallback } from 'react';
