@@ -1,7 +1,6 @@
 const { net, shell, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { spawn } = require('child_process');
 
 // ─── Configuration ───────────────────────────────────────────
 const UPDATE_CHECK_URL = 'https://api.github.com/repos/VraithTV/system-sidekick-app/releases/latest';
