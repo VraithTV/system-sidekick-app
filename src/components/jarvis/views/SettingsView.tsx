@@ -3,9 +3,11 @@ import { Minus, Plus, Play, X, RefreshCw, Download, Unlink } from 'lucide-react'
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { isSpotifyConnected, clearSpotifyTokens, exchangeSpotifyCode } from '@/lib/spotifyClient';
 import spotifyLogo from '@/assets/spotify-logo.png';
+import { UpdatePrompt } from '@/components/jarvis/UpdatePrompt';
+import { UpdateProgressScreen } from '@/components/jarvis/UpdateProgressScreen';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -51,6 +53,46 @@ export const SettingsView = () => {
   const { inputs, outputs, refresh: refreshDevices } = useAudioDevices();
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [spotifyConnected, setSpotifyConnected] = useState(isSpotifyConnected());
+  const [updateState, setUpdateState] = useState<'idle' | 'checking' | 'prompt' | 'updating' | 'no-update'>('idle');
+  const [updateVersion, setUpdateVersion] = useState('');
+  const [currentVersion, setCurrentVersion] = useState('0.0.0');
+
+  // Fetch current version on mount (Electron only)
+  useEffect(() => {
+    if (isElectron) {
+      (window as any).electronAPI?.getAppVersion?.().then((v: string) => {
+        if (v) setCurrentVersion(v);
+      });
+    }
+  }, []);
+
+  const handleCheckForUpdates = async () => {
+    if (!isElectron) return;
+    setUpdateState('checking');
+    try {
+      const result = await (window as any).electronAPI?.checkForUpdates?.();
+      if (result && result !== currentVersion) {
+        setUpdateVersion(result);
+        setUpdateState('prompt');
+      } else {
+        setUpdateState('no-update');
+        setTimeout(() => setUpdateState('idle'), 2500);
+      }
+    } catch {
+      setUpdateState('no-update');
+      setTimeout(() => setUpdateState('idle'), 2500);
+    }
+  };
+
+  const handleUpdateComplete = useCallback(() => {
+    setUpdateState('idle');
+    // In a real scenario this would relaunch. For now just close the overlay.
+    if (isElectron) {
+      (window as any).electronAPI?.openUrl?.(
+        `https://github.com/VraithTV/system-sidekick-app/releases/latest`
+      );
+    }
+  }, []);
 
   // Listen for Spotify OAuth callback
   useEffect(() => {
@@ -344,13 +386,18 @@ export const SettingsView = () => {
             {isElectron && (
               <div className="bg-card rounded-xl p-6 border border-border">
                 <SectionTitle>Updates</SectionTitle>
-                <Row label="Check for Updates" desc="See if a newer version is available">
+                <Row label="Check for Updates" desc={currentVersion !== '0.0.0' ? `Current: v${currentVersion}` : 'See if a newer version is available'}>
                   <button
-                    onClick={() => (window as any).electronAPI?.checkForUpdates?.()}
-                    className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg border border-primary/30 transition-colors"
+                    onClick={handleCheckForUpdates}
+                    disabled={updateState === 'checking'}
+                    className="flex items-center gap-2 text-[12px] font-mono px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg border border-primary/30 transition-colors disabled:opacity-50"
                   >
-                    <Download size={14} />
-                    Check Now
+                    {updateState === 'checking' ? (
+                      <div className="w-3.5 h-3.5 border-2 border-primary/60 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Download size={14} />
+                    )}
+                    {updateState === 'checking' ? 'Checking...' : updateState === 'no-update' ? 'Up to Date' : 'Check Now'}
                   </button>
                 </Row>
               </div>
@@ -358,6 +405,21 @@ export const SettingsView = () => {
           </div>
         </div>
       </div>
+
+      <UpdatePrompt
+        open={updateState === 'prompt'}
+        currentVersion={currentVersion}
+        newVersion={updateVersion}
+        onDismiss={() => setUpdateState('idle')}
+        onUpdateNow={() => setUpdateState('updating')}
+        onUpdateLater={() => setUpdateState('idle')}
+      />
+
+      <UpdateProgressScreen
+        open={updateState === 'updating'}
+        newVersion={updateVersion}
+        onComplete={handleUpdateComplete}
+      />
     </div>
   );
 };
