@@ -33,8 +33,7 @@
     "win": {
       "target": "nsis",
       "icon": "public/jarvis-icon.ico",
-      "signAndEditExecutable": false,
-      "sign": null
+      "signAndEditExecutable": false
     },
     "forceCodeSigning": false,
     "nsis": {
