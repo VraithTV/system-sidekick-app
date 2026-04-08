@@ -28,7 +28,7 @@ export const Sidebar = () => {
           className="h-9 w-9 object-contain shrink-0"
         />
         <div className="flex flex-col">
-          <span className="text-[15px] font-semibold tracking-[0.3em] font-orbitron text-muted-foreground/70">JARVIS</span>
+          <span className="text-[15px] font-semibold tracking-[0.3em] font-display text-muted-foreground/70">JARVIS</span>
           <span className="text-[9px] font-mono text-muted-foreground/30 tracking-wider">V1.2 BETA</span>
         </div>
       </div>
