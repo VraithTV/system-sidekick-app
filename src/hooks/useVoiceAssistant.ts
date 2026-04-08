@@ -214,10 +214,11 @@ function addToHistory(role: 'user' | 'assistant', content: string) {
   }
 }
 
-async function getAIResponse(text: string, mode?: string): Promise<string> {
+async function getAIResponse(text: string, mode?: string, language?: string): Promise<string> {
   try {
     const memories = mode === 'private' ? '' : formatMemoriesForPrompt();
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const lang = getLanguage(language || 'en');
 
     // Build the system prompt for Ollama (same one the edge function uses)
     const now = new Date();
@@ -233,11 +234,13 @@ async function getAIResponse(text: string, mode?: string): Promise<string> {
       ? `\n\nYou remember these facts about the user:\n${memories}\nUse these facts naturally in conversation.`
       : '';
 
+    const langInstruction = lang.code !== 'en' ? `\n\n${lang.aiPrompt}` : '';
+
     const systemPrompt = `You are Jarvis, an AI desktop assistant inspired by Iron Man's Jarvis. You are polite, efficient, calm, professional, and slightly witty. You speak in short, clear sentences. Keep responses under 2 sentences for action commands. For questions or conversations, be helpful but concise. Sound sleek and natural.
 
 CRITICAL: You are having a live voice conversation. When the user gives a short reply, treat it as an answer to your last question. Just act on it.
 
-The current date and time is: ${dateTimeStr} (${timezone}).${memoriesSection}
+The current date and time is: ${dateTimeStr} (${timezone}).${memoriesSection}${langInstruction}
 
 IMPORTANT: After your reply, if the user revealed any new personal facts, output them on a new line starting with "MEMORY:" followed by a JSON array of short fact strings. If no new facts, don't include a MEMORY line.`;
 
