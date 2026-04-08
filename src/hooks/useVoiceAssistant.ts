@@ -8,6 +8,7 @@ import { processVoiceCommand } from '@/lib/voiceCommands';
 import { canUseVoice, incrementUsage } from '@/lib/usageLimit';
 import { getModeSystemPromptAddition } from '@/lib/modes';
 import { commonApps } from '@/lib/commonApps';
+import { isOllamaAvailable, chatWithOllama, getOllamaModel } from '@/lib/ollamaClient';
 import { toast } from 'sonner';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -210,8 +211,47 @@ async function getAIResponse(text: string, mode?: string): Promise<string> {
   try {
     const memories = mode === 'private' ? '' : formatMemoriesForPrompt();
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const { supabase } = await import('@/integrations/supabase/client');
 
+    // Build the system prompt for Ollama (same one the edge function uses)
+    const now = new Date();
+    let dateTimeStr: string;
+    try {
+      dateTimeStr = now.toLocaleString('en-US', {
+        timeZone: timezone, weekday: 'long', year: 'numeric', month: 'long',
+        day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
+      });
+    } catch { dateTimeStr = now.toUTCString(); }
+
+    const memoriesSection = memories && mode !== 'private'
+      ? `\n\nYou remember these facts about the user:\n${memories}\nUse these facts naturally in conversation.`
+      : '';
+
+    const systemPrompt = `You are Jarvis, an AI desktop assistant inspired by Iron Man's Jarvis. You are polite, efficient, calm, professional, and slightly witty. You speak in short, clear sentences. Keep responses under 2 sentences for action commands. For questions or conversations, be helpful but concise. Sound sleek and natural.
+
+CRITICAL: You are having a live voice conversation. When the user gives a short reply, treat it as an answer to your last question. Just act on it.
+
+The current date and time is: ${dateTimeStr} (${timezone}).${memoriesSection}
+
+IMPORTANT: After your reply, if the user revealed any new personal facts, output them on a new line starting with "MEMORY:" followed by a JSON array of short fact strings. If no new facts, don't include a MEMORY line.`;
+
+    // Try Ollama first (local, free, private)
+    const ollamaReady = await isOllamaAvailable();
+    if (ollamaReady) {
+      try {
+        console.log('[Jarvis] Using Ollama (local) with model:', getOllamaModel());
+        const ollamaMessages = [
+          ...conversationHistory.slice(-10).map(m => ({ ...m, role: m.role as 'user' | 'assistant' | 'system' })),
+          { role: 'user' as const, content: text },
+        ];
+        const fullReply = await chatWithOllama({ systemPrompt, messages: ollamaMessages });
+        return parseAIReply(fullReply);
+      } catch (ollamaErr) {
+        console.warn('[Jarvis] Ollama failed, falling back to cloud:', ollamaErr);
+      }
+    }
+
+    // Fallback: cloud AI via edge function
+    const { supabase } = await import('@/integrations/supabase/client');
     let data: any;
     let error: any;
 
@@ -228,7 +268,6 @@ async function getAIResponse(text: string, mode?: string): Promise<string> {
 
     if (error) throw error;
 
-    // Store any new memories the AI extracted
     if (data?.newMemories && Array.isArray(data.newMemories) && data.newMemories.length > 0) {
       addMemories(data.newMemories);
       console.log('[Jarvis] New memories saved:', data.newMemories);
@@ -239,6 +278,25 @@ async function getAIResponse(text: string, mode?: string): Promise<string> {
     console.error('AI response error:', e);
     return "I'm having trouble connecting right now. If you're using a VPN, try switching servers or disabling it temporarily.";
   }
+}
+
+/** Parse MEMORY: lines from AI reply */
+function parseAIReply(fullReply: string): string {
+  let reply = fullReply;
+  const memoryMatch = fullReply.match(/MEMORY:\s*(\[.*\])/s);
+  if (memoryMatch) {
+    try {
+      const newMemories = JSON.parse(memoryMatch[1]);
+      if (Array.isArray(newMemories) && newMemories.length > 0) {
+        addMemories(newMemories);
+        console.log('[Jarvis] New memories saved:', newMemories);
+      }
+      reply = fullReply.substring(0, memoryMatch.index).trim();
+    } catch {
+      reply = fullReply.replace(/MEMORY:.*$/s, '').trim();
+    }
+  }
+  return reply || "I didn't catch that. Could you say it again?";
 }
 
 export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
