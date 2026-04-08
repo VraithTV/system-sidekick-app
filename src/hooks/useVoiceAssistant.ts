@@ -340,10 +340,13 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
           timestamp: new Date(),
           type: 'voice',
         });
-        toast.error('Daily limit reached', {
-          description: 'You have used all 25 commands for today. Try again after midnight.',
-          duration: 6000,
-        });
+        if (!limitToastShown) {
+          limitToastShown = true;
+          toast.error('Daily limit reached', {
+            description: 'You have used all 25 commands for today. Try again after midnight.',
+            duration: 6000,
+          });
+        }
         await speakBrowser(limitMsg, settings.outputDeviceId || undefined, settings.voice, settings.language);
         if (isListeningRef.current) setState('standby');
         return;
