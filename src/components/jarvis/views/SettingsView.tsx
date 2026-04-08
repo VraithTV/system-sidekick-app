@@ -9,7 +9,7 @@ import spotifyLogo from '@/assets/spotify-logo.png';
 import { UpdatePrompt } from '@/components/jarvis/UpdatePrompt';
 import { UpdateProgressScreen } from '@/components/jarvis/UpdateProgressScreen';
 import { isOllamaAvailable, listOllamaModels, resetOllamaStatus, getOllamaModel } from '@/lib/ollamaClient';
-import { languages } from '@/lib/languages';
+import { languages, getFlagUrl } from '@/lib/languages';
 import { createT } from '@/lib/i18n';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
