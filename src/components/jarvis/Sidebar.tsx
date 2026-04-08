@@ -1,6 +1,6 @@
 import { useJarvisStore } from '@/store/jarvisStore';
 import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Activity, Palette } from 'lucide-react';
-import { JarvisLogo } from '@/components/jarvis/JarvisLogo';
+import jarvisFullLogo from '@/assets/jarvis-app-icon.png';
 import { createT } from '@/lib/i18n';
 
 const navKeys = [
