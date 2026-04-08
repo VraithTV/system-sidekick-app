@@ -1,7 +1,17 @@
-const SpeechRecognitionCtor: any =
-  typeof window !== 'undefined'
-    ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    : undefined;
+function getSpeechRecognitionCtor(): any {
+  if (typeof window === 'undefined') return undefined;
+  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+}
+
+function getBrowserName(): string {
+  if (typeof navigator === 'undefined') return 'unknown';
+  const ua = navigator.userAgent;
+  if (ua.includes('Firefox')) return 'Firefox';
+  if (ua.includes('Edg/')) return 'Edge';
+  if (ua.includes('Chrome')) return 'Chrome';
+  if (ua.includes('Safari')) return 'Safari';
+  return 'unknown';
+}
 
 type SpeechRecognitionController = {
   promise: Promise<string>;
@@ -19,8 +29,18 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
   let recognition: any;
 
   const promise = new Promise<string>((resolve, reject) => {
+    const SpeechRecognitionCtor = getSpeechRecognitionCtor();
     if (!SpeechRecognitionCtor) {
-      reject(new SpeechRecognitionUnavailableError('Browser Speech Recognition not supported'));
+      const browser = getBrowserName();
+      if (browser === 'Firefox') {
+        reject(new SpeechRecognitionUnavailableError(
+          'Firefox does not support speech recognition yet. Use Chrome or Edge, or install the "Speech Recognition Polyfill" Firefox addon.'
+        ));
+      } else {
+        reject(new SpeechRecognitionUnavailableError(
+          `Speech recognition is not available in ${browser}. Try Chrome or Edge.`
+        ));
+      }
       return;
     }
 
@@ -65,12 +85,21 @@ function createBrowserSpeechRecognitionController(): SpeechRecognitionController
 
     recognition.onerror = (event: any) => {
       const code = event.error || 'unknown';
-      if (code === 'no-speech' || code === 'aborted') {
+      if (code === 'no-speech' || code === 'aborted' || code === 'network') {
         finish('');
         return;
       }
 
-      fail(new SpeechRecognitionUnavailableError(`Speech recognition error: ${code}`));
+      if (code === 'not-allowed' || code === 'service-not-allowed') {
+        fail(new SpeechRecognitionUnavailableError(
+          'Microphone access was denied. Allow microphone permission in your browser settings and try again.'
+        ));
+        return;
+      }
+
+      // Treat unknown errors as non-fatal so the loop can retry
+      console.warn('[Jarvis] Speech recognition error:', code);
+      finish('');
     };
 
     recognition.onend = () => {
@@ -107,10 +136,16 @@ export function startSpeechRecognition(
   let activeController: SpeechRecognitionController | null = null;
   let stopped = false;
 
-  // Always use free browser Speech Recognition - never call ElevenLabs
+  const SpeechRecognitionCtor = getSpeechRecognitionCtor();
   if (!SpeechRecognitionCtor) {
+    const browser = getBrowserName();
+    if (browser === 'Firefox') {
+      throw new SpeechRecognitionUnavailableError(
+        'Firefox does not support speech recognition yet. Use Chrome or Edge, or install the "Speech Recognition Polyfill" Firefox addon.'
+      );
+    }
     throw new SpeechRecognitionUnavailableError(
-      'Speech recognition is not supported in this browser. Please use Chrome or Edge.'
+      `Speech recognition is not available in ${browser}. Try using Chrome or Edge.`
     );
   }
   const attempts = [{ label: 'browser speech recognition', create: () => createBrowserSpeechRecognitionController() }];

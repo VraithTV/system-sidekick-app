@@ -80,8 +80,10 @@ function notifyVoiceCaptureError(error: unknown) {
   const errorCode = getVoiceCaptureErrorCode(error);
 
   if (errorName === 'SpeechRecognitionUnavailableError' || errorCode === 'unsupported') {
-    toast.error('Speech recognition is not available here.', {
-      description: 'Use Chrome or Edge and allow microphone access.',
+    const msg = error instanceof Error ? error.message : '';
+    toast.error('Speech recognition is not available.', {
+      description: msg || 'Use Chrome or Edge and allow microphone access.',
+      duration: 8000,
     });
     return;
   }
@@ -119,18 +121,34 @@ function notifyVoiceCaptureError(error: unknown) {
 }
 
 const browserVoiceMap: Record<string, { keywords: string[]; gender: 'male' | 'female'; pitch: number; rate: number }> = {
-  daniel:  { keywords: ['Daniel', 'Google UK English Male', 'British'], gender: 'male', pitch: 0.85, rate: 0.92 },
-  george:  { keywords: ['George', 'Google UK English Male', 'British'], gender: 'male', pitch: 0.9, rate: 0.95 },
-  brian:   { keywords: ['David', 'Google US English', 'Male'], gender: 'male', pitch: 0.8, rate: 0.9 },
-  chris:   { keywords: ['Google US English', 'Alex', 'Male'], gender: 'male', pitch: 1.0, rate: 1.0 },
-  liam:    { keywords: ['Google UK English Male', 'Liam', 'Male'], gender: 'male', pitch: 1.05, rate: 0.98 },
-  eric:    { keywords: ['Google US English', 'Fred', 'Male'], gender: 'male', pitch: 0.88, rate: 0.93 },
-  alice:   { keywords: ['Google UK English Female', 'Alice', 'Female'], gender: 'female', pitch: 1.1, rate: 0.95 },
-  sarah:   { keywords: ['Google US English Female', 'Samantha', 'Female'], gender: 'female', pitch: 1.05, rate: 0.92 },
+  daniel:  { keywords: ['Daniel', 'Microsoft Mark', 'Google UK English Male'], gender: 'male', pitch: 0.88, rate: 0.94 },
+  george:  { keywords: ['George', 'Microsoft George', 'Google UK English Male'], gender: 'male', pitch: 0.92, rate: 0.96 },
+  brian:   { keywords: ['David', 'Microsoft David', 'Google US English'], gender: 'male', pitch: 0.85, rate: 0.92 },
+  chris:   { keywords: ['Google US English', 'Alex', 'Microsoft Mark'], gender: 'male', pitch: 0.95, rate: 0.98 },
+  liam:    { keywords: ['Google UK English Male', 'Liam', 'Microsoft Ryan'], gender: 'male', pitch: 1.0, rate: 0.96 },
+  eric:    { keywords: ['Google US English', 'Fred', 'Microsoft Eric'], gender: 'male', pitch: 0.9, rate: 0.95 },
+  alice:   { keywords: ['Google UK English Female', 'Microsoft Hazel', 'Alice'], gender: 'female', pitch: 1.05, rate: 0.94 },
+  sarah:   { keywords: ['Google US English Female', 'Samantha', 'Microsoft Zira'], gender: 'female', pitch: 1.0, rate: 0.93 },
 };
+
+// Workaround for Chrome bug where speechSynthesis stops working after ~15s of inactivity
+let speechKeepAliveInterval: ReturnType<typeof setInterval> | null = null;
+
+function ensureSpeechSynthesisActive() {
+  if (speechKeepAliveInterval) return;
+  speechKeepAliveInterval = setInterval(() => {
+    if (!speechSynthesis.speaking) {
+      speechSynthesis.cancel();
+    }
+  }, 10000);
+}
 
 function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string): Promise<void> {
   return new Promise((resolve) => {
+    // Cancel any ongoing speech first
+    speechSynthesis.cancel();
+    ensureSpeechSynthesisActive();
+
     const utterance = new SpeechSynthesisUtterance(text);
     const allVoices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith('en'));
     const prefs = browserVoiceMap[voiceId || 'daniel'] || browserVoiceMap.daniel;
@@ -142,7 +160,7 @@ function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string):
     // Try to find a matching voice by keyword
     let matched: SpeechSynthesisVoice | undefined;
     for (const kw of prefs.keywords) {
-      matched = allVoices.find((v) => v.name.includes(kw));
+      matched = allVoices.find((v) => v.name.toLowerCase().includes(kw.toLowerCase()));
       if (matched) break;
     }
     // Fallback: pick any English voice, preferring the right gender keyword
@@ -151,13 +169,29 @@ function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string):
       matched =
         allVoices.find((v) => v.name.includes(genderKw)) ||
         allVoices.find((v) => v.name.includes('Google')) ||
+        allVoices.find((v) => v.name.includes('Microsoft')) ||
         allVoices[0];
     }
     if (matched) utterance.voice = matched;
 
-    utterance.onend = () => resolve();
-    utterance.onerror = () => resolve();
-    speechSynthesis.speak(utterance);
+    // Safety timeout in case onend never fires (known Chrome bug)
+    const safetyTimeout = setTimeout(() => {
+      console.warn('[Jarvis] TTS safety timeout reached, resolving.');
+      resolve();
+    }, Math.max(text.length * 120, 8000));
+
+    utterance.onend = () => {
+      clearTimeout(safetyTimeout);
+      resolve();
+    };
+    utterance.onerror = (e) => {
+      clearTimeout(safetyTimeout);
+      console.warn('[Jarvis] TTS error:', e);
+      resolve();
+    };
+
+    // Small delay to let Chrome's speech engine initialize
+    setTimeout(() => speechSynthesis.speak(utterance), 50);
   });
 }
 
