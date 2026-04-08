@@ -383,7 +383,11 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      await speakBrowser(response, settings.outputDeviceId || undefined, settings.voice, settings.language);
+      // Try ElevenLabs TTS first, fall back to browser TTS
+      const elevenlabsOk = await speakWithElevenLabs(response, settings.voiceId || undefined, settings.outputDeviceId || undefined);
+      if (!elevenlabsOk) {
+        await speakBrowser(response, settings.outputDeviceId || undefined, settings.voice, settings.language);
+      }
 
       // If the response ends with a question mark, stay in conversation mode
       // so the user doesn't need the wake word for their reply
@@ -511,6 +515,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     wakeWordHeard.current = false;
     captureStopRef.current?.();
     captureStopRef.current = null;
+    stopElevenLabsTTS();
     speechSynthesis.cancel();
     setSystemStatus({ micActive: false });
     setState('idle');
