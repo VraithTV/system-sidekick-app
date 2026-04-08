@@ -39,7 +39,6 @@ function tryLaunchApp(userText: string): void {
   api.openApp(appId);
 }
 
-let elevenLabsRetryAfter = 0;
 const FATAL_CAPTURE_ERRORS = new Set([
   'NotAllowedError',
   'NotFoundError',
@@ -47,85 +46,6 @@ const FATAL_CAPTURE_ERRORS = new Set([
   'SecurityError',
   'SpeechRecognitionUnavailableError',
 ]);
-
-function pause(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
-
-async function speakWithElevenLabs(text: string, voiceId: string, outputDeviceId?: string, jarvisVoice?: string): Promise<void> {
-  if (Date.now() < elevenLabsRetryAfter) {
-    return speakBrowser(text, outputDeviceId, jarvisVoice);
-  }
-
-  try {
-    const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ text, voiceId }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn('ElevenLabs TTS unavailable, falling back to browser TTS:', errorText);
-
-      let creditIssue = false;
-      try {
-        const errData = JSON.parse(errorText);
-        if (errData?.code === 'detected_unusual_activity' || response.status === 402 || response.status === 403) {
-          creditIssue = true;
-        }
-      } catch {}
-
-      if (creditIssue || response.status === 402) {
-        toast.error('Voice API credits have run out. Using backup voice until credits are restored.', { duration: 8000 });
-      }
-
-      if ([401, 402, 403, 429, 500, 502, 503].includes(response.status)) {
-        elevenLabsRetryAfter = Date.now() + 5 * 60 * 1000;
-      }
-
-      return speakBrowser(text, outputDeviceId, jarvisVoice);
-    }
-
-    elevenLabsRetryAfter = 0;
-
-    const audioBlob = await response.blob();
-    const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = new Audio(audioUrl);
-    // Route to selected output device if supported
-    if (outputDeviceId && typeof (audio as any).setSinkId === 'function') {
-      try { await (audio as any).setSinkId(outputDeviceId); } catch {}
-    }
-
-    return new Promise((resolve) => {
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-        resolve();
-      };
-      audio.onerror = async () => {
-        URL.revokeObjectURL(audioUrl);
-        await speakBrowser(text, outputDeviceId, jarvisVoice);
-        resolve();
-      };
-      audio.play().catch(async () => {
-        URL.revokeObjectURL(audioUrl);
-        await speakBrowser(text, outputDeviceId, jarvisVoice);
-        resolve();
-      });
-    });
-  } catch (e) {
-    console.warn('ElevenLabs error, falling back:', e);
-    elevenLabsRetryAfter = Date.now() + 5 * 60 * 1000;
-    return speakBrowser(text, outputDeviceId, jarvisVoice);
-  }
-}
 
 // Map Jarvis voice IDs to browser voice preferences for variety
 const browserVoiceMap: Record<string, { keywords: string[]; gender: 'male' | 'female'; pitch: number; rate: number }> = {
