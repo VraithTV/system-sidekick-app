@@ -1,5 +1,5 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { Minus, Plus, Play, X, RefreshCw, Download, Unlink, Cpu } from 'lucide-react';
+import { Minus, Plus, Play, X, RefreshCw, Download, Unlink, Cpu, Globe } from 'lucide-react';
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
@@ -9,6 +9,7 @@ import spotifyLogo from '@/assets/spotify-logo.png';
 import { UpdatePrompt } from '@/components/jarvis/UpdatePrompt';
 import { UpdateProgressScreen } from '@/components/jarvis/UpdateProgressScreen';
 import { isOllamaAvailable, listOllamaModels, resetOllamaStatus, getOllamaModel } from '@/lib/ollamaClient';
+import { languages } from '@/lib/languages';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
