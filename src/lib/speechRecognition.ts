@@ -1,5 +1,3 @@
-import { startUtteranceCapture } from '@/lib/captureUtterance';
-
 const SpeechRecognitionCtor: any =
   typeof window !== 'undefined'
     ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
