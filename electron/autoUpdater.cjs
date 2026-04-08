@@ -1,4 +1,4 @@
-const { net, dialog, shell, app } = require('electron');
+const { net, shell, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
