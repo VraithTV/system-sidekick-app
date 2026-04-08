@@ -28,12 +28,11 @@ class SpeechRecognitionUnavailableError extends Error {
   }
 }
 
-// ─── MediaRecorder + ElevenLabs STT (used in Electron) ──────
+// ─── Persistent mic stream (avoids flickering) ───────────────
 
 let cachedMicStream: MediaStream | null = null;
 
 async function getMicStream(deviceId?: string): Promise<MediaStream> {
-  // Reuse existing stream if tracks are still live
   if (cachedMicStream && cachedMicStream.getAudioTracks().every(t => t.readyState === 'live')) {
     return cachedMicStream;
   }
@@ -48,11 +47,12 @@ async function getMicStream(deviceId?: string): Promise<MediaStream> {
   return cachedMicStream;
 }
 
+// ─── MediaRecorder + ElevenLabs STT ──────────────────────────
+
 function createMediaRecorderSTTController(deviceId?: string, langCode?: string): SpeechRecognitionController {
   let stopped = false;
   let recorder: MediaRecorder | null = null;
   let audioContext: AudioContext | null = null;
-  let analyser: AnalyserNode | null = null;
   let rafId = 0;
 
   const promise = new Promise<string>(async (resolve, reject) => {
@@ -69,19 +69,19 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
       recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       const chunks: BlobPart[] = [];
 
-      // Voice activity detection: stop recording after silence
+      // Voice activity detection
       audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
-      analyser = audioContext.createAnalyser();
+      const analyser = audioContext.createAnalyser();
       analyser.fftSize = 2048;
       source.connect(analyser);
       const samples = new Uint8Array(analyser.fftSize);
 
       let heardSpeech = false;
       let silenceStart = 0;
-      const SILENCE_MS = 1200; // Stop after 1.2s of silence
-      const MAX_DURATION_MS = 10000; // Max 10s per utterance
-      const LEVEL_THRESHOLD = 6;
+      const SILENCE_MS = 1500;        // 1.5s silence to finalize
+      const MAX_DURATION_MS = 12000;   // 12s max per utterance
+      const LEVEL_THRESHOLD = 3;       // Lower threshold to catch quieter speech
       const startTime = performance.now();
 
       const measure = () => {
@@ -132,8 +132,8 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
 
         const blob = new Blob(chunks, { type: recorder!.mimeType || 'audio/webm' });
 
-        // If blob is very small (< 1KB), likely no real audio
-        if (blob.size < 1000) {
+        // Very small blobs likely have no speech
+        if (blob.size < 800) {
           resolve('');
           return;
         }
@@ -186,7 +186,6 @@ async function transcribeWithElevenLabs(audioBlob: Blob, langCode?: string): Pro
   const formData = new FormData();
   formData.append('audio', audioBlob, 'recording.webm');
 
-  // Map BCP-47 to ElevenLabs ISO 639-3 codes
   const langMap: Record<string, string> = {
     'en-US': 'eng', 'en-GB': 'eng', 'fr-FR': 'fra', 'de-DE': 'deu',
     'es-ES': 'spa', 'pt-BR': 'por', 'ru-RU': 'rus', 'ja-JP': 'jpn',
@@ -217,7 +216,7 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
       const browser = getBrowserName();
       if (browser === 'Firefox') {
         reject(new SpeechRecognitionUnavailableError(
-          'Firefox does not support speech recognition yet. Use Chrome or Edge, or install the "Speech Recognition Polyfill" Firefox addon.'
+          'Firefox does not support speech recognition yet. Use Chrome or Edge.'
         ));
       } else {
         reject(new SpeechRecognitionUnavailableError(
@@ -234,7 +233,6 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
     recognition.continuous = true;
 
     let settled = false;
-    let lastActivityTime = Date.now();
 
     const timeout = setTimeout(() => {
       if (!settled) {
@@ -257,8 +255,6 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
     };
 
     recognition.onresult = (event: any) => {
-      lastActivityTime = Date.now();
-
       let finalTranscript = '';
       for (let i = 0; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
@@ -279,7 +275,6 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
         return;
       }
 
-      // In Electron, 'network' error means Google's speech service is unavailable
       if (code === 'network') {
         fail(new SpeechRecognitionUnavailableError(
           'Speech recognition network service is unavailable. Using cloud transcription instead.'
@@ -333,7 +328,6 @@ export function startSpeechRecognition(
   langCode?: string,
 ): SpeechRecognitionController {
   // In Electron, always use MediaRecorder + ElevenLabs STT
-  // because Web Speech API requires Google's proprietary service
   if (isElectron) {
     return createMediaRecorderSTTController(_deviceId, langCode);
   }
@@ -343,7 +337,6 @@ export function startSpeechRecognition(
 
   const SpeechRecognitionCtor = getSpeechRecognitionCtor();
 
-  // Build attempt list: try browser speech first, fall back to MediaRecorder
   const attempts: { label: string; create: () => SpeechRecognitionController }[] = [];
 
   if (SpeechRecognitionCtor) {
@@ -353,7 +346,6 @@ export function startSpeechRecognition(
     });
   }
 
-  // Always have MediaRecorder + ElevenLabs as fallback
   attempts.push({
     label: 'cloud transcription (ElevenLabs)',
     create: () => createMediaRecorderSTTController(_deviceId, langCode),

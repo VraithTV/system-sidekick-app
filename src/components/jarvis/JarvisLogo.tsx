@@ -10,27 +10,31 @@ type JarvisLogoProps = {
 export const JarvisLogo = ({ size = 32, className, static: isStatic }: JarvisLogoProps) => (
   <div
     className={className}
-    style={{
-      width: size,
-      height: size,
-      backgroundColor: isStatic ? undefined : 'hsl(var(--primary))',
-      WebkitMaskImage: isStatic ? undefined : `url(${jarvisLogo})`,
-      WebkitMaskSize: 'contain',
-      WebkitMaskRepeat: 'no-repeat',
-      WebkitMaskPosition: 'center',
-      maskImage: isStatic ? undefined : `url(${jarvisLogo})`,
-      maskSize: 'contain',
-      maskRepeat: 'no-repeat',
-      maskPosition: 'center',
-    }}
+    style={{ width: size, height: size, position: 'relative' }}
   >
-    {isStatic && (
-      <img
-        src={jarvisLogo}
-        width={size}
-        height={size}
-        alt="Jarvis"
-        draggable={false}
+    <img
+      src={jarvisLogo}
+      width={size}
+      height={size}
+      alt="Jarvis"
+      draggable={false}
+      style={{
+        display: 'block',
+        width: size,
+        height: size,
+        objectFit: 'contain',
+      }}
+    />
+    {/* Accent colour overlay using mix-blend-mode (skipped when static) */}
+    {!isStatic && (
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundColor: 'hsl(var(--primary))',
+          mixBlendMode: 'color',
+          pointerEvents: 'none',
+        }}
       />
     )}
   </div>
