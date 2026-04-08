@@ -52,6 +52,30 @@ function mapProviderError(status: number, rawError: string) {
     };
   }
 
+  if (providerCode === "voice_not_found") {
+    return {
+      status: 404,
+      body: {
+        error: "The requested voice was not found. It may not be available on your ElevenLabs account.",
+        provider: "ElevenLabs",
+        code: providerCode,
+        fallback: "browser_tts",
+      },
+    };
+  }
+
+  if (providerCode === "quota_exceeded") {
+    return {
+      status: 429,
+      body: {
+        error: "ElevenLabs quota exceeded. No credits remaining.",
+        provider: "ElevenLabs",
+        code: providerCode,
+        fallback: "browser_tts",
+      },
+    };
+  }
+
   return {
     status: status >= 500 ? 502 : status,
     body: {
