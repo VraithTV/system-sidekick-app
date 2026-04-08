@@ -58,6 +58,7 @@ export interface JarvisSettings {
   wakeSensitivity: number;
   voice: string;
   voiceId: string;
+  language: string;
   startOnBoot: boolean;
   alwaysListening: boolean;
   pushToTalk: boolean;

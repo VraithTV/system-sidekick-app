@@ -86,6 +86,7 @@ export const useJarvisStore = create<JarvisStore>((set) => ({
     wakeSensitivity: 0.55,
     voice: 'daniel',
     voiceId: 'onwK4e9ZLuTAKqWW03F9',
+    language: 'en',
     startOnBoot: true,
     alwaysListening: true,
     pushToTalk: false,
