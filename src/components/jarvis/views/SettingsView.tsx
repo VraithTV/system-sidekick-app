@@ -10,6 +10,7 @@ import { UpdatePrompt } from '@/components/jarvis/UpdatePrompt';
 import { UpdateProgressScreen } from '@/components/jarvis/UpdateProgressScreen';
 import { isOllamaAvailable, listOllamaModels, resetOllamaStatus, getOllamaModel } from '@/lib/ollamaClient';
 import { languages } from '@/lib/languages';
+import { createT } from '@/lib/i18n';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -123,6 +124,7 @@ const OllamaSection = () => {
 
 export const SettingsView = () => {
   const { settings, updateSettings } = useJarvisStore();
+  const t = createT(settings.language || 'en');
   const { previewVoice } = useVoiceAssistant({ previewOnly: true });
   const { inputs, outputs, refresh: refreshDevices } = useAudioDevices();
   const [previewing, setPreviewing] = useState<string | null>(null);
@@ -230,12 +232,12 @@ export const SettingsView = () => {
   return (
     <div className="flex-1 overflow-y-auto bg-background">
       <div className="p-8">
-        <h2 className="font-display text-sm text-primary tracking-[0.15em] mb-8">SETTINGS</h2>
+        <h2 className="font-display text-sm text-primary tracking-[0.15em] mb-8">{t('settings.title')}</h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="space-y-5">
             <div className="bg-card rounded-xl p-6 border border-border">
-              <SectionTitle>General</SectionTitle>
+              <SectionTitle>{t('settings.general')}</SectionTitle>
               <Row label="Wake Word" desc="Activation trigger name">
                 <Input value={settings.wakeName} onChange={(e: any) => updateSettings({ wakeName: e.target.value })} className="w-28" />
               </Row>
@@ -294,7 +296,7 @@ export const SettingsView = () => {
             </div>
 
             <div className="bg-card rounded-xl p-6 border border-border">
-              <SectionTitle>Voice Input</SectionTitle>
+              <SectionTitle>{t('settings.voiceInput')}</SectionTitle>
               {/* Microphone selector */}
               <div className="py-3 border-b border-border/60">
                 <div className="flex items-center justify-between mb-2">
@@ -327,7 +329,7 @@ export const SettingsView = () => {
             </div>
 
             <div className="bg-card rounded-xl p-6 border border-border">
-              <SectionTitle>Audio Output</SectionTitle>
+              <SectionTitle>{t('settings.audioOutput')}</SectionTitle>
               <div className="py-3 border-b border-border/60 last:border-0">
                 <div className="flex items-center justify-between mb-2">
                   <div>
@@ -386,7 +388,7 @@ export const SettingsView = () => {
 
           <div className="space-y-5">
             <div className="bg-card rounded-xl p-6 border border-border">
-              <SectionTitle>Voice Selection</SectionTitle>
+              <SectionTitle>{t('settings.voiceSelection')}</SectionTitle>
               <div className="space-y-1.5">
                 {voiceOptions.map((v) => (
                   <button
@@ -422,8 +424,8 @@ export const SettingsView = () => {
             </div>
 
             <div className="bg-card rounded-xl p-6 border border-border">
-              <SectionTitle>Language</SectionTitle>
-              <p className="text-[10px] text-muted-foreground mb-4">Changes voice recognition, speech output, and AI responses.</p>
+              <SectionTitle>{t('settings.language')}</SectionTitle>
+              <p className="text-[10px] text-muted-foreground mb-4">{t('settings.langDesc')}</p>
               <div className="space-y-1.5 max-h-[280px] overflow-y-auto pr-1">
                 {languages.map((lang) => (
                   <button
@@ -449,7 +451,7 @@ export const SettingsView = () => {
             </div>
 
             <div className="bg-card rounded-xl p-6 border border-border">
-              <SectionTitle>Keyboard Shortcuts</SectionTitle>
+              <SectionTitle>{t('settings.shortcuts')}</SectionTitle>
               {[
                 { label: 'Clip Last 30s', key: 'Ctrl+Shift+C' },
                 { label: 'Toggle Recording', key: 'Ctrl+Shift+R' },
@@ -464,7 +466,7 @@ export const SettingsView = () => {
             </div>
 
             <div className="bg-card rounded-xl p-6 border border-border">
-              <SectionTitle>Connections</SectionTitle>
+              <SectionTitle>{t('settings.connections')}</SectionTitle>
               <div className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
                   <img src={spotifyLogo} alt="Spotify" className="w-9 h-9 rounded-lg" loading="lazy" width={36} height={36} />
