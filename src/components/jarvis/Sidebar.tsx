@@ -20,13 +20,17 @@ export const Sidebar = () => {
   return (
     <aside className="w-52 h-screen bg-card border-r border-border flex flex-col shrink-0 select-none">
       {/* Logo header */}
-      <div className="flex items-center px-4 h-16 titlebar-drag">
+      <div className="flex items-center gap-2.5 px-4 h-16 titlebar-drag">
         <img
           src={jarvisFullLogo}
           alt="Jarvis"
           draggable={false}
-          className="h-8 w-auto object-contain"
+          className="h-7 w-7 object-contain"
         />
+        <div className="flex flex-col">
+          <span className="text-[13px] font-semibold tracking-widest font-heading text-foreground">JARVIS</span>
+          <span className="text-[9px] font-mono text-muted-foreground/50">v1.1.0</span>
+        </div>
       </div>
 
       {/* Nav items */}
