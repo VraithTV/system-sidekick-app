@@ -80,8 +80,10 @@ function notifyVoiceCaptureError(error: unknown) {
   const errorCode = getVoiceCaptureErrorCode(error);
 
   if (errorName === 'SpeechRecognitionUnavailableError' || errorCode === 'unsupported') {
-    toast.error('Speech recognition is not available here.', {
-      description: 'Use Chrome or Edge and allow microphone access.',
+    const msg = error instanceof Error ? error.message : '';
+    toast.error('Speech recognition is not available.', {
+      description: msg || 'Use Chrome or Edge and allow microphone access.',
+      duration: 8000,
     });
     return;
   }
