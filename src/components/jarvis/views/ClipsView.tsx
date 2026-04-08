@@ -1,17 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import type { Clip } from '@/types/jarvis';
-import { Film, Scissors, Trash2, Play, FolderOpen, Circle, Square, Clock, HardDrive, Eye } from 'lucide-react';
+import { Film, Scissors, Trash2, Play, FolderOpen, Circle, Square, Clock, HardDrive, Settings2 } from 'lucide-react';
+import { ClipOverlay } from '@/components/jarvis/clips/ClipOverlay';
+import { ClipTrimmer } from '@/components/jarvis/clips/ClipTrimmer';
+import { ClipDurationPicker } from '@/components/jarvis/clips/ClipDurationPicker';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 const formatDuration = (seconds: number) => {
   const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
-
-const formatFileSize = (size: string) => size;
 
 const formatTime = (date: Date) => {
   const d = new Date(date);
@@ -29,10 +30,18 @@ const formatTime = (date: Date) => {
 };
 
 export const ClipsView = () => {
-  const { clips, settings, systemStatus, addClip } = useJarvisStore();
+  const { clips, settings, updateSettings, addClip } = useJarvisStore();
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [bufferActive, setBufferActive] = useState(true);
+  const [showDurationPicker, setShowDurationPicker] = useState(false);
+  const [trimmingClip, setTrimmingClip] = useState<Clip | null>(null);
+
+  // Overlay state
+  const [overlayVisible, setOverlayVisible] = useState(false);
+  const [overlayVariant, setOverlayVariant] = useState<'recording-started' | 'clip-saved'>('clip-saved');
+  const [overlayFilename, setOverlayFilename] = useState('');
+  const [overlayDuration, setOverlayDuration] = useState(0);
 
   // Recording timer
   useEffect(() => {
@@ -48,15 +57,22 @@ export const ClipsView = () => {
     if (api?.onClipSaved) {
       api.onClipSaved((clip: Clip) => {
         addClip(clip);
+        showOverlay('clip-saved', clip.filename, clip.duration);
       });
     }
   }, [addClip]);
+
+  const showOverlay = (variant: 'recording-started' | 'clip-saved', filename: string, duration: number) => {
+    setOverlayVariant(variant);
+    setOverlayFilename(filename);
+    setOverlayDuration(duration);
+    setOverlayVisible(true);
+  };
 
   const handleClipNow = useCallback(() => {
     if (isElectron && (window as any).electronAPI?.clipNow) {
       (window as any).electronAPI.clipNow(settings.clipDuration);
     } else {
-      // Web fallback: simulate a clip
       const clip: Clip = {
         id: Date.now().toString(),
         filename: `Clip_${new Date().toISOString().replace(/[:.]/g, '-')}.mp4`,
@@ -65,6 +81,7 @@ export const ClipsView = () => {
         size: `${(Math.random() * 50 + 10).toFixed(1)} MB`,
       };
       addClip(clip);
+      showOverlay('clip-saved', clip.filename, clip.duration);
     }
   }, [settings.clipDuration, addClip]);
 
@@ -79,6 +96,7 @@ export const ClipsView = () => {
         size: `${(recordingTime * 2.5).toFixed(1)} MB`,
       };
       addClip(clip);
+      showOverlay('clip-saved', clip.filename, clip.duration);
       setRecordingTime(0);
 
       if (isElectron && (window as any).electronAPI?.stopRecording) {
@@ -86,6 +104,7 @@ export const ClipsView = () => {
       }
     } else {
       setIsRecording(true);
+      showOverlay('recording-started', '', 0);
       if (isElectron && (window as any).electronAPI?.startRecording) {
         (window as any).electronAPI.startRecording();
       }
@@ -105,16 +124,26 @@ export const ClipsView = () => {
   };
 
   const handleDeleteClip = (clipId: string) => {
-    // In a real implementation, also delete the file via Electron
     if (isElectron && (window as any).electronAPI?.deleteClip) {
       (window as any).electronAPI.deleteClip(clipId);
     }
+  };
+
+  const handleTrimSave = (clip: Clip, startTime: number, endTime: number) => {
+    // In a real implementation, this would call Electron to trim the video file
+    console.log(`[Clips] Trim ${clip.filename}: ${startTime}s - ${endTime}s`);
+    setTrimmingClip(null);
   };
 
   const totalSize = clips.reduce((acc, c) => {
     const match = c.size.match(/([\d.]+)/);
     return acc + (match ? parseFloat(match[1]) : 0);
   }, 0);
+
+  const formatTotalSize = (mb: number) => {
+    if (mb >= 1024) return `${(mb / 1024).toFixed(2)} GB`;
+    return `${mb.toFixed(1)} MB`;
+  };
 
   return (
     <div className="flex-1 overflow-y-auto bg-background">
@@ -135,19 +164,8 @@ export const ClipsView = () => {
               className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary/10 text-primary text-[12px] font-mono border border-primary/20 hover:bg-primary/15 transition-colors"
             >
               <Scissors className="w-4 h-4" />
-              Clip Last {settings.clipDuration}s
+              Clip Last {formatDuration(settings.clipDuration)}
             </button>
-          </div>
-        </div>
-
-        {/* Preview Notice */}
-        <div className="mb-6 flex items-start gap-3 rounded-xl bg-primary/5 border border-primary/20 p-4">
-          <Eye className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-          <div>
-            <p className="text-[13px] text-primary font-medium">Preview: Clips</p>
-            <p className="text-[11px] text-muted-foreground font-mono mt-1">
-              Here's a preview of what the Clips feature will look like. Screen recording and clip saving are still under development.
-            </p>
           </div>
         </div>
 
@@ -190,24 +208,42 @@ export const ClipsView = () => {
             </button>
           </div>
 
-          {/* Buffer Status */}
+          {/* Buffer Status with Duration Picker */}
           <div className="bg-card rounded-xl p-5 border border-border">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-mono tracking-[0.15em] text-muted-foreground uppercase">Replay Buffer</p>
-              <div className="flex items-center gap-1.5">
-                <div className={`w-2 h-2 rounded-full ${bufferActive ? 'bg-emerald-500' : 'bg-muted-foreground/30'}`} />
-                <span className={`text-[11px] font-mono ${bufferActive ? 'text-emerald-500' : 'text-muted-foreground'}`}>
-                  {bufferActive ? 'ACTIVE' : 'OFF'}
-                </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowDurationPicker(!showDurationPicker)}
+                  className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors"
+                  title="Change buffer duration"
+                >
+                  <Settings2 className="w-3.5 h-3.5" />
+                </button>
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full ${bufferActive ? 'bg-emerald-500' : 'bg-muted-foreground/30'}`} />
+                  <span className={`text-[11px] font-mono ${bufferActive ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                    {bufferActive ? 'ACTIVE' : 'OFF'}
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-foreground/60">
-              <Clock className="w-4 h-4" />
-              <span className="text-[13px]">{settings.clipDuration}s buffer</span>
-            </div>
-            <p className="text-[10px] font-mono text-muted-foreground mt-2">
-              Press <kbd className="px-1.5 py-0.5 bg-muted rounded border border-border text-[10px]">Ctrl+Shift+C</kbd> to save
-            </p>
+            {showDurationPicker ? (
+              <ClipDurationPicker
+                value={settings.clipDuration}
+                onChange={(d) => updateSettings({ clipDuration: d })}
+              />
+            ) : (
+              <>
+                <div className="flex items-center gap-2 text-foreground/60">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-[13px]">{formatDuration(settings.clipDuration)} buffer</span>
+                </div>
+                <p className="text-[10px] font-mono text-muted-foreground mt-2">
+                  Press <kbd className="px-1.5 py-0.5 bg-muted rounded border border-border text-[10px]">Ctrl+Shift+C</kbd> to save
+                </p>
+              </>
+            )}
           </div>
 
           {/* Storage */}
@@ -215,12 +251,22 @@ export const ClipsView = () => {
             <p className="text-[10px] font-mono tracking-[0.15em] text-muted-foreground uppercase mb-3">Storage</p>
             <div className="flex items-center gap-2 text-foreground/60 mb-1">
               <HardDrive className="w-4 h-4" />
-              <span className="text-[13px]">{clips.length} clips</span>
+              <span className="text-[13px]">{clips.length} clip{clips.length !== 1 ? 's' : ''}</span>
             </div>
             <p className="text-[11px] font-mono text-muted-foreground">
-              {totalSize.toFixed(1)} MB total
+              {formatTotalSize(totalSize)}
             </p>
-            <p className="text-[10px] font-mono text-muted-foreground/60 mt-2 truncate" title={settings.clipFolder}>
+            {/* Storage bar */}
+            <div className="mt-2 h-1.5 rounded-full bg-muted/50 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary/50 transition-all"
+                style={{ width: `${Math.min((totalSize / 5120) * 100, 100)}%` }}
+              />
+            </div>
+            <p className="text-[9px] font-mono text-muted-foreground/50 mt-1">
+              {formatTotalSize(totalSize)} / 5.0 GB
+            </p>
+            <p className="text-[10px] font-mono text-muted-foreground/60 mt-1 truncate" title={settings.clipFolder}>
               {settings.clipFolder}
             </p>
           </div>
@@ -242,7 +288,8 @@ export const ClipsView = () => {
             {clips.map((clip) => (
               <div
                 key={clip.id}
-                className="bg-card rounded-xl p-4 border border-border hover:border-primary/20 transition-all group"
+                className="bg-card rounded-xl p-4 border border-border hover:border-primary/20 transition-all group cursor-pointer"
+                onClick={() => setTrimmingClip(clip)}
               >
                 <div className="flex items-center gap-4">
                   {/* Thumbnail / icon */}
@@ -263,7 +310,7 @@ export const ClipsView = () => {
                         {formatDuration(clip.duration)}
                       </span>
                       <span className="text-[10px] font-mono text-muted-foreground">
-                        {formatFileSize(clip.size)}
+                        {clip.size}
                       </span>
                       <span className="text-[10px] font-mono text-muted-foreground/60">
                         {formatTime(clip.timestamp)}
@@ -274,14 +321,21 @@ export const ClipsView = () => {
                   {/* Actions */}
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={() => handlePlayClip(clip)}
+                      onClick={(e) => { e.stopPropagation(); setTrimmingClip(clip); }}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors"
+                      title="Trim clip"
+                    >
+                      <Scissors className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handlePlayClip(clip); }}
                       className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-primary hover:bg-primary/10 transition-colors"
                       title="Play clip"
                     >
                       <Play className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDeleteClip(clip.id)}
+                      onClick={(e) => { e.stopPropagation(); handleDeleteClip(clip.id); }}
                       className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors"
                       title="Delete clip"
                     >
@@ -294,6 +348,24 @@ export const ClipsView = () => {
           </div>
         )}
       </div>
+
+      {/* Medal-style overlay notification */}
+      <ClipOverlay
+        visible={overlayVisible}
+        filename={overlayFilename}
+        duration={overlayDuration}
+        variant={overlayVariant}
+        onDismiss={() => setOverlayVisible(false)}
+      />
+
+      {/* Clip trimmer modal */}
+      {trimmingClip && (
+        <ClipTrimmer
+          clip={trimmingClip}
+          onClose={() => setTrimmingClip(null)}
+          onSave={handleTrimSave}
+        />
+      )}
     </div>
   );
 };
