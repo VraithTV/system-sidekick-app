@@ -1,5 +1,5 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { Minus, Plus, Play, X, RefreshCw, Download, Unlink } from 'lucide-react';
+import { Minus, Plus, Play, X, RefreshCw, Download, Unlink, Cpu } from 'lucide-react';
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
@@ -8,6 +8,7 @@ import { isSpotifyConnected, clearSpotifyTokens, exchangeSpotifyCode } from '@/l
 import spotifyLogo from '@/assets/spotify-logo.png';
 import { UpdatePrompt } from '@/components/jarvis/UpdatePrompt';
 import { UpdateProgressScreen } from '@/components/jarvis/UpdateProgressScreen';
+import { isOllamaAvailable, listOllamaModels, resetOllamaStatus, getOllamaModel } from '@/lib/ollamaClient';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
@@ -46,6 +47,78 @@ const Input = ({ className = 'w-36', ...props }: any) => (
 );
 
 const clipDurations = [15, 30, 45, 60, 90, 120];
+
+const OllamaSection = () => {
+  const [status, setStatus] = useState<'checking' | 'connected' | 'offline'>('checking');
+  const [models, setModels] = useState<string[]>([]);
+  const [activeModel, setActiveModel] = useState('');
+
+  const check = useCallback(async () => {
+    setStatus('checking');
+    resetOllamaStatus();
+    const available = await isOllamaAvailable();
+    if (available) {
+      setStatus('connected');
+      setActiveModel(getOllamaModel());
+      const list = await listOllamaModels();
+      setModels(list);
+    } else {
+      setStatus('offline');
+    }
+  }, []);
+
+  useEffect(() => { check(); }, [check]);
+
+  return (
+    <div className="bg-card rounded-xl p-6 border border-border">
+      <SectionTitle>AI Engine</SectionTitle>
+      <div className="flex items-center justify-between py-3 border-b border-border/60">
+        <div className="flex items-center gap-2.5">
+          <Cpu className="w-4 h-4 text-primary/70" />
+          <div>
+            <p className="text-[13px] text-foreground/85">Ollama (Local AI)</p>
+            <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+              {status === 'checking' && 'Checking...'}
+              {status === 'connected' && `Connected. Model: ${activeModel}`}
+              {status === 'offline' && 'Not detected. Using cloud AI as fallback.'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className={`w-2.5 h-2.5 rounded-full ${
+            status === 'connected' ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]' :
+            status === 'offline' ? 'bg-muted-foreground/30' :
+            'bg-yellow-500 animate-pulse'
+          }`} />
+          <button onClick={check} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+      {status === 'connected' && models.length > 1 && (
+        <div className="pt-3">
+          <p className="text-[10px] text-muted-foreground font-mono mb-2">Available models</p>
+          <div className="flex flex-wrap gap-1.5">
+            {models.map((m) => (
+              <span key={m} className={`text-[10px] px-2 py-1 rounded-md font-mono ${
+                m === activeModel ? 'bg-primary/15 text-primary border border-primary/25' : 'bg-muted text-muted-foreground'
+              }`}>{m}</span>
+            ))}
+          </div>
+        </div>
+      )}
+      {status === 'offline' && (
+        <div className="pt-3">
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Install <a href="https://ollama.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Ollama</a> and
+            run <code className="text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded text-[9px]">ollama pull llama3</code> to
+            enable free local AI. Cloud AI (GPT-5.2) is used as fallback.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const SettingsView = () => {
   const { settings, updateSettings } = useJarvisStore();
@@ -306,6 +379,8 @@ export const SettingsView = () => {
                 <Input type="password" value={settings.obsWebsocketPassword} onChange={(e: any) => updateSettings({ obsWebsocketPassword: e.target.value })} className="w-44" placeholder="••••••" />
               </Row>
             </div>
+
+            <OllamaSection />
             </div>
 
           <div className="space-y-5">
