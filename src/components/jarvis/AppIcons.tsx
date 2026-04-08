@@ -266,11 +266,6 @@ export const GenericAppIcon = ({ className, size }: IconProps) => (
   </svg>
 );
 
-import {
-  OperaGXIcon, VivaldiIcon, EpicGamesIcon, TeamsIcon, ZoomIcon,
-  PowerPointIcon, AfterEffectsIcon, BlenderIcon, NotionIcon,
-  FigmaIcon, VLCIcon, SpotifyWebIcon,
-} from './AppIconsExtra';
 
 export const appIconMap: Record<string, React.FC<IconProps>> = {
   chrome: ChromeIcon,
