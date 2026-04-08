@@ -72,7 +72,7 @@ function getVoiceCaptureErrorCode(error: unknown) {
 
 function isFatalVoiceCaptureError(error: unknown) {
   const errorName = error instanceof Error ? error.name : '';
-  return FATAL_CAPTURE_ERRORS.has(errorName) || errorName === 'BrowserSpeechRecognitionError';
+  return FATAL_CAPTURE_ERRORS.has(errorName);
 }
 
 function notifyVoiceCaptureError(error: unknown) {
