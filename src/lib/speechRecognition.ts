@@ -399,6 +399,9 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
   };
 }
 
+// ─── Browser STT failure cache ─────────────────────────────
+let browserSTTFailed = false;
+
 // ─── Public API ─────────────────────────────────────────────
 
 export function startSpeechRecognition(
@@ -418,7 +421,7 @@ export function startSpeechRecognition(
       create: () => createMediaRecorderSTTController(_deviceId, langCode),
     });
   } else {
-    if (SpeechRecognitionCtor) {
+    if (SpeechRecognitionCtor && !browserSTTFailed) {
       attempts.push({
         label: 'browser speech recognition',
         create: () => createBrowserSpeechRecognitionController(langCode),
