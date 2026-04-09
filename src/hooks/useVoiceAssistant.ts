@@ -88,9 +88,17 @@ function notifyVoiceCaptureError(error: unknown) {
   const errorCode = getVoiceCaptureErrorCode(error);
 
    if (errorCode === 'quota_exceeded') {
-    toast.error('Voice transcription credits are exhausted.', {
-      description: 'Add more credits, then click the mic again.',
+    toast.error('AI transcription credits exhausted.', {
+      description: 'Add funds in Settings, then click the mic again.',
       duration: 8000,
+    });
+    return;
+  }
+
+  if (errorCode === 'rate_limited') {
+    toast.error('Transcription rate limited.', {
+      description: 'Wait a moment and try again.',
+      duration: 5000,
     });
     return;
   }
