@@ -180,7 +180,7 @@ export const SettingsView = () => {
     setPreviewing(null);
   };
 
-  const VoiceCard = ({ v }: { v: typeof jarvisVoices[0] }) => (
+  const VoiceCard = ({ v }: { v: typeof standardVoices[0] }) => (
     <button
       key={v.id}
       onClick={() => updateSettings({ voice: v.id, voiceId: v.elevenLabsId || '' })}
