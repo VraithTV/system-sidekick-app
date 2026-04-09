@@ -547,15 +547,26 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
   }, [setState, setSystemStatus]);
 
   const previewVoice = useCallback(async (voiceIdOrElevenLabsId: string) => {
-    // Accept either local voice ID or ElevenLabs ID
     const { voiceOptions } = await import('@/lib/voices');
     const voice = voiceOptions.find(v => v.id === voiceIdOrElevenLabsId || v.elevenLabsId === voiceIdOrElevenLabsId);
-    const elevenLabsId = voice?.elevenLabsId || voiceIdOrElevenLabsId;
-    const localId = voice?.id || 'daniel';
-    const ok = await speakWithElevenLabs('At your service. How can I help you today?', elevenLabsId, settings.outputDeviceId || undefined);
-    if (!ok) {
-      await speakBrowser('At your service. How can I help you today?', settings.outputDeviceId || undefined, localId);
+    const previewText = 'At your service. How can I help you today?';
+
+    // Try Kokoro if voice has a kokoroId
+    if (voice?.kokoroId) {
+      const ok = await speakWithKokoro(previewText, voice.kokoroId, settings.outputDeviceId || undefined);
+      if (ok) return;
     }
+
+    // Try ElevenLabs
+    const elevenLabsId = voice?.elevenLabsId || voiceIdOrElevenLabsId;
+    if (elevenLabsId) {
+      const ok = await speakWithElevenLabs(previewText, elevenLabsId, settings.outputDeviceId || undefined);
+      if (ok) return;
+    }
+
+    // Browser fallback
+    const localId = voice?.id || 'daniel';
+    await speakBrowser(previewText, settings.outputDeviceId || undefined, localId);
   }, [settings.outputDeviceId]);
 
   useEffect(() => {
