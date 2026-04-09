@@ -439,7 +439,7 @@ export function startSpeechRecognition(
 
   if (isElectron) {
     attempts.push({
-      label: 'cloud transcription (ElevenLabs)',
+      label: 'cloud transcription (AI)',
       create: () => createMediaRecorderSTTController(_deviceId, langCode),
     });
   } else {
@@ -450,12 +450,10 @@ export function startSpeechRecognition(
       });
     }
 
-    if (!sttCreditsExhausted) {
-      attempts.push({
-        label: 'cloud transcription (ElevenLabs)',
-        create: () => createMediaRecorderSTTController(_deviceId, langCode),
-      });
-    }
+    attempts.push({
+      label: 'cloud transcription (AI)',
+      create: () => createMediaRecorderSTTController(_deviceId, langCode),
+    });
   }
 
   if (attempts.length === 0) {
