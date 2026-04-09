@@ -254,7 +254,7 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
   };
 }
 
-async function transcribeWithElevenLabs(audioBlob: Blob, langCode?: string): Promise<string> {
+async function transcribeWithAI(audioBlob: Blob, langCode?: string): Promise<string> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
@@ -267,12 +267,12 @@ async function transcribeWithElevenLabs(audioBlob: Blob, langCode?: string): Pro
     'ko-KR': 'kor', 'zh-CN': 'cmn', 'ar-SA': 'ara', 'hi-IN': 'hin',
     'it-IT': 'ita',
   };
-  const elevenLabsLang = langMap[langCode || 'en-US'] || '';
-  if (elevenLabsLang) {
-    formData.append('language', elevenLabsLang);
+  const aiLang = langMap[langCode || 'en-US'] || '';
+  if (aiLang) {
+    formData.append('language', aiLang);
   }
 
-  const response = await fetch(`${supabaseUrl}/functions/v1/elevenlabs-transcribe`, {
+  const response = await fetch(`${supabaseUrl}/functions/v1/ai-transcribe`, {
     method: 'POST',
     headers: {
       apikey: supabaseKey,
