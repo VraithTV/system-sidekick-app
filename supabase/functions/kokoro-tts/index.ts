@@ -32,6 +32,7 @@ serve(async (req) => {
 
     // Kokoro FastAPI uses the OpenAI-compatible endpoint
     const endpoint = `${kokoroUrl.replace(/\/+$/, "")}/v1/audio/speech`;
+    console.log("Kokoro endpoint:", endpoint);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
