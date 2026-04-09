@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
-import { commonApps, toAppShortcut, type CommonApp } from '@/lib/commonApps';
+import { commonApps, categoryLabels, categoryOrder, toAppShortcut, type CommonApp } from '@/lib/commonApps';
 import { getAppIcon } from '@/components/jarvis/AppIcons';
-import { AppWindow, Plus, Trash2, X } from 'lucide-react';
+import { AppWindow, Plus, Trash2, X, Search } from 'lucide-react';
 import type { AppShortcut } from '@/types/jarvis';
 import { createT } from '@/lib/i18n';
 
@@ -12,8 +12,35 @@ export const AppsView = () => {
   const { apps, addApp, removeApp, settings } = useJarvisStore();
   const t = createT(settings.language || 'en');
   const [showAdd, setShowAdd] = useState(false);
+  const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const availableApps = commonApps.filter((ca) => !apps.some((a) => a.id === ca.id));
+
+  const filteredApps = useMemo(() => {
+    let filtered = availableApps;
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter((ca) =>
+        ca.name.toLowerCase().includes(q) ||
+        ca.aliases.some((a) => a.includes(q)) ||
+        ca.category.includes(q)
+      );
+    }
+    if (activeCategory) {
+      filtered = filtered.filter((ca) => ca.category === activeCategory);
+    }
+    return filtered;
+  }, [availableApps, search, activeCategory]);
+
+  const groupedApps = useMemo(() => {
+    const groups: Record<string, CommonApp[]> = {};
+    for (const app of filteredApps) {
+      if (!groups[app.category]) groups[app.category] = [];
+      groups[app.category].push(app);
+    }
+    return groups;
+  }, [filteredApps]);
 
   const handleAdd = (ca: CommonApp) => {
     addApp(toAppShortcut(ca));
@@ -31,7 +58,7 @@ export const AppsView = () => {
         <div className="flex items-center justify-between mb-8">
           <h2 className="font-display text-sm text-primary tracking-[0.15em]">{t('apps.title')}</h2>
           <button
-            onClick={() => setShowAdd(!showAdd)}
+            onClick={() => { setShowAdd(!showAdd); setSearch(''); setActiveCategory(null); }}
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary/10 text-primary text-[12px] font-mono border border-primary/20 hover:bg-primary/15 transition-colors"
           >
             {showAdd ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -41,24 +68,75 @@ export const AppsView = () => {
 
         {showAdd && (
           <div className="mb-6 p-4 rounded-xl bg-card border border-border">
-            <p className="text-[11px] text-muted-foreground font-mono mb-3 tracking-wide">
-              {t('apps.available')}
-            </p>
-            {availableApps.length === 0 ? (
-              <p className="text-xs text-muted-foreground/50">{t('apps.allAdded')}</p>
+            {/* Search bar */}
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search apps..."
+                className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-background border border-border text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 transition-colors"
+              />
+            </div>
+
+            {/* Category filters */}
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              <button
+                onClick={() => setActiveCategory(null)}
+                className={`px-3 py-1.5 rounded-md text-[10px] font-mono tracking-wide transition-colors ${
+                  !activeCategory ? 'bg-primary/15 text-primary border border-primary/25' : 'text-muted-foreground hover:text-foreground border border-transparent hover:bg-muted/40'
+                }`}
+              >
+                All
+              </button>
+              {categoryOrder.map((cat) => {
+                const count = availableApps.filter((a) => a.category === cat).length;
+                if (count === 0) return null;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+                    className={`px-3 py-1.5 rounded-md text-[10px] font-mono tracking-wide transition-colors ${
+                      activeCategory === cat ? 'bg-primary/15 text-primary border border-primary/25' : 'text-muted-foreground hover:text-foreground border border-transparent hover:bg-muted/40'
+                    }`}
+                  >
+                    {categoryLabels[cat]} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {filteredApps.length === 0 ? (
+              <p className="text-xs text-muted-foreground/50 text-center py-4">
+                {search ? 'No apps match your search.' : t('apps.allAdded')}
+              </p>
             ) : (
-              <div className="grid grid-cols-2 xl:grid-cols-3 gap-2">
-                {availableApps.map((ca) => {
-                  const Icon = getAppIcon(ca.id);
+              <div className="max-h-[400px] overflow-y-auto pr-1 space-y-4">
+                {categoryOrder.map((cat) => {
+                  const catApps = groupedApps[cat];
+                  if (!catApps || catApps.length === 0) return null;
                   return (
-                    <button
-                      key={ca.id}
-                      onClick={() => handleAdd(ca)}
-                      className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all text-left"
-                    >
-                      <Icon size={22} />
-                      <p className="text-[12px] text-foreground/80 truncate">{ca.name}</p>
-                    </button>
+                    <div key={cat}>
+                      <p className="text-[10px] font-mono text-primary/50 tracking-[0.15em] uppercase mb-2">
+                        {categoryLabels[cat]}
+                      </p>
+                      <div className="grid grid-cols-2 xl:grid-cols-3 gap-2">
+                        {catApps.map((ca) => {
+                          const Icon = getAppIcon(ca.id);
+                          return (
+                            <button
+                              key={ca.id}
+                              onClick={() => handleAdd(ca)}
+                              className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all text-left"
+                            >
+                              <Icon size={22} />
+                              <p className="text-[12px] text-foreground/80 truncate">{ca.name}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
