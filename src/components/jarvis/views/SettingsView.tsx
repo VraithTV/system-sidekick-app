@@ -163,7 +163,7 @@ export const SettingsView = () => {
   const VoiceCard = ({ v }: { v: typeof jarvisVoices[0] }) => (
     <button
       key={v.id}
-      onClick={() => updateSettings({ voice: v.id, voiceId: v.elevenLabsId })}
+      onClick={() => updateSettings({ voice: v.id, voiceId: v.elevenLabsId || '' })}
       className={`w-full flex items-center gap-3 p-3.5 rounded-lg transition-all text-left group ${
         settings.voice === v.id
           ? 'bg-primary/10 border border-primary/30 shadow-[0_0_15px_hsl(var(--primary)/0.08)]'
@@ -175,11 +175,11 @@ export const SettingsView = () => {
       }`} />
       <div className="flex-1 min-w-0">
         <p className="text-[13px] text-foreground/90 font-medium">{v.label}</p>
-        <p className="text-[10px] text-muted-foreground font-mono truncate">{t(`voice.${v.id}`)}</p>
+        <p className="text-[10px] text-muted-foreground font-mono truncate">{v.description}</p>
       </div>
       <button
         className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/30 hover:text-primary hover:bg-primary/10 transition-all shrink-0"
-        onClick={(e) => { e.stopPropagation(); handlePreview(v.id, v.elevenLabsId); }}
+        onClick={(e) => { e.stopPropagation(); handlePreview(v.id, v.elevenLabsId || v.id); }}
         disabled={previewing !== null}
       >
         {previewing === v.id ? (
