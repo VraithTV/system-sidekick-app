@@ -48,6 +48,15 @@ function openUrl(url: string) {
   }
 }
 
+/** Close an app via Electron */
+function closeApp(appId: string): boolean {
+  if (isElectron && (window as any).electronAPI?.closeApp) {
+    (window as any).electronAPI.closeApp(appId);
+    return true;
+  }
+  return false;
+}
+
 /** Send a media key via Electron */
 function sendMediaKey(key: 'play-pause' | 'next' | 'previous' | 'stop') {
   if (isElectron && (window as any).electronAPI?.mediaKey) {
@@ -55,6 +64,50 @@ function sendMediaKey(key: 'play-pause' | 'next' | 'previous' | 'stop') {
     return true;
   }
   return false;
+}
+
+/** Handle "close X" commands */
+function handleCloseCommand(text: string): AppCommandResult {
+  const lower = text.toLowerCase();
+  const closeMatch = lower.match(/(?:close|quit|exit|kill|stop|shut down|terminate|end)\s+(.+)/i);
+  if (!closeMatch) return { handled: false };
+
+  const target = closeMatch[1]
+    .replace(/^(the|my)\s+/i, '')
+    .replace(/\s*(?:app|application|program|window)\s*/i, '')
+    .trim()
+    .toLowerCase();
+
+  if (!target) return { handled: false };
+
+  // Match against known app aliases
+  const matched = commonApps.find((app) =>
+    app.aliases.some((alias) => target === alias || target.includes(alias))
+  );
+
+  if (matched) {
+    // For web apps, we can't close them
+    if (matched.launchCmd.includes('https://')) {
+      return { handled: true, response: `I can't close ${matched.name} since it's a website. You'll need to close it from your browser.` };
+    }
+    if (closeApp(matched.id)) {
+      return { handled: true, response: `Closing ${matched.name} for you.` };
+    }
+    // If not Electron, try generic
+    if (isElectron && (window as any).electronAPI?.runCommand) {
+      (window as any).electronAPI.runCommand(`taskkill /im ${matched.id}.exe /f`);
+      return { handled: true, response: `Closing ${matched.name}.` };
+    }
+    return { handled: true, response: `I'll close ${matched.name} for you. Make sure you're running the desktop app for full control.` };
+  }
+
+  // Generic close attempt
+  if (isElectron && (window as any).electronAPI?.closeApp) {
+    (window as any).electronAPI.closeApp(target);
+    return { handled: true, response: `Attempting to close ${target}.` };
+  }
+
+  return { handled: false };
 }
 
 /** Parse and handle Spotify-specific voice commands */
@@ -75,7 +128,6 @@ function handleSpotifyCommand(text: string): AppCommandResult {
   }
 
   // "play [song/artist] on spotify" or just "play [song]"
-  // Broad regex: handles "play X", "can you play X", "I want to hear X", "put on X", etc.
   const playMatch = lower.match(/(?:play|put on|queue|listen to|hear)\s+(.+?)(?:\s+on\s+spotify)?[\s.!?]*$/i);
   if (playMatch && (lower.includes('spotify') || lower.includes('music') || lower.includes('play') || lower.includes('listen') || lower.includes('hear') || lower.includes('put on') || lower.includes('queue'))) {
     const query = playMatch[1]
@@ -94,29 +146,23 @@ function handleSpotifyCommand(text: string): AppCommandResult {
 
     if (query && query !== 'music' && query !== 'some music' && query !== 'something') {
       if (hasSpotifyAPI) {
-        // Launch Spotify desktop app first, then play via API
         return {
           handled: true,
           async: true,
           response: `Searching for "${query}" on Spotify...`,
           asyncResponse: (async () => {
-            // Open Spotify app in background
             launchSpotifyApp();
-            // Wait a moment for Spotify to start before searching
             await wait(2000);
-            // Try to play
             console.log('[Spotify] Attempting to play:', query);
             let result = await spotifyPlayTrack(query);
             console.log('[Spotify] First attempt result:', result);
             if (result.success) return result.message;
-            // If no device found, wait longer for Spotify to fully start
             if (result.message.includes('No active') || result.message.includes('device') || result.message.includes('Could not search')) {
               console.log('[Spotify] No device found, retrying...');
               await wait(4000);
               result = await spotifyPlayTrack(query);
               console.log('[Spotify] Second attempt result:', result);
               if (result.success) return result.message;
-              // Final retry
               await wait(5000);
               result = await spotifyPlayTrack(query);
               console.log('[Spotify] Third attempt result:', result);
@@ -125,7 +171,6 @@ function handleSpotifyCommand(text: string): AppCommandResult {
           })(),
         };
       }
-      // Fallback: open Spotify URI/web and tell user to connect for full control
       if (isElectron) {
         openUrl(`spotify:search:${encodeURIComponent(query)}`);
       } else {
@@ -208,7 +253,7 @@ function handleSpotifyCommand(text: string): AppCommandResult {
     return { handled: true, response: 'Going back.' };
   }
 
-  // Shuffle: "shuffle my playlist", "turn on shuffle", "shuffle mode"
+  // Shuffle
   if (/\b(shuffle|shuffl)\b/i.test(lower)) {
     if (hasSpotifyAPI) {
       const wantOn = /\b(on|enable|start|activate)\b/i.test(lower);
@@ -223,7 +268,7 @@ function handleSpotifyCommand(text: string): AppCommandResult {
     return { handled: true, response: 'Connect Spotify in Settings to use shuffle.' };
   }
 
-  // Volume control: "set volume to 50%", "volume 80", "turn it up/down"
+  // Volume control
   const volMatch = lower.match(/(?:set\s+)?(?:spotify\s+)?volume\s+(?:to\s+)?(\d+)\s*%?/i);
   if (volMatch) {
     const vol = parseInt(volMatch[1], 10);
@@ -237,7 +282,7 @@ function handleSpotifyCommand(text: string): AppCommandResult {
     return { handled: true, response: `I need Spotify connected to change volume. Connect it in Settings.` };
   }
 
-  // "turn it up" / "turn it down" / "louder" / "quieter"
+  // "turn it up" / "turn it down"
   if (/\b(turn\s*(it\s*)?(up|down)|louder|quieter|lower\s*the\s*volume|raise\s*the\s*volume)\b/i.test(lower)) {
     if (hasSpotifyAPI) {
       const isUp = /\b(up|louder|raise)\b/i.test(lower);
@@ -245,7 +290,6 @@ function handleSpotifyCommand(text: string): AppCommandResult {
         handled: true,
         async: true,
         asyncResponse: (async () => {
-          // Get current volume, adjust by 20%
           const token = localStorage.getItem('jarvis_spotify_tokens');
           let currentVol = 50;
           try {
@@ -289,7 +333,7 @@ function handleUrlCommand(text: string): AppCommandResult {
     linkedin: { url: 'https://linkedin.com', name: 'LinkedIn' },
   };
 
-  // Match "open youtube", "go to netflix", "take me to github"
+  // Match "open youtube", "go to netflix", etc.
   const openMatch = lower.match(/(?:open|go to|take me to|launch|navigate to|show me|pull up|bring up)\s+(.+)/i);
   if (openMatch) {
     const target = openMatch[1].replace(/^(the|my|up)\s+/i, '').trim().toLowerCase();
@@ -312,7 +356,7 @@ function handleUrlCommand(text: string): AppCommandResult {
       }
     }
 
-    // "open youtube and search for X"
+    // YouTube search
     const ytSearchMatch = lower.match(/youtube.*(?:search|look up|find)\s+(.+)/i);
     if (ytSearchMatch) {
       const query = ytSearchMatch[1].trim();
@@ -320,7 +364,6 @@ function handleUrlCommand(text: string): AppCommandResult {
       return { handled: true, response: `Searching YouTube for "${query}".` };
     }
 
-    // "search youtube for X"
     const searchYtMatch = lower.match(/search\s+youtube\s+(?:for\s+)?(.+)/i);
     if (searchYtMatch) {
       const query = searchYtMatch[1].trim();
@@ -352,11 +395,13 @@ function handleUrlCommand(text: string): AppCommandResult {
 
 /**
  * Process a voice command for app control.
- * Returns { handled: true, response } if the command was handled,
- * or { handled: false } if it should pass through to the AI.
  */
 export function processAppCommand(text: string): AppCommandResult {
-  // Try Spotify commands first
+  // Try close commands first
+  const closeResult = handleCloseCommand(text);
+  if (closeResult.handled) return closeResult;
+
+  // Try Spotify commands
   const spotifyResult = handleSpotifyCommand(text);
   if (spotifyResult.handled) return spotifyResult;
 

@@ -56,19 +56,42 @@ serve(async (req) => {
 
     const modeAddition = getModePrompt(mode || 'assistant');
     const langMap: Record<string, string> = {
-      fr: '\n\nIMPORTANT: Respond entirely in French (Français). All text must be in French.',
-      de: '\n\nIMPORTANT: Respond entirely in German (Deutsch). All text must be in German.',
-      es: '\n\nIMPORTANT: Respond entirely in Spanish (Español). All text must be in Spanish.',
-      pt: '\n\nIMPORTANT: Respond entirely in Portuguese (Português). All text must be in Portuguese.',
-      ru: '\n\nIMPORTANT: Respond entirely in Russian (Русский). All text must be in Russian.',
-      ja: '\n\nIMPORTANT: Respond entirely in Japanese (日本語). All text must be in Japanese.',
-      ko: '\n\nIMPORTANT: Respond entirely in Korean (한국어). All text must be in Korean.',
-      zh: '\n\nIMPORTANT: Respond entirely in Mandarin Chinese (中文). All text must be in Chinese.',
-      ar: '\n\nIMPORTANT: Respond entirely in Arabic (العربية). All text must be in Arabic.',
-      hi: '\n\nIMPORTANT: Respond entirely in Hindi (हिन्दी). All text must be in Hindi.',
-      it: '\n\nIMPORTANT: Respond entirely in Italian (Italiano). All text must be in Italian.',
-      ro: '\n\nIMPORTANT: Respond entirely in Romanian (Română). All text must be in Romanian.',
-      nl: '\n\nIMPORTANT: Respond entirely in Dutch (Nederlands). All text must be in Dutch.',
+      fr: '\n\nIMPORTANT: Respond entirely in French (Français).',
+      de: '\n\nIMPORTANT: Respond entirely in German (Deutsch).',
+      es: '\n\nIMPORTANT: Respond entirely in Spanish (Español).',
+      pt: '\n\nIMPORTANT: Respond entirely in Portuguese (Português).',
+      tr: '\n\nIMPORTANT: Respond entirely in Turkish (Türkçe).',
+      ru: '\n\nIMPORTANT: Respond entirely in Russian (Русский).',
+      ja: '\n\nIMPORTANT: Respond entirely in Japanese (日本語).',
+      ko: '\n\nIMPORTANT: Respond entirely in Korean (한국어).',
+      zh: '\n\nIMPORTANT: Respond entirely in Mandarin Chinese (中文).',
+      ar: '\n\nIMPORTANT: Respond entirely in Arabic (العربية).',
+      hi: '\n\nIMPORTANT: Respond entirely in Hindi (हिन्दी).',
+      it: '\n\nIMPORTANT: Respond entirely in Italian (Italiano).',
+      ro: '\n\nIMPORTANT: Respond entirely in Romanian (Română).',
+      nl: '\n\nIMPORTANT: Respond entirely in Dutch (Nederlands).',
+      pl: '\n\nIMPORTANT: Respond entirely in Polish (Polski).',
+      sv: '\n\nIMPORTANT: Respond entirely in Swedish (Svenska).',
+      da: '\n\nIMPORTANT: Respond entirely in Danish (Dansk).',
+      no: '\n\nIMPORTANT: Respond entirely in Norwegian (Norsk).',
+      fi: '\n\nIMPORTANT: Respond entirely in Finnish (Suomi).',
+      el: '\n\nIMPORTANT: Respond entirely in Greek (Ελληνικά).',
+      cs: '\n\nIMPORTANT: Respond entirely in Czech (Čeština).',
+      uk: '\n\nIMPORTANT: Respond entirely in Ukrainian (Українська).',
+      th: '\n\nIMPORTANT: Respond entirely in Thai (ไทย).',
+      vi: '\n\nIMPORTANT: Respond entirely in Vietnamese (Tiếng Việt).',
+      id: '\n\nIMPORTANT: Respond entirely in Indonesian (Bahasa Indonesia).',
+      ms: '\n\nIMPORTANT: Respond entirely in Malay (Bahasa Melayu).',
+      hu: '\n\nIMPORTANT: Respond entirely in Hungarian (Magyar).',
+      he: '\n\nIMPORTANT: Respond entirely in Hebrew (עברית).',
+      bg: '\n\nIMPORTANT: Respond entirely in Bulgarian (Български).',
+      hr: '\n\nIMPORTANT: Respond entirely in Croatian (Hrvatski).',
+      sk: '\n\nIMPORTANT: Respond entirely in Slovak (Slovenčina).',
+      sr: '\n\nIMPORTANT: Respond entirely in Serbian (Srpski).',
+      fil: '\n\nIMPORTANT: Respond entirely in Filipino (Tagalog).',
+      bn: '\n\nIMPORTANT: Respond entirely in Bengali (বাংলা).',
+      ur: '\n\nIMPORTANT: Respond entirely in Urdu (اردو).',
+      sw: '\n\nIMPORTANT: Respond entirely in Swahili (Kiswahili).',
     };
     const langAddition = langMap[language || 'en'] || '';
 
@@ -89,15 +112,17 @@ You think of yourself as a real AI companion, not just a chatbot. You have opini
 CRITICAL: You are having a live voice conversation. When the user gives a short reply (like a city name, "yes", "no", a number, etc.), treat it as an answer to your last question. Never ask "what do you want me to do with that?" when the context is obvious. Just act on it.
 
 You can control these things on the user's PC:
-- Open applications (Chrome, Spotify, Discord, OBS, Steam, VS Code, etc.)
-- Control Spotify (play/pause/skip/previous music)
+- Open applications (Chrome, Firefox, Spotify, Discord, OBS, Steam, VS Code, etc.)
+- Close applications (Discord, Spotify, Chrome, Steam, etc.)
+- Control Spotify (play/pause/skip/previous music, play specific songs)
 - Open websites (YouTube, Netflix, Twitch, GitHub, etc.)
 - Search Google or YouTube
 - Save screen clips
 - Toggle recording
 - Control OBS (start/stop recording, streaming)
+- Launch games (Fortnite, Minecraft, GTA V, Valorant, etc.)
 
-When the user asks you to do something, respond as if you're doing it. Be confident and direct.
+When the user asks you to do something, respond as if you're doing it. Be confident and direct. When they ask to close something, confirm you're closing it.
 
 The current date and time is: ${dateTimeStr} (${tz}).
 ${memoriesSection}${modeAddition}${langAddition}

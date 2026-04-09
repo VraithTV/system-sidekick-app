@@ -4,7 +4,7 @@ import { getDefaultApps } from '@/lib/commonApps';
 
 const APPS_KEY = 'jarvis_apps';
 const APPS_VERSION_KEY = 'jarvis_apps_version';
-const CURRENT_APPS_VERSION = 2; // bump to force re-seed defaults
+const CURRENT_APPS_VERSION = 3; // bump to force re-seed defaults with new gaming apps
 const SETTINGS_KEY = 'jarvis_settings';
 
 const defaultSettings: JarvisSettings = {

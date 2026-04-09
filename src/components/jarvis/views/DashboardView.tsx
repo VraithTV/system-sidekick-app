@@ -2,22 +2,15 @@ import { useState, useEffect } from 'react';
 import { AssistantOrb } from '../AssistantOrb';
 import { CommandHistory } from '../CommandHistory';
 import { useJarvisStore } from '@/store/jarvisStore';
-import { Mic, MicOff, Zap } from 'lucide-react';
+import { Mic, MicOff } from 'lucide-react';
 import { requestVoiceAssistantStart, requestVoiceAssistantStop } from '@/hooks/useVoiceAssistant';
-import { getRemainingUses, getDailyLimit } from '@/lib/usageLimit';
 import { createT } from '@/lib/i18n';
 
 export const DashboardView = () => {
   const { commands, settings, systemStatus, state } = useJarvisStore();
   const micOn = systemStatus.micActive;
-  const limit = getDailyLimit();
-  const [remaining, setRemaining] = useState(getRemainingUses());
   const [time, setTime] = useState(new Date());
   const t = createT(settings.language || 'en');
-
-  useEffect(() => {
-    setRemaining(getRemainingUses());
-  }, [commands.length]);
 
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
@@ -87,15 +80,6 @@ export const DashboardView = () => {
           <div className="flex-1 min-w-0">
             {commands.length > 0 && <CommandHistory />}
           </div>
-
-          <div className="flex flex-col gap-2 shrink-0">
-            <div className="flex items-center gap-2 rounded-full border border-border/50 bg-card/60 backdrop-blur-sm px-3.5 py-1.5">
-              <Zap className={`h-3.5 w-3.5 ${remaining === 0 ? 'text-destructive' : 'text-primary'}`} />
-              <span className={`font-mono text-[11px] ${remaining === 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                {remaining}/{limit}
-              </span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -111,15 +95,9 @@ export const DashboardView = () => {
         {/* Quick stats */}
         <div className="py-5 space-y-3">
           <p className="font-display text-[9px] tracking-[0.25em] text-primary/60 uppercase">{t('dash.quickStats')}</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg border border-border/40 bg-background/40 p-3 text-center">
-              <p className="font-display text-lg text-primary glow-text">{commands.length}</p>
-              <p className="font-mono text-[8px] text-muted-foreground/50 mt-0.5 tracking-wider uppercase">{t('dash.commands')}</p>
-            </div>
-            <div className="rounded-lg border border-border/40 bg-background/40 p-3 text-center">
-              <p className="font-display text-lg text-primary glow-text">{remaining}</p>
-              <p className="font-mono text-[8px] text-muted-foreground/50 mt-0.5 tracking-wider uppercase">{t('dash.remaining')}</p>
-            </div>
+          <div className="rounded-lg border border-border/40 bg-background/40 p-3 text-center">
+            <p className="font-display text-lg text-primary glow-text">{commands.length}</p>
+            <p className="font-mono text-[8px] text-muted-foreground/50 mt-0.5 tracking-wider uppercase">{t('dash.commands')}</p>
           </div>
         </div>
 
@@ -153,7 +131,7 @@ export const DashboardView = () => {
           <div className="text-center">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/5 px-3 py-1">
               <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="font-mono text-[8px] text-primary/60 tracking-[0.2em] uppercase">Beta v1.2.6</span>
+              <span className="font-mono text-[8px] text-primary/60 tracking-[0.2em] uppercase">Beta v1.2.7</span>
             </div>
           </div>
         </div>
