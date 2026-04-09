@@ -522,7 +522,14 @@ export const SettingsView = () => {
       <UpdateProgressScreen
         open={updateState === 'updating'}
         newVersion={updateVersion}
-        onComplete={() => {}}
+        downloadProgress={downloadProgress}
+        installState={installState}
+        onOpenFolder={() => {
+          if (downloadedFilePath) {
+            (window as any).electronAPI?.openUrl?.('file://' + downloadedFilePath);
+          }
+        }}
+        onDismiss={() => setUpdateState('idle')}
       />
     </div>
   );
