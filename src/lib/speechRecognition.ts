@@ -425,6 +425,14 @@ export function startSpeechRecognition(
         create: () => createMediaRecorderSTTController(_deviceId, langCode),
       });
     }
+
+    // Fallback: try browser speech recognition in Electron (Chromium-based)
+    if (SpeechRecognitionCtor) {
+      attempts.push({
+        label: 'browser speech recognition',
+        create: () => createBrowserSpeechRecognitionController(langCode),
+      });
+    }
   } else {
     if (SpeechRecognitionCtor) {
       attempts.push({
