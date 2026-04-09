@@ -397,14 +397,24 @@ ipcMain.handle('check-for-updates', () => checkForUpdates(false));
 ipcMain.handle('get-app-version', () => getCurrentVersion());
 ipcMain.handle('download-update', async (_event, downloadUrl, assetName) => {
   try {
-    const filePath = await downloadUpdate(downloadUrl, assetName);
-    return { status: 'downloaded', filePath };
+    const tempDir = app.getPath('temp');
+    const fileName = assetName || 'jarvis-update.exe';
+    const destPath = path.join(tempDir, fileName);
+
+    // Download with progress sent to renderer
+    await downloadFile(downloadUrl, destPath, (percent) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update-download-progress', percent);
+      }
+    });
+
+    return { status: 'downloaded', filePath: destPath };
   } catch (error) {
     return { status: 'error', message: error instanceof Error ? error.message : 'Download failed.' };
   }
 });
-ipcMain.handle('install-update', (_event, filePath) => {
-  const launched = installAndRestart(filePath);
+ipcMain.handle('install-update', async (_event, filePath) => {
+  const launched = await installAndRestart(filePath);
   return { launched };
 });
 ipcMain.handle('dismiss-update', (_event, version) => {

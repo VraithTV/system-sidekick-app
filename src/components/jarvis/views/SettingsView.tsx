@@ -72,12 +72,20 @@ export const SettingsView = () => {
   const [updateAssetName, setUpdateAssetName] = useState('');
   const [updateError, setUpdateError] = useState('');
   const [currentVersion, setCurrentVersion] = useState('0.0.0');
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [installState, setInstallState] = useState<'downloading' | 'installing' | 'failed' | 'done'>('downloading');
+  const [downloadedFilePath, setDownloadedFilePath] = useState('');
 
   useEffect(() => {
     if (isElectron) {
       (window as any).electronAPI?.getAppVersion?.().then((v: string) => {
         if (v) setCurrentVersion(v);
       });
+      // Listen for download progress from Electron
+      const cleanup = (window as any).electronAPI?.onUpdateDownloadProgress?.((percent: number) => {
+        setDownloadProgress(percent);
+      });
+      return () => cleanup?.();
     }
   }, []);
 
@@ -111,11 +119,23 @@ export const SettingsView = () => {
 
   const handleUpdateNow = useCallback(async () => {
     setUpdateState('updating');
+    setDownloadProgress(0);
+    setInstallState('downloading');
+    setDownloadedFilePath('');
     if (!isElectron || !updateUrl) return;
     try {
       const result = await (window as any).electronAPI?.downloadUpdate?.(updateUrl, updateAssetName);
       if (result?.status === 'downloaded' && result.filePath) {
-        await (window as any).electronAPI?.installUpdate?.(result.filePath);
+        setDownloadedFilePath(result.filePath);
+        setInstallState('installing');
+        const installResult = await (window as any).electronAPI?.installUpdate?.(result.filePath);
+        if (installResult?.launched) {
+          setInstallState('done');
+          // App will quit shortly
+        } else {
+          // Installer couldn't launch automatically (Windows security, or .zip file)
+          setInstallState('failed');
+        }
       } else {
         setUpdateError(result?.message || 'Download failed.');
         setUpdateState('error');
@@ -502,7 +522,14 @@ export const SettingsView = () => {
       <UpdateProgressScreen
         open={updateState === 'updating'}
         newVersion={updateVersion}
-        onComplete={() => {}}
+        downloadProgress={downloadProgress}
+        installState={installState}
+        onOpenFolder={() => {
+          if (downloadedFilePath) {
+            (window as any).electronAPI?.openUrl?.('file://' + downloadedFilePath);
+          }
+        }}
+        onDismiss={() => setUpdateState('idle')}
       />
     </div>
   );
