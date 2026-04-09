@@ -2,6 +2,11 @@ import {
   OperaGXIcon, VivaldiIcon, EpicGamesIcon, TeamsIcon, ZoomIcon,
   PowerPointIcon, AfterEffectsIcon, BlenderIcon, NotionIcon,
   FigmaIcon, VLCIcon, SpotifyWebIcon,
+  FortniteIcon, MinecraftIcon, GTAIcon, FiveMIcon, ValorantIcon,
+  LeagueIcon, ApexIcon, CSGOIcon, RobloxIcon, OverwatchIcon,
+  RocketLeagueIcon, WarzoneIcon, BattleNetIcon, EAAppIcon,
+  UbisoftIcon, XboxIcon, GeForceNowIcon, StreamlabsIcon,
+  DaVinciIcon, CapCutIcon,
 } from './AppIconsExtra';
 
 type IconProps = { className?: string; size?: number };
@@ -308,6 +313,29 @@ export const appIconMap: Record<string, React.FC<IconProps>> = {
   figma: FigmaIcon,
   vlc: VLCIcon,
   'spotify-web': SpotifyWebIcon,
+  // Gaming
+  fortnite: FortniteIcon,
+  minecraft: MinecraftIcon,
+  gta5: GTAIcon,
+  fivem: FiveMIcon,
+  valorant: ValorantIcon,
+  league: LeagueIcon,
+  apex: ApexIcon,
+  csgo: CSGOIcon,
+  roblox: RobloxIcon,
+  overwatch: OverwatchIcon,
+  'rocket-league': RocketLeagueIcon,
+  warzone: WarzoneIcon,
+  battlenet: BattleNetIcon,
+  'ea-app': EAAppIcon,
+  ubisoft: UbisoftIcon,
+  xbox: XboxIcon,
+  'geforce-now': GeForceNowIcon,
+  // Streaming
+  streamlabs: StreamlabsIcon,
+  // Creative
+  davinci: DaVinciIcon,
+  capcut: CapCutIcon,
 };
 
 export const getAppIcon = (id: string) => appIconMap[id] || GenericAppIcon;
