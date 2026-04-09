@@ -358,11 +358,11 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
       }
 
       if (code === 'network') {
-        // In Electron the browser speech service is unavailable; treat as
-        // a soft failure so the fallback chain can try cloud transcription
-        // without surfacing a scary toast to the user.
-        console.info('[Jarvis] Browser speech network unavailable, falling back.');
-        finish('');
+        const error = new SpeechRecognitionUnavailableError(
+          'Speech recognition network service is unavailable. Using cloud transcription instead.'
+        ) as SpeechRecognitionUnavailableError & { code?: string };
+        error.code = 'browser-network';
+        fail(error);
         return;
       }
 
@@ -418,31 +418,38 @@ export function startSpeechRecognition(
 
   const attempts: { label: string; create: () => SpeechRecognitionController }[] = [];
 
-  if (isElectron && !sttCreditsExhausted) {
-    // In Electron, try ElevenLabs STT first (better quality)
-    attempts.push({
-      label: 'cloud transcription (ElevenLabs)',
-      create: () => createMediaRecorderSTTController(_deviceId, langCode),
-    });
-  }
+  if (isElectron) {
+    if (!sttCreditsExhausted) {
+      attempts.push({
+        label: 'cloud transcription (ElevenLabs)',
+        create: () => createMediaRecorderSTTController(_deviceId, langCode),
+      });
+    }
+  } else {
+    if (SpeechRecognitionCtor) {
+      attempts.push({
+        label: 'browser speech recognition',
+        create: () => createBrowserSpeechRecognitionController(langCode),
+      });
+    }
 
-  // Browser Web Speech API as primary (browser) or fallback (Electron)
-  if (SpeechRecognitionCtor) {
-    attempts.push({
-      label: 'browser speech recognition',
-      create: () => createBrowserSpeechRecognitionController(langCode),
-    });
-  }
-
-  // If not in Electron and browser STT is available, also offer ElevenLabs as fallback
-  if (!isElectron && !sttCreditsExhausted) {
-    attempts.push({
-      label: 'cloud transcription (ElevenLabs)',
-      create: () => createMediaRecorderSTTController(_deviceId, langCode),
-    });
+    if (!sttCreditsExhausted) {
+      attempts.push({
+        label: 'cloud transcription (ElevenLabs)',
+        create: () => createMediaRecorderSTTController(_deviceId, langCode),
+      });
+    }
   }
 
   if (attempts.length === 0) {
+    if (isElectron) {
+      throw new SpeechRecognitionUnavailableError(
+        sttCreditsExhausted
+          ? 'Cloud transcription is unavailable because voice transcription credits are exhausted.'
+          : 'Microphone transcription is not available in the Electron app right now.'
+      );
+    }
+
     const browser = getBrowserName();
     throw new SpeechRecognitionUnavailableError(
       `Speech recognition is not available in ${browser}. Try using Chrome or Edge.`
