@@ -49,8 +49,9 @@ export interface VoiceOption {
   id: string;
   label: string;
   elevenLabsId: string;
+  kokoroId?: string;
   description: string;
-  category?: 'jarvis' | 'standard';
+  category?: 'jarvis' | 'kokoro' | 'standard';
 }
 
 export interface JarvisSettings {
