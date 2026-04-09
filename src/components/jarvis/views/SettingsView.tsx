@@ -442,7 +442,7 @@ export const SettingsView = () => {
                   >
                     <img src={getFlagUrl(lang.countryCode)} alt={lang.label} className="w-6 h-[18px] rounded-sm object-cover shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] text-foreground/90 font-medium">{t(`lang.${lang.code}`)}</p>
+                      <p className="text-[13px] text-foreground/90 font-medium">{t(`lang.${lang.code}`) !== `lang.${lang.code}` ? t(`lang.${lang.code}`) : lang.label}</p>
                       <p className="text-[10px] text-muted-foreground font-mono">{lang.nativeLabel}</p>
                     </div>
                     {(settings.language || 'en') === lang.code && (
