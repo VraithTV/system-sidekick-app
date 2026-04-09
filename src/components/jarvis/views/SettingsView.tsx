@@ -81,6 +81,11 @@ export const SettingsView = () => {
       (window as any).electronAPI?.getAppVersion?.().then((v: string) => {
         if (v) setCurrentVersion(v);
       });
+      // Listen for download progress from Electron
+      const cleanup = (window as any).electronAPI?.onUpdateDownloadProgress?.((percent: number) => {
+        setDownloadProgress(percent);
+      });
+      return () => cleanup?.();
     }
   }, []);
 
