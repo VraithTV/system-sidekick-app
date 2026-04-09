@@ -175,6 +175,7 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
           const errMsg = err instanceof Error ? err.message : String(err);
           if (errMsg.includes('quota') || errMsg.includes('401') || errMsg.includes('429')) {
             sttCreditsExhausted = true;
+            persistSttExhausted();
             console.warn('[Jarvis] ElevenLabs STT credits exhausted. Will use browser speech recognition from now on.');
           }
           // Reject so the outer fallback logic can try browser STT
