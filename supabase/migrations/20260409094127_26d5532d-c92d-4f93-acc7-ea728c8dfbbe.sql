@@ -1,0 +1,1 @@
+INSERT INTO public.app_config (key, value) VALUES ('min_version', '1.2.0') ON CONFLICT (key) DO UPDATE SET value = '1.2.0', updated_at = now();

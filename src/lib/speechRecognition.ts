@@ -28,6 +28,15 @@ class SpeechRecognitionUnavailableError extends Error {
   }
 }
 
+// ─── ElevenLabs STT credit tracking ─────────────────────────
+
+/** Once STT credits are exhausted, skip ElevenLabs STT for this session */
+let sttCreditsExhausted = false;
+
+export function isElevenLabsSTTExhausted(): boolean {
+  return sttCreditsExhausted;
+}
+
 // ─── Persistent mic stream (avoids flickering) ───────────────
 
 let cachedMicStream: MediaStream | null = null;
@@ -79,9 +88,9 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
 
       let heardSpeech = false;
       let silenceStart = 0;
-      const SILENCE_MS = 1500;        // 1.5s silence to finalize
-      const MAX_DURATION_MS = 12000;   // 12s max per utterance
-      const LEVEL_THRESHOLD = 3;       // Lower threshold to catch quieter speech
+      const SILENCE_MS = 1500;
+      const MAX_DURATION_MS = 12000;
+      const LEVEL_THRESHOLD = 3;
       const startTime = performance.now();
 
       const measure = () => {
@@ -132,7 +141,6 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
 
         const blob = new Blob(chunks, { type: recorder!.mimeType || 'audio/webm' });
 
-        // Very small blobs likely have no speech
         if (blob.size < 800) {
           resolve('');
           return;
@@ -143,7 +151,14 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
           resolve(transcript);
         } catch (err) {
           console.warn('[Jarvis] ElevenLabs STT failed:', err);
-          resolve('');
+          // Mark credits as exhausted if it looks like a quota error
+          const errMsg = err instanceof Error ? err.message : String(err);
+          if (errMsg.includes('quota') || errMsg.includes('401') || errMsg.includes('429')) {
+            sttCreditsExhausted = true;
+            console.warn('[Jarvis] ElevenLabs STT credits exhausted. Will use browser speech recognition from now on.');
+          }
+          // Reject so the outer fallback logic can try browser STT
+          reject(new Error('ElevenLabs STT failed: ' + errMsg));
         }
       };
 
@@ -205,7 +220,7 @@ async function transcribeWithElevenLabs(audioBlob: Blob, langCode?: string): Pro
   return (data?.text || '').trim();
 }
 
-// ─── Browser Web Speech API (Chrome/Edge only) ─────────────
+// ─── Browser Web Speech API (Chrome/Edge/Electron) ─────────
 
 function createBrowserSpeechRecognitionController(langCode?: string): SpeechRecognitionController {
   let recognition: any;
@@ -327,11 +342,6 @@ export function startSpeechRecognition(
   _deviceId?: string,
   langCode?: string,
 ): SpeechRecognitionController {
-  // In Electron, always use MediaRecorder + ElevenLabs STT
-  if (isElectron) {
-    return createMediaRecorderSTTController(_deviceId, langCode);
-  }
-
   let activeController: SpeechRecognitionController | null = null;
   let stopped = false;
 
@@ -339,6 +349,15 @@ export function startSpeechRecognition(
 
   const attempts: { label: string; create: () => SpeechRecognitionController }[] = [];
 
+  if (isElectron && !sttCreditsExhausted) {
+    // In Electron, try ElevenLabs STT first (better quality)
+    attempts.push({
+      label: 'cloud transcription (ElevenLabs)',
+      create: () => createMediaRecorderSTTController(_deviceId, langCode),
+    });
+  }
+
+  // Browser Web Speech API as primary (browser) or fallback (Electron)
   if (SpeechRecognitionCtor) {
     attempts.push({
       label: 'browser speech recognition',
@@ -346,10 +365,13 @@ export function startSpeechRecognition(
     });
   }
 
-  attempts.push({
-    label: 'cloud transcription (ElevenLabs)',
-    create: () => createMediaRecorderSTTController(_deviceId, langCode),
-  });
+  // If not in Electron and browser STT is available, also offer ElevenLabs as fallback
+  if (!isElectron && !sttCreditsExhausted) {
+    attempts.push({
+      label: 'cloud transcription (ElevenLabs)',
+      create: () => createMediaRecorderSTTController(_deviceId, langCode),
+    });
+  }
 
   if (attempts.length === 0) {
     const browser = getBrowserName();
