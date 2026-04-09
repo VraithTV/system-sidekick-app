@@ -87,6 +87,22 @@ function notifyVoiceCaptureError(error: unknown) {
   const errorName = error instanceof Error ? error.name : '';
   const errorCode = getVoiceCaptureErrorCode(error);
 
+   if (errorCode === 'quota_exceeded') {
+    toast.error('Voice transcription credits are exhausted.', {
+      description: 'Add more credits, then click the mic again.',
+      duration: 8000,
+    });
+    return;
+  }
+
+  if (errorCode === 'cloud-transcription-failed') {
+    toast.error('Cloud transcription is unavailable.', {
+      description: error instanceof Error ? error.message : 'Check your internet connection and try again.',
+      duration: 8000,
+    });
+    return;
+  }
+
   if (errorName === 'SpeechRecognitionUnavailableError' || errorCode === 'unsupported') {
     const msg = error instanceof Error ? error.message : '';
     toast.error(isElectron ? 'Microphone transcription is not available.' : 'Speech recognition is not available.', {
