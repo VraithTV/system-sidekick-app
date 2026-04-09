@@ -3,22 +3,15 @@ import { Monitor, Circle, Radio, Camera, Mic, MicOff, Volume2, VolumeX } from 'l
 import { requestVoiceAssistantStart, requestVoiceAssistantStop } from '@/hooks/useVoiceAssistant';
 import { Button } from '@/components/ui/button';
 
-const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
-
 export const OBSView = () => {
   const { systemStatus, setSystemStatus } = useJarvisStore();
 
   const toggleMic = () => {
-    if (!isElectron) {
-      if (systemStatus.micActive) {
-        requestVoiceAssistantStop();
-      } else {
-        requestVoiceAssistantStart();
-      }
-      return;
+    if (systemStatus.micActive) {
+      requestVoiceAssistantStop();
+    } else {
+      requestVoiceAssistantStart();
     }
-
-    setSystemStatus({ micActive: !systemStatus.micActive });
   };
 
   return (
