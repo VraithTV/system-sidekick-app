@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { matchWakeWord } from '@/lib/fuzzyWake';
 import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
-import { startSpeechRecognition } from '@/lib/speechRecognition';
+import { resetElevenLabsSTTExhausted, startSpeechRecognition } from '@/lib/speechRecognition';
 import { processAppCommand } from '@/lib/appCommands';
 import { processVoiceCommand } from '@/lib/voiceCommands';
 import { canUseVoice, incrementUsage } from '@/lib/usageLimit';
@@ -61,6 +61,9 @@ export const VOICE_ASSISTANT_STOP_EVENT = 'jarvis:stop-listening';
 
 export function requestVoiceAssistantStart() {
   if (typeof window === 'undefined') return;
+  if (isElectron) {
+    resetElevenLabsSTTExhausted();
+  }
   window.dispatchEvent(new Event(VOICE_ASSISTANT_START_EVENT));
 }
 
@@ -86,8 +89,10 @@ function notifyVoiceCaptureError(error: unknown) {
 
   if (errorName === 'SpeechRecognitionUnavailableError' || errorCode === 'unsupported') {
     const msg = error instanceof Error ? error.message : '';
-    toast.error('Speech recognition is not available.', {
-      description: msg || 'Use Chrome or Edge and allow microphone access.',
+    toast.error(isElectron ? 'Microphone transcription is not available.' : 'Speech recognition is not available.', {
+      description: msg || (isElectron
+        ? 'Check microphone access and try again.'
+        : 'Use Chrome or Edge and allow microphone access.'),
       duration: 8000,
     });
     return;
