@@ -186,7 +186,7 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
         }
 
         try {
-          const transcript = await transcribeWithElevenLabs(blob, langCode);
+          const transcript = await transcribeWithAI(blob, langCode);
           resolve(transcript);
         } catch (err) {
           console.warn('[Jarvis] ElevenLabs STT failed:', err);
