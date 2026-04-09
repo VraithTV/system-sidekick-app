@@ -108,6 +108,7 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
       const MAX_DURATION_MS = 8000;
       const LEVEL_THRESHOLD = 3;
       const startTime = performance.now();
+      let totalSpeechFrames = 0;
 
       const measure = () => {
         analyser!.getByteTimeDomainData(samples);
@@ -124,6 +125,7 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
         if (level > LEVEL_THRESHOLD) {
           heardSpeech = true;
           silenceStart = 0;
+          totalSpeechFrames++;
         } else if (heardSpeech) {
           if (!silenceStart) silenceStart = now;
           if (now - silenceStart >= SILENCE_MS) {
@@ -162,8 +164,32 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
           return;
         }
 
+        // Estimate speech duration: if very few speech frames detected
+        // but transcription returns a long sentence, it's likely hallucinated
+        const estimatedSpeechMs = totalSpeechFrames * (1000 / 60); // ~60fps RAF
+
         try {
           const transcript = await transcribeWithAI(blob, langCode);
+
+          // Hallucination guard: if we detected very little speech but got
+          // a suspiciously long transcript, discard it
+          if (transcript) {
+            const wordCount = transcript.split(/\s+/).length;
+            const maxWordsForDuration = Math.max(3, Math.ceil(estimatedSpeechMs / 300));
+            if (estimatedSpeechMs < 500 && wordCount > 5) {
+              console.warn('[Jarvis] Discarding likely hallucinated transcript:', JSON.stringify(transcript),
+                `(speechMs=${Math.round(estimatedSpeechMs)}, words=${wordCount})`);
+              resolve('');
+              return;
+            }
+            if (wordCount > maxWordsForDuration * 2) {
+              console.warn('[Jarvis] Transcript too long for detected speech, discarding:', JSON.stringify(transcript),
+                `(speechMs=${Math.round(estimatedSpeechMs)}, words=${wordCount}, maxWords=${maxWordsForDuration})`);
+              resolve('');
+              return;
+            }
+          }
+
           resolve(transcript);
         } catch (err) {
           console.warn('[Jarvis] ElevenLabs STT failed:', err);

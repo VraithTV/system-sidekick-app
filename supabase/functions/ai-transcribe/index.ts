@@ -66,13 +66,20 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           model: "google/gemini-2.5-flash-lite",
+          temperature: 0,
           messages: [
             {
               role: "user",
               content: [
                 {
                   type: "text",
-                  text: `Transcribe the following audio exactly as spoken. Return ONLY the transcribed text, nothing else. No quotes, no labels, no explanations. If the audio is silent or unintelligible, return an empty string.${langHint}`,
+                  text: `You are a strict speech-to-text transcriber. Transcribe ONLY the words actually spoken in this audio. Rules:
+- Return ONLY the literal spoken words, nothing else.
+- Do NOT add any words, sentences, or context that were not spoken.
+- Do NOT infer, guess, or hallucinate content.
+- If the audio contains only silence, noise, breathing, or is unintelligible, return EXACTLY an empty string.
+- Do NOT generate plausible-sounding sentences. Only transcribe what you clearly hear.
+- Short audio clips may contain only 1-5 words. Do not pad them into full sentences.${langHint}`,
                 },
                 {
                   type: "input_audio",
