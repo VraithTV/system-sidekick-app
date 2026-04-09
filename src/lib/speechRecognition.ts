@@ -104,8 +104,8 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
 
       let heardSpeech = false;
       let silenceStart = 0;
-      const SILENCE_MS = 1500;
-      const MAX_DURATION_MS = 12000;
+      const SILENCE_MS = 1000;
+      const MAX_DURATION_MS = 8000;
       const LEVEL_THRESHOLD = 3;
       const startTime = performance.now();
 

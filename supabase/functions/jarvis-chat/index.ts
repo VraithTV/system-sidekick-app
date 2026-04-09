@@ -67,6 +67,8 @@ serve(async (req) => {
       ar: '\n\nIMPORTANT: Respond entirely in Arabic (العربية). All text must be in Arabic.',
       hi: '\n\nIMPORTANT: Respond entirely in Hindi (हिन्दी). All text must be in Hindi.',
       it: '\n\nIMPORTANT: Respond entirely in Italian (Italiano). All text must be in Italian.',
+      ro: '\n\nIMPORTANT: Respond entirely in Romanian (Română). All text must be in Romanian.',
+      nl: '\n\nIMPORTANT: Respond entirely in Dutch (Nederlands). All text must be in Dutch.',
     };
     const langAddition = langMap[language || 'en'] || '';
 
@@ -119,7 +121,7 @@ Examples of your tone:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "openai/gpt-5.2",
+          model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: systemPrompt },
             ...(Array.isArray(conversationHistory) ? conversationHistory.slice(-10) : []),
