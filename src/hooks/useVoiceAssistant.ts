@@ -15,7 +15,7 @@ import { speakWithKokoro, stopKokoroTTS, isKokoroAvailable } from '@/lib/kokoroT
 import { toast } from 'sonner';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
-let limitToastShown = false;
+
 
 /** Try to detect an "open app" intent and actually launch it via Electron */
 function tryLaunchApp(userText: string): void {
