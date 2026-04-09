@@ -399,6 +399,9 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
   };
 }
 
+// ─── Browser STT failure cache ─────────────────────────────
+let browserSTTFailed = false;
+
 // ─── Public API ─────────────────────────────────────────────
 
 export function startSpeechRecognition(
@@ -418,7 +421,7 @@ export function startSpeechRecognition(
       create: () => createMediaRecorderSTTController(_deviceId, langCode),
     });
   } else {
-    if (SpeechRecognitionCtor) {
+    if (SpeechRecognitionCtor && !browserSTTFailed) {
       attempts.push({
         label: 'browser speech recognition',
         create: () => createBrowserSpeechRecognitionController(langCode),
@@ -457,6 +460,16 @@ export function startSpeechRecognition(
         lastError = error;
 
         if (stopped) return '';
+
+        // Cache browser STT network failures so we skip straight to cloud next time
+        if (
+          attempt.label === 'browser speech recognition' &&
+          error instanceof SpeechRecognitionUnavailableError &&
+          (error as any).code === 'browser-network'
+        ) {
+          browserSTTFailed = true;
+          console.info('[Jarvis] Browser speech recognition unavailable, will use cloud transcription going forward.');
+        }
 
         if (index < attempts.length - 1) {
           console.warn(`[Jarvis] ${attempt.label} failed, trying fallback:`, error);
