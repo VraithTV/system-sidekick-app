@@ -108,6 +108,7 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
       const MAX_DURATION_MS = 8000;
       const LEVEL_THRESHOLD = 3;
       const startTime = performance.now();
+      let totalSpeechFrames = 0;
 
       const measure = () => {
         analyser!.getByteTimeDomainData(samples);
