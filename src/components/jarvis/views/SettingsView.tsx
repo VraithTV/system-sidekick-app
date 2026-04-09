@@ -1,6 +1,6 @@
 import { useJarvisStore } from '@/store/jarvisStore';
 import { Minus, Plus, Play, X, RefreshCw, Download, Unlink } from 'lucide-react';
-import { jarvisVoices, kokoroVoices, standardVoices } from '@/lib/voices';
+import { standardVoices } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useState, useEffect, useCallback } from 'react';
@@ -420,17 +420,7 @@ export const SettingsView = () => {
             <Card>
               <SectionTitle>{t('settings.voiceSelection')}</SectionTitle>
 
-              <p className="text-[10px] font-mono text-primary/70 uppercase tracking-wider mb-2 mt-1">{t('settings.jarvisVoices')}</p>
-              <div className="space-y-1.5 mb-5">
-                {jarvisVoices.map((v) => <VoiceCard key={v.id} v={v} />)}
-              </div>
-
-              <p className="text-[10px] font-mono text-[#10b981]/70 uppercase tracking-wider mb-2">Kokoro Voices (Self-Hosted)</p>
-              <div className="space-y-1.5 mb-5">
-                {kokoroVoices.map((v) => <VoiceCard key={v.id} v={v} />)}
-              </div>
-
-              <p className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-2">{t('settings.standardVoices')}</p>
+              <p className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider mb-2 mt-1">{t('settings.standardVoices')}</p>
               <div className="space-y-1.5">
                 {standardVoices.map((v) => <VoiceCard key={v.id} v={v} />)}
               </div>
