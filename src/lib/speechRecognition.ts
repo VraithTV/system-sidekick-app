@@ -240,7 +240,7 @@ async function transcribeWithAI(audioBlob: Blob, langCode?: string): Promise<str
     'en-US': 'eng', 'en-GB': 'eng', 'fr-FR': 'fra', 'de-DE': 'deu',
     'es-ES': 'spa', 'pt-BR': 'por', 'ru-RU': 'rus', 'ja-JP': 'jpn',
     'ko-KR': 'kor', 'zh-CN': 'cmn', 'ar-SA': 'ara', 'hi-IN': 'hin',
-    'it-IT': 'ita',
+    'it-IT': 'ita', 'ro-RO': 'ron', 'nl-NL': 'nld',
   };
   const aiLang = langMap[langCode || 'en-US'] || '';
   if (aiLang) {
