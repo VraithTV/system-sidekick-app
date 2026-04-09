@@ -11,6 +11,7 @@ import { commonApps } from '@/lib/commonApps';
 import { isOllamaAvailable, chatWithOllama, getOllamaModel } from '@/lib/ollamaClient';
 import { getLanguage } from '@/lib/languages';
 import { speakWithElevenLabs, stopElevenLabsTTS } from '@/lib/elevenLabsTTS';
+import { speakWithKokoro, stopKokoroTTS, isKokoroAvailable } from '@/lib/kokoroTTS';
 import { toast } from 'sonner';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
@@ -392,9 +393,23 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      // Try ElevenLabs TTS first, fall back to browser TTS
-      const elevenlabsOk = await speakWithElevenLabs(response, settings.voiceId || undefined, settings.outputDeviceId || undefined);
-      if (!elevenlabsOk) {
+      // TTS priority: Kokoro → ElevenLabs → browser
+      const { getVoiceById } = await import('@/lib/voices');
+      const selectedVoice = getVoiceById(settings.voice);
+      let spoken = false;
+
+      // Try Kokoro first if a Kokoro voice is selected or Kokoro is available
+      if (selectedVoice.kokoroId && isKokoroAvailable()) {
+        spoken = await speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined);
+      }
+
+      // Fall back to ElevenLabs
+      if (!spoken && selectedVoice.elevenLabsId) {
+        spoken = await speakWithElevenLabs(response, settings.voiceId || undefined, settings.outputDeviceId || undefined);
+      }
+
+      // Final fallback: browser TTS
+      if (!spoken) {
         await speakBrowser(response, settings.outputDeviceId || undefined, settings.voice, settings.language);
       }
 
@@ -524,6 +539,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     wakeWordHeard.current = false;
     captureStopRef.current?.();
     captureStopRef.current = null;
+    stopKokoroTTS();
     stopElevenLabsTTS();
     speechSynthesis.cancel();
     setSystemStatus({ micActive: false });
