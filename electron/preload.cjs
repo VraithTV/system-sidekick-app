@@ -57,6 +57,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   downloadUpdate: (downloadUrl, assetName) => ipcRenderer.invoke('download-update', downloadUrl, assetName),
   installUpdate: (filePath) => ipcRenderer.invoke('install-update', filePath),
+  dismissUpdate: (version) => ipcRenderer.invoke('dismiss-update', version),
+  onUpdateDownloadProgress: (callback) => {
+    const handler = (_event, percent) => callback(percent);
+    ipcRenderer.on('update-download-progress', handler);
+    return () => ipcRenderer.removeListener('update-download-progress', handler);
+  },
   // System info
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
 });
