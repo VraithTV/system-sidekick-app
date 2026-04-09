@@ -31,8 +31,9 @@ serve(async (req) => {
     }
 
     // Kokoro FastAPI uses the OpenAI-compatible endpoint
-    const endpoint = `${kokoroUrl.replace(/\/+$/, "")}/v1/audio/speech`;
-    console.log("Kokoro endpoint:", endpoint);
+    // Strip common trailing paths users might paste (e.g. /docs, /v1)
+    const baseUrl = kokoroUrl.replace(/\/+$/, "").replace(/\/(docs|v1)(\/.*)?$/, "");
+    const endpoint = `${baseUrl}/v1/audio/speech`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
