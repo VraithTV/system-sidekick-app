@@ -3,9 +3,9 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { exec } = require('child_process');
-const { checkForUpdates, downloadUpdate, installAndRestart, dismissVersion, startAutoUpdateSchedule, stopAutoUpdateSchedule, getCurrentVersion } = require('./autoUpdater.cjs');
+const { checkForUpdates, downloadUpdate, downloadFile, installAndRestart, dismissVersion, startAutoUpdateSchedule, stopAutoUpdateSchedule, getCurrentVersion } = require('./autoUpdater.cjs');
 
-app.setName('Jarvis AI BETA 1.2.2');
+app.setName(`Jarvis AI BETA ${getCurrentVersion()}`);
 
 if (process.platform === 'win32') {
   app.setAppUserModelId('com.jarvis.ai');
