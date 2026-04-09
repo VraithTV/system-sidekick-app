@@ -21,6 +21,8 @@ export const languages: LanguageOption[] = [
   { code: 'ar', label: 'Arabic', nativeLabel: 'العربية', flag: '🇸🇦', countryCode: 'sa', sttCode: 'ar-SA', aiPrompt: 'Respond entirely in Arabic (العربية). All text must be in Arabic.' },
   { code: 'hi', label: 'Hindi', nativeLabel: 'हिन्दी', flag: '🇮🇳', countryCode: 'in', sttCode: 'hi-IN', aiPrompt: 'Respond entirely in Hindi (हिन्दी). All text must be in Hindi.' },
   { code: 'it', label: 'Italian', nativeLabel: 'Italiano', flag: '🇮🇹', countryCode: 'it', sttCode: 'it-IT', aiPrompt: 'Respond entirely in Italian (Italiano). All text must be in Italian.' },
+  { code: 'ro', label: 'Romanian', nativeLabel: 'Română', flag: '🇷🇴', countryCode: 'ro', sttCode: 'ro-RO', aiPrompt: 'Respond entirely in Romanian (Română). All text must be in Romanian.' },
+  { code: 'nl', label: 'Dutch', nativeLabel: 'Nederlands', flag: '🇳🇱', countryCode: 'nl', sttCode: 'nl-NL', aiPrompt: 'Respond entirely in Dutch (Nederlands). All text must be in Dutch.' },
 ];
 
 export function getLanguage(code: string): LanguageOption {
