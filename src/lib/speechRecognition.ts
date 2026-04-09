@@ -358,9 +358,11 @@ function createBrowserSpeechRecognitionController(langCode?: string): SpeechReco
       }
 
       if (code === 'network') {
-        fail(new SpeechRecognitionUnavailableError(
-          'Speech recognition network service is unavailable. Using cloud transcription instead.'
-        ));
+        // In Electron the browser speech service is unavailable; treat as
+        // a soft failure so the fallback chain can try cloud transcription
+        // without surfacing a scary toast to the user.
+        console.info('[Jarvis] Browser speech network unavailable, falling back.');
+        finish('');
         return;
       }
 
