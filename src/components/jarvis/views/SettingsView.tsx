@@ -119,11 +119,23 @@ export const SettingsView = () => {
 
   const handleUpdateNow = useCallback(async () => {
     setUpdateState('updating');
+    setDownloadProgress(0);
+    setInstallState('downloading');
+    setDownloadedFilePath('');
     if (!isElectron || !updateUrl) return;
     try {
       const result = await (window as any).electronAPI?.downloadUpdate?.(updateUrl, updateAssetName);
       if (result?.status === 'downloaded' && result.filePath) {
-        await (window as any).electronAPI?.installUpdate?.(result.filePath);
+        setDownloadedFilePath(result.filePath);
+        setInstallState('installing');
+        const installResult = await (window as any).electronAPI?.installUpdate?.(result.filePath);
+        if (installResult?.launched) {
+          setInstallState('done');
+          // App will quit shortly
+        } else {
+          // Installer couldn't launch automatically (Windows security, or .zip file)
+          setInstallState('failed');
+        }
       } else {
         setUpdateError(result?.message || 'Download failed.');
         setUpdateState('error');
