@@ -72,6 +72,9 @@ export const SettingsView = () => {
   const [updateAssetName, setUpdateAssetName] = useState('');
   const [updateError, setUpdateError] = useState('');
   const [currentVersion, setCurrentVersion] = useState('0.0.0');
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [installState, setInstallState] = useState<'downloading' | 'installing' | 'failed' | 'done'>('downloading');
+  const [downloadedFilePath, setDownloadedFilePath] = useState('');
 
   useEffect(() => {
     if (isElectron) {
