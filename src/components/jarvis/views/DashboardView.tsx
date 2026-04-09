@@ -7,10 +7,8 @@ import { requestVoiceAssistantStart, requestVoiceAssistantStop } from '@/hooks/u
 import { getRemainingUses, getDailyLimit } from '@/lib/usageLimit';
 import { createT } from '@/lib/i18n';
 
-const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
-
 export const DashboardView = () => {
-  const { commands, settings, systemStatus, state, setSystemStatus } = useJarvisStore();
+  const { commands, settings, systemStatus, state } = useJarvisStore();
   const micOn = systemStatus.micActive;
   const limit = getDailyLimit();
   const [remaining, setRemaining] = useState(getRemainingUses());
@@ -27,16 +25,11 @@ export const DashboardView = () => {
   }, []);
 
   const toggleMic = () => {
-    if (!isElectron) {
-      if (micOn) {
-        requestVoiceAssistantStop();
-      } else {
-        requestVoiceAssistantStart();
-      }
-      return;
+    if (micOn) {
+      requestVoiceAssistantStop();
+    } else {
+      requestVoiceAssistantStart();
     }
-
-    setSystemStatus({ micActive: !micOn });
   };
 
   const timeStr = time.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });

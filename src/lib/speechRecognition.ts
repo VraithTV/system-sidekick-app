@@ -1,4 +1,14 @@
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
+const ELECTRON_MIC_PRIMED_KEY = 'jarvis_electron_mic_primed';
+
+function markElectronMicPrimed() {
+  if (!isElectron) return;
+  try {
+    localStorage.setItem(ELECTRON_MIC_PRIMED_KEY, '1');
+  } catch {
+    // no-op
+  }
+}
 
 function getSpeechRecognitionCtor(): any {
   if (typeof window === 'undefined') return undefined;
@@ -73,6 +83,7 @@ async function getMicStream(deviceId?: string): Promise<MediaStream> {
   };
 
   cachedMicStream = await navigator.mediaDevices.getUserMedia(constraints);
+  markElectronMicPrimed();
   return cachedMicStream;
 }
 
