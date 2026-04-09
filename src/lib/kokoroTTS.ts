@@ -32,6 +32,9 @@ export async function speakWithKokoro(
   if (!SUPABASE_URL || !SUPABASE_KEY) return false;
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+
     const response = await fetch(
       `${SUPABASE_URL}/functions/v1/kokoro-tts`,
       {
@@ -42,8 +45,10 @@ export async function speakWithKokoro(
           Authorization: `Bearer ${SUPABASE_KEY}`,
         },
         body: JSON.stringify({ text, voice: voice || 'af_bella' }),
+        signal: controller.signal,
       }
     );
+    clearTimeout(timeout);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
