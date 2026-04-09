@@ -434,9 +434,7 @@ export function startSpeechRecognition(
   if (attempts.length === 0) {
     if (isElectron) {
       throw new SpeechRecognitionUnavailableError(
-        sttCreditsExhausted
-          ? 'Cloud transcription is unavailable because voice transcription credits are exhausted.'
-          : 'Microphone transcription is not available in the Electron app right now.'
+        'Microphone transcription is not available in the Electron app right now.'
       );
     }
 
