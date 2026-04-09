@@ -52,11 +52,22 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      let providerCode = "";
+
+      try {
+        const parsed = JSON.parse(errorText);
+        providerCode = typeof parsed?.detail?.status === "string" ? parsed.detail.status : "";
+      } catch {
+        providerCode = "";
+      }
+
       console.error("ElevenLabs STT error:", response.status, errorText);
       return jsonResponse(
         {
           error: "Speech transcription failed.",
           provider: "ElevenLabs",
+          code: providerCode,
+          fallback: "browser_speech_recognition",
           details: errorText,
         },
         response.status >= 500 ? 502 : response.status

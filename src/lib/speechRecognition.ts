@@ -171,14 +171,22 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
           resolve(transcript);
         } catch (err) {
           console.warn('[Jarvis] ElevenLabs STT failed:', err);
-          // Mark credits as exhausted if it looks like a quota error
           const errMsg = err instanceof Error ? err.message : String(err);
-          if (errMsg.includes('quota') || errMsg.includes('401') || errMsg.includes('429')) {
+          const errCode = typeof (err as { code?: unknown })?.code === 'string'
+            ? String((err as { code?: unknown }).code).toLowerCase()
+            : '';
+          const normalizedMsg = errMsg.toLowerCase();
+
+          if (
+            errCode === 'quota_exceeded' ||
+            normalizedMsg.includes('quota_exceeded') ||
+            (normalizedMsg.includes('credits') && normalizedMsg.includes('required for this request'))
+          ) {
             sttCreditsExhausted = true;
             persistSttExhausted();
             console.warn('[Jarvis] ElevenLabs STT credits exhausted. Will use browser speech recognition from now on.');
           }
-          // Reject so the outer fallback logic can try browser STT
+
           reject(new Error('ElevenLabs STT failed: ' + errMsg));
         }
       };
@@ -217,7 +225,8 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
 }
 
 async function transcribeWithElevenLabs(audioBlob: Blob, langCode?: string): Promise<string> {
-  const { supabase } = await import('@/integrations/supabase/client');
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
   const formData = new FormData();
   formData.append('audio', audioBlob, 'recording.webm');
@@ -233,12 +242,38 @@ async function transcribeWithElevenLabs(audioBlob: Blob, langCode?: string): Pro
     formData.append('language', elevenLabsLang);
   }
 
-  const { data, error } = await supabase.functions.invoke('elevenlabs-transcribe', {
+  const response = await fetch(`${supabaseUrl}/functions/v1/elevenlabs-transcribe`, {
+    method: 'POST',
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+    },
     body: formData,
   });
 
-  if (error) throw error;
-  return (data?.text || '').trim();
+  const raw = await response.text();
+  let payload: any = null;
+
+  try {
+    payload = raw ? JSON.parse(raw) : null;
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const details = typeof payload?.details === 'string'
+      ? payload.details
+      : typeof payload?.error === 'string'
+        ? payload.error
+        : raw || `Speech transcription failed (${response.status}).`;
+    const code = typeof payload?.code === 'string' ? payload.code : '';
+    const error = new Error(details) as Error & { code?: string; status?: number };
+    error.code = code;
+    error.status = response.status;
+    throw error;
+  }
+
+  return (typeof payload?.text === 'string' ? payload.text : '').trim();
 }
 
 // ─── Browser Web Speech API (Chrome/Edge/Electron) ─────────
