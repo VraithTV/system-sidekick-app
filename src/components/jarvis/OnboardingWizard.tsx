@@ -7,7 +7,9 @@ import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { commonApps, toAppShortcut } from '@/lib/commonApps';
 import { getAppIcon } from '@/components/jarvis/AppIcons';
-import { Mic, Volume2, Play, ChevronRight, ChevronLeft, Check, AppWindow, Cpu, ExternalLink, RefreshCw } from 'lucide-react';
+import { languages, getFlagUrl } from '@/lib/languages';
+import { t } from '@/lib/i18n';
+import { Mic, Volume2, Play, ChevronRight, ChevronLeft, Check, AppWindow, Cpu, ExternalLink, RefreshCw, Globe } from 'lucide-react';
 import { playClick, playTick } from '@/lib/sounds';
 import { isOllamaAvailable, resetOllamaStatus, getOllamaModel, listOllamaModels } from '@/lib/ollamaClient';
 
@@ -64,6 +66,71 @@ const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
     </button>
   </div>
 );
+
+// ── Step 1: Language Selection ──
+const LanguageStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
+  const { settings, updateSettings } = useJarvisStore();
+  const currentLang = settings.language || 'en';
+  const tr = (key: string, vars?: Record<string, string>) => t(currentLang, key, vars);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full animate-fade-in-up">
+      <div className="w-16 h-16 rounded-full border border-primary/25 flex items-center justify-center bg-primary/5 mb-6">
+        <Globe className="w-7 h-7 text-primary" />
+      </div>
+      <h2 className="font-display text-lg tracking-[0.12em] text-foreground mb-2">
+        {tr('onboard.language')}
+      </h2>
+      <p className="text-xs text-muted-foreground mb-6 text-center max-w-xs">
+        {tr('onboard.languageDesc')}
+      </p>
+      <div className="w-full max-w-sm space-y-1.5 mb-8 max-h-[320px] overflow-y-auto pr-1">
+        {languages.map((lang) => (
+          <button
+            key={lang.code}
+            onClick={() => {
+              playTick();
+              updateSettings({ language: lang.code });
+            }}
+            className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
+              currentLang === lang.code
+                ? 'bg-primary/10 border border-primary/25'
+                : 'hover:bg-muted border border-transparent'
+            }`}
+          >
+            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+              currentLang === lang.code ? 'bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.5)]' : 'bg-muted-foreground/25'
+            }`} />
+            <img
+              src={getFlagUrl(lang.countryCode, 40)}
+              alt={lang.label}
+              className="w-6 h-4 rounded-sm object-cover shrink-0"
+              loading="lazy"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] text-foreground/85">{lang.nativeLabel}</p>
+              <p className="text-[10px] text-muted-foreground font-mono">{tr(`lang.${lang.code}`)}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => { playClick(); onBack(); }}
+          className="flex items-center gap-2 px-6 py-3 rounded-full border border-muted-foreground/20 text-muted-foreground font-display text-xs tracking-[0.15em] uppercase hover:bg-muted/40 transition-all duration-300"
+        >
+          <ChevronLeft className="w-4 h-4" /> {tr('onboard.back')}
+        </button>
+        <button
+          onClick={() => { playClick(); onNext(); }}
+          className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
+        >
+          {tr('onboard.continue')} <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // ── Step 1: Ollama Detection ──
 const OllamaStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
@@ -445,7 +512,7 @@ const VoiceStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void 
 // ── Main Wizard ──
 export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
-  const totalSteps = 6;
+  const totalSteps = 7;
 
   const next = () => {
     if (step < totalSteps - 1) setStep(step + 1);
@@ -469,11 +536,12 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
       <div className="relative z-10 w-full max-w-md px-6 flex-1 flex flex-col mx-auto items-center justify-center">
         <div className="flex-1 flex flex-col">
           {step === 0 && <WelcomeStep onNext={next} />}
-          {step === 1 && <OllamaStep onNext={next} onBack={back} />}
-          {step === 2 && <MicStep onNext={next} onBack={back} />}
-          {step === 3 && <OutputStep onNext={next} onBack={back} />}
-          {step === 4 && <AppsStep onNext={next} onBack={back} />}
-          {step === 5 && <VoiceStep onNext={next} onBack={back} />}
+          {step === 1 && <LanguageStep onNext={next} onBack={back} />}
+          {step === 2 && <OllamaStep onNext={next} onBack={back} />}
+          {step === 3 && <MicStep onNext={next} onBack={back} />}
+          {step === 4 && <OutputStep onNext={next} onBack={back} />}
+          {step === 5 && <AppsStep onNext={next} onBack={back} />}
+          {step === 6 && <VoiceStep onNext={next} onBack={back} />}
         </div>
 
         {/* Step dots */}

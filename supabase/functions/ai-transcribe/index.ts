@@ -49,6 +49,7 @@ serve(async (req) => {
       eng: "English", fra: "French", deu: "German", spa: "Spanish",
       por: "Portuguese", rus: "Russian", jpn: "Japanese", kor: "Korean",
       cmn: "Mandarin Chinese", ara: "Arabic", hin: "Hindi", ita: "Italian",
+      ron: "Romanian", nld: "Dutch",
     };
     const langHint =
       typeof language === "string" && language.trim() && langNames[language.trim()]
