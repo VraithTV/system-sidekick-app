@@ -512,7 +512,7 @@ const VoiceStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void 
 // ── Main Wizard ──
 export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
-  const totalSteps = 6;
+  const totalSteps = 7;
 
   const next = () => {
     if (step < totalSteps - 1) setStep(step + 1);
@@ -536,11 +536,12 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
       <div className="relative z-10 w-full max-w-md px-6 flex-1 flex flex-col mx-auto items-center justify-center">
         <div className="flex-1 flex flex-col">
           {step === 0 && <WelcomeStep onNext={next} />}
-          {step === 1 && <OllamaStep onNext={next} onBack={back} />}
-          {step === 2 && <MicStep onNext={next} onBack={back} />}
-          {step === 3 && <OutputStep onNext={next} onBack={back} />}
-          {step === 4 && <AppsStep onNext={next} onBack={back} />}
-          {step === 5 && <VoiceStep onNext={next} onBack={back} />}
+          {step === 1 && <LanguageStep onNext={next} onBack={back} />}
+          {step === 2 && <OllamaStep onNext={next} onBack={back} />}
+          {step === 3 && <MicStep onNext={next} onBack={back} />}
+          {step === 4 && <OutputStep onNext={next} onBack={back} />}
+          {step === 5 && <AppsStep onNext={next} onBack={back} />}
+          {step === 6 && <VoiceStep onNext={next} onBack={back} />}
         </div>
 
         {/* Step dots */}
