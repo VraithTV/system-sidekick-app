@@ -5,7 +5,7 @@ const os = require('os');
 const { exec } = require('child_process');
 const { checkForUpdates, downloadUpdate, installAndRestart, dismissVersion, startAutoUpdateSchedule, stopAutoUpdateSchedule, getCurrentVersion } = require('./autoUpdater.cjs');
 
-app.setName('Jarvis AI BETA 1.2.0');
+app.setName('Jarvis AI BETA 1.2.1');
 
 if (process.platform === 'win32') {
   app.setAppUserModelId('com.jarvis.ai');
@@ -97,7 +97,7 @@ function createTray() {
   const iconPath = getIconPath(trayIconName);
   const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
   tray = new Tray(trayIcon);
-  tray.setToolTip('Jarvis AI BETA 1.2.0');
+  tray.setToolTip('Jarvis AI BETA 1.2.1');
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Open Jarvis', click: showMainWindow },
     { type: 'separator' },
@@ -130,7 +130,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280, height: 860, minWidth: 900, minHeight: 600,
     frame: false, titleBarStyle: 'hidden', icon,
-    title: 'Jarvis AI BETA 1.2.0', backgroundColor: '#0e1117',
+    title: 'Jarvis AI BETA 1.2.1', backgroundColor: '#0e1117',
     show: false, // Don't show until ready
     webPreferences: {
       contextIsolation: true, nodeIntegration: false,
