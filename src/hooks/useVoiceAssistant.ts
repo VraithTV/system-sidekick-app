@@ -232,8 +232,8 @@ function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string, 
       resolve();
     };
 
-    // Small delay to let Chrome's speech engine initialize
-    setTimeout(() => speechSynthesis.speak(utterance), 50);
+    // Minimal delay for Chrome speech engine init
+    setTimeout(() => speechSynthesis.speak(utterance), 10);
   });
 }
 
@@ -404,7 +404,6 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
       }
 
       // TTS priority: Kokoro → ElevenLabs → browser
-      const { getVoiceById } = await import('@/lib/voices');
       const selectedVoice = getVoiceById(settings.voice);
       let spoken = false;
 
