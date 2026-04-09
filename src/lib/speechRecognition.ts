@@ -33,6 +33,26 @@ class SpeechRecognitionUnavailableError extends Error {
 /** Once STT credits are exhausted, skip ElevenLabs STT for this session */
 let sttCreditsExhausted = false;
 
+/** Persistent flag: skip ElevenLabs STT across sessions when credits are known to be gone */
+const STT_EXHAUSTED_KEY = 'jarvis_stt_credits_exhausted';
+
+function loadSttExhausted(): boolean {
+  try { return localStorage.getItem(STT_EXHAUSTED_KEY) === '1'; } catch { return false; }
+}
+
+function persistSttExhausted() {
+  try { localStorage.setItem(STT_EXHAUSTED_KEY, '1'); } catch {}
+}
+
+/** Call this if the user tops up credits and wants to retry ElevenLabs STT */
+export function resetElevenLabsSTTExhausted() {
+  sttCreditsExhausted = false;
+  try { localStorage.removeItem(STT_EXHAUSTED_KEY); } catch {}
+}
+
+// Initialize from localStorage so we skip ElevenLabs immediately on reload
+sttCreditsExhausted = loadSttExhausted();
+
 export function isElevenLabsSTTExhausted(): boolean {
   return sttCreditsExhausted;
 }
@@ -155,6 +175,7 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
           const errMsg = err instanceof Error ? err.message : String(err);
           if (errMsg.includes('quota') || errMsg.includes('401') || errMsg.includes('429')) {
             sttCreditsExhausted = true;
+            persistSttExhausted();
             console.warn('[Jarvis] ElevenLabs STT credits exhausted. Will use browser speech recognition from now on.');
           }
           // Reject so the outer fallback logic can try browser STT
