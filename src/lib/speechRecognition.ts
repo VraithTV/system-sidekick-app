@@ -46,34 +46,11 @@ function createSpeechRecognitionError(message: string, code?: string) {
   return error;
 }
 
-// ─── ElevenLabs STT credit tracking ─────────────────────────
+// ─── STT credit/error tracking (legacy stubs) ──────────────
 
-/** Once STT credits are exhausted, skip ElevenLabs STT for this session */
-let sttCreditsExhausted = false;
-
-/** Persistent flag: skip ElevenLabs STT across sessions when credits are known to be gone */
-const STT_EXHAUSTED_KEY = 'jarvis_stt_credits_exhausted';
-
-function loadSttExhausted(): boolean {
-  try { return localStorage.getItem(STT_EXHAUSTED_KEY) === '1'; } catch { return false; }
-}
-
-function persistSttExhausted() {
-  try { localStorage.setItem(STT_EXHAUSTED_KEY, '1'); } catch {}
-}
-
-/** Call this if the user tops up credits and wants to retry ElevenLabs STT */
-export function resetElevenLabsSTTExhausted() {
-  sttCreditsExhausted = false;
-  try { localStorage.removeItem(STT_EXHAUSTED_KEY); } catch {}
-}
-
-// Initialize from localStorage so we skip ElevenLabs immediately on reload
-sttCreditsExhausted = loadSttExhausted();
-
-export function isElevenLabsSTTExhausted(): boolean {
-  return sttCreditsExhausted;
-}
+/** @deprecated No longer using ElevenLabs STT. Kept for API compat. */
+export function resetElevenLabsSTTExhausted() {}
+export function isElevenLabsSTTExhausted(): boolean { return false; }
 
 // ─── Persistent mic stream (avoids flickering) ───────────────
 
@@ -198,15 +175,13 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
 
           if (
             errCode === 'quota_exceeded' ||
-            normalizedMsg.includes('quota_exceeded') ||
-            (normalizedMsg.includes('credits') && normalizedMsg.includes('required for this request'))
+            errCode === 'rate_limited'
           ) {
-            sttCreditsExhausted = true;
-            persistSttExhausted();
-            console.warn('[Jarvis] ElevenLabs STT credits exhausted. Will skip cloud transcription until credits are restored.');
             reject(createSpeechRecognitionError(
-              'Voice transcription credits are exhausted. Add more credits, then try again.',
-              'quota_exceeded',
+              errCode === 'rate_limited'
+                ? 'Transcription rate limited. Wait a moment and try again.'
+                : 'AI transcription credits exhausted. Add funds in Settings.',
+              errCode,
             ));
             return;
           }
