@@ -7,7 +7,9 @@ import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
 import { commonApps, toAppShortcut } from '@/lib/commonApps';
 import { getAppIcon } from '@/components/jarvis/AppIcons';
-import { Mic, Volume2, Play, ChevronRight, ChevronLeft, Check, AppWindow, Cpu, ExternalLink, RefreshCw } from 'lucide-react';
+import { languages, getFlagUrl } from '@/lib/languages';
+import { t } from '@/lib/i18n';
+import { Mic, Volume2, Play, ChevronRight, ChevronLeft, Check, AppWindow, Cpu, ExternalLink, RefreshCw, Globe } from 'lucide-react';
 import { playClick, playTick } from '@/lib/sounds';
 import { isOllamaAvailable, resetOllamaStatus, getOllamaModel, listOllamaModels } from '@/lib/ollamaClient';
 
