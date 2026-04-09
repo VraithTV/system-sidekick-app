@@ -113,6 +113,8 @@ const translations: Record<string, Record<string, string>> = {
     'lang.ar': 'Arabic',
     'lang.hi': 'Hindi',
     'lang.it': 'Italian',
+    'lang.ro': 'Romanian',
+    'lang.nl': 'Dutch',
     // System
     'sys.cpu': 'CPU',
     'sys.memory': 'Memory',
