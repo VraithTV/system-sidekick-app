@@ -5,7 +5,7 @@ import { formatMemoriesForPrompt, addMemories } from '@/lib/memoryStore';
 import { resetElevenLabsSTTExhausted, startSpeechRecognition } from '@/lib/speechRecognition';
 import { processAppCommand } from '@/lib/appCommands';
 import { processVoiceCommand } from '@/lib/voiceCommands';
-import { canUseVoice, incrementUsage } from '@/lib/usageLimit';
+
 import { getModeSystemPromptAddition } from '@/lib/modes';
 import { commonApps } from '@/lib/commonApps';
 import { isOllamaAvailable, chatWithOllama, getOllamaModel } from '@/lib/ollamaClient';
@@ -363,30 +363,6 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         return;
       }
 
-      // Check daily usage limit
-      if (!canUseVoice()) {
-        setState('speaking');
-        const limitMsg = "You've used all 25 commands for today. Your limit resets at midnight, so try again tomorrow.";
-        addCommand({
-          id: Date.now().toString(),
-          text: cleanedText,
-          response: limitMsg,
-          timestamp: new Date(),
-          type: 'voice',
-        });
-        if (!limitToastShown) {
-          limitToastShown = true;
-          toast.error('Daily limit reached', {
-            description: 'You have used all 25 commands for today. Try again after midnight.',
-            duration: 6000,
-          });
-        }
-        await speakBrowser(limitMsg, settings.outputDeviceId || undefined, settings.voice, settings.language);
-        if (isListeningRef.current) setState('standby');
-        return;
-      }
-
-      incrementUsage();
       setState('thinking');
 
       // Check built-in voice commands first (timer, time, math, etc.)

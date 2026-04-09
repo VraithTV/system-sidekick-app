@@ -5,11 +5,12 @@ import { useAudioDevices } from '@/hooks/useAudioDevices';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { voiceOptions } from '@/lib/voices';
 import { useVoiceAssistant } from '@/hooks/useVoiceAssistant';
-import { commonApps, toAppShortcut } from '@/lib/commonApps';
+import { commonApps, toAppShortcut, categoryLabels, categoryOrder } from '@/lib/commonApps';
 import { getAppIcon } from '@/components/jarvis/AppIcons';
 import { languages, getFlagUrl } from '@/lib/languages';
+import { themePresets, accentOptions, applyTheme } from '@/lib/themes';
 import { t } from '@/lib/i18n';
-import { Mic, Volume2, Play, ChevronRight, ChevronLeft, Check, AppWindow, Cpu, ExternalLink, RefreshCw, Globe } from 'lucide-react';
+import { Mic, Volume2, Play, ChevronRight, ChevronLeft, Check, AppWindow, Cpu, ExternalLink, RefreshCw, Globe, Palette } from 'lucide-react';
 import { playClick, playTick } from '@/lib/sounds';
 import { isOllamaAvailable, resetOllamaStatus, getOllamaModel, listOllamaModels } from '@/lib/ollamaClient';
 
@@ -132,7 +133,97 @@ const LanguageStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => vo
   );
 };
 
-// ── Step 1: Ollama Detection ──
+// ── Step 2: Theme Selection ──
+const ThemeStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
+  const [selectedPreset, setSelectedPreset] = useState('default');
+  const [selectedAccent, setSelectedAccent] = useState('cyan');
+
+  const handlePreset = (id: string) => {
+    playTick();
+    setSelectedPreset(id);
+    applyTheme(id, selectedAccent);
+  };
+
+  const handleAccent = (id: string) => {
+    playTick();
+    setSelectedAccent(id);
+    applyTheme(selectedPreset, id);
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full animate-fade-in-up">
+      <div className="w-16 h-16 rounded-full border border-primary/25 flex items-center justify-center bg-primary/5 mb-6">
+        <Palette className="w-7 h-7 text-primary" />
+      </div>
+      <h2 className="font-display text-lg tracking-[0.12em] text-foreground mb-2">Choose Your Theme</h2>
+      <p className="text-xs text-muted-foreground mb-5 text-center max-w-xs">
+        Pick a look and accent color. You can change these anytime in the Themes tab.
+      </p>
+
+      {/* Theme presets */}
+      <div className="w-full max-w-sm mb-4">
+        <p className="text-[10px] font-mono text-primary/50 tracking-[0.15em] uppercase mb-2">Theme</p>
+        <div className="grid grid-cols-4 gap-2">
+          {themePresets.map((preset) => (
+            <button
+              key={preset.id}
+              onClick={() => handlePreset(preset.id)}
+              className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg transition-all ${
+                selectedPreset === preset.id
+                  ? 'bg-primary/10 border border-primary/25'
+                  : 'hover:bg-muted border border-transparent'
+              }`}
+            >
+              <div className="w-full h-8 rounded-md flex overflow-hidden border border-border/50">
+                <div className="flex-1" style={{ backgroundColor: preset.preview.bg }} />
+                <div className="flex-1" style={{ backgroundColor: preset.preview.card }} />
+                <div className="w-1.5" style={{ backgroundColor: preset.preview.accent }} />
+              </div>
+              <p className="text-[10px] text-foreground/70 truncate w-full text-center">{preset.name}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Accent colors */}
+      <div className="w-full max-w-sm mb-8">
+        <p className="text-[10px] font-mono text-primary/50 tracking-[0.15em] uppercase mb-2">Accent Color</p>
+        <div className="flex flex-wrap gap-2">
+          {accentOptions.map((accent) => (
+            <button
+              key={accent.id}
+              onClick={() => handleAccent(accent.id)}
+              className={`w-8 h-8 rounded-full transition-all ${
+                selectedAccent === accent.id
+                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110'
+                  : 'hover:scale-105'
+              }`}
+              style={{ backgroundColor: accent.preview }}
+              title={accent.name}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => { playClick(); onBack(); }}
+          className="flex items-center gap-2 px-6 py-3 rounded-full border border-muted-foreground/20 text-muted-foreground font-display text-xs tracking-[0.15em] uppercase hover:bg-muted/40 transition-all duration-300"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
+        <button
+          onClick={() => { playClick(); onNext(); }}
+          className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
+        >
+          Continue <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── Step 3: Ollama Detection ──
 const OllamaStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
   const [status, setStatus] = useState<'checking' | 'found' | 'not-found'>('checking');
   const [model, setModel] = useState('');
@@ -239,7 +330,7 @@ const OllamaStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void
   );
 };
 
-// ── Step 1: Microphone ──
+// ── Step 4: Microphone ──
 const MicStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
   const { inputs, refresh } = useAudioDevices();
   const { settings, updateSettings } = useJarvisStore();
@@ -258,7 +349,7 @@ const MicStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void })
       <div className="w-full max-w-sm space-y-2 mb-8">
         {inputs.length === 0 && (
           <p className="text-[11px] text-muted-foreground/50 font-mono text-center">
-            No microphones found — grant permission or plug one in
+            No microphones found. Grant permission or plug one in.
           </p>
         )}
         {inputs.map((d) => (
@@ -296,7 +387,7 @@ const MicStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void })
   );
 };
 
-// ── Step 2: Output Device ──
+// ── Step 5: Output Device ──
 const OutputStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
   const { outputs, refresh } = useAudioDevices();
   const { settings, updateSettings } = useJarvisStore();
@@ -366,10 +457,11 @@ const OutputStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void
   );
 };
 
-// ── Step 3: App Selection ──
+// ── Step 6: App Selection ──
 const AppsStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
   const { setApps } = useJarvisStore();
   const [selected, setSelected] = useState<Set<string>>(new Set(['chrome', 'spotify', 'discord', 'obs']));
+  const [search, setSearch] = useState('');
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -388,17 +480,30 @@ const AppsStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }
     onNext();
   };
 
+  const filtered = search
+    ? commonApps.filter((a) => a.name.toLowerCase().includes(search.toLowerCase()) || a.aliases.some((al) => al.includes(search.toLowerCase())))
+    : commonApps;
+
   return (
     <div className="flex flex-col items-center justify-center h-full animate-fade-in-up">
       <div className="w-16 h-16 rounded-full border border-primary/25 flex items-center justify-center bg-primary/5 mb-6">
         <AppWindow className="w-7 h-7 text-primary" />
       </div>
       <h2 className="font-display text-lg tracking-[0.12em] text-foreground mb-2">Choose Your Apps</h2>
-      <p className="text-xs text-muted-foreground mb-6 text-center max-w-xs">
-        Select apps you'd like Jarvis to open by voice. Paths are auto-detected for Windows. You can add more later.
+      <p className="text-xs text-muted-foreground mb-4 text-center max-w-xs">
+        Select apps you'd like Jarvis to open by voice. You can add more later.
       </p>
-      <div className="w-full max-w-sm space-y-1.5 mb-8 max-h-[300px] overflow-y-auto pr-1">
-        {commonApps.map((app) => {
+
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search apps..."
+        className="w-full max-w-sm mb-3 px-4 py-2.5 rounded-lg bg-background border border-border text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 transition-colors"
+      />
+
+      <div className="w-full max-w-sm space-y-1.5 mb-8 max-h-[280px] overflow-y-auto pr-1">
+        {filtered.map((app) => {
           const Icon = getAppIcon(app.id);
           return (
           <button
@@ -418,7 +523,10 @@ const AppsStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }
               {selected.has(app.id) && <Check className="w-3 h-3" />}
             </div>
             <Icon size={20} className="shrink-0" />
-            <p className="text-[13px] text-foreground/85">{app.name}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] text-foreground/85">{app.name}</p>
+              <p className="text-[9px] text-muted-foreground/50 font-mono">{categoryLabels[app.category]}</p>
+            </div>
           </button>
           );
         })}
@@ -441,7 +549,7 @@ const AppsStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }
   );
 };
 
-// ── Step 4: Voice Selection ──
+// ── Step 7: Voice Selection ──
 const VoiceStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
   const { settings, updateSettings } = useJarvisStore();
   const { previewVoice } = useVoiceAssistant({ previewOnly: true });
@@ -512,7 +620,7 @@ const VoiceStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void 
 // ── Main Wizard ──
 export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
-  const totalSteps = 7;
+  const totalSteps = 8;
 
   const next = () => {
     if (step < totalSteps - 1) setStep(step + 1);
@@ -537,11 +645,12 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
         <div className="flex-1 flex flex-col">
           {step === 0 && <WelcomeStep onNext={next} />}
           {step === 1 && <LanguageStep onNext={next} onBack={back} />}
-          {step === 2 && <OllamaStep onNext={next} onBack={back} />}
-          {step === 3 && <MicStep onNext={next} onBack={back} />}
-          {step === 4 && <OutputStep onNext={next} onBack={back} />}
-          {step === 5 && <AppsStep onNext={next} onBack={back} />}
-          {step === 6 && <VoiceStep onNext={next} onBack={back} />}
+          {step === 2 && <ThemeStep onNext={next} onBack={back} />}
+          {step === 3 && <OllamaStep onNext={next} onBack={back} />}
+          {step === 4 && <MicStep onNext={next} onBack={back} />}
+          {step === 5 && <OutputStep onNext={next} onBack={back} />}
+          {step === 6 && <AppsStep onNext={next} onBack={back} />}
+          {step === 7 && <VoiceStep onNext={next} onBack={back} />}
         </div>
 
         {/* Step dots */}
