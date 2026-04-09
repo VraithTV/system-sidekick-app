@@ -92,17 +92,6 @@ export const DashboardView = () => {
 
         <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
 
-        {/* Quick stats */}
-        <div className="py-5 space-y-3">
-          <p className="font-display text-[9px] tracking-[0.25em] text-primary/60 uppercase">{t('dash.quickStats')}</p>
-          <div className="rounded-lg border border-border/40 bg-background/40 p-3 text-center">
-            <p className="font-display text-lg text-primary glow-text">{commands.length}</p>
-            <p className="font-mono text-[8px] text-muted-foreground/50 mt-0.5 tracking-wider uppercase">{t('dash.commands')}</p>
-          </div>
-        </div>
-
-        <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
-
         {/* Session info */}
         <div className="py-5 space-y-2.5">
           <p className="font-display text-[9px] tracking-[0.25em] text-primary/60 uppercase">{t('dash.session')}</p>
