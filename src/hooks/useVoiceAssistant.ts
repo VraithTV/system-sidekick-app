@@ -12,6 +12,7 @@ import { isOllamaAvailable, chatWithOllama, getOllamaModel } from '@/lib/ollamaC
 import { getLanguage } from '@/lib/languages';
 import { speakWithElevenLabs, stopElevenLabsTTS } from '@/lib/elevenLabsTTS';
 import { speakWithKokoro, stopKokoroTTS, isKokoroAvailable } from '@/lib/kokoroTTS';
+import { getVoiceById } from '@/lib/voices';
 import { toast } from 'sonner';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
