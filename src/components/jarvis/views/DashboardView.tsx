@@ -153,7 +153,7 @@ export const DashboardView = () => {
           <div className="text-center">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/5 px-3 py-1">
               <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="font-mono text-[8px] text-primary/60 tracking-[0.2em] uppercase">Beta v1.2.1</span>
+              <span className="font-mono text-[8px] text-primary/60 tracking-[0.2em] uppercase">Beta v1.2.2</span>
             </div>
           </div>
         </div>

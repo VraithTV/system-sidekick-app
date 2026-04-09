@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-const CURRENT_VERSION = '1.2.1';
+const CURRENT_VERSION = '1.2.2';
 const UPDATE_URL = 'https://jarvisai-hub.vercel.app';
 
 function parseVersion(v: string) {
