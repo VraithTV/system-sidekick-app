@@ -125,6 +125,7 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
         if (level > LEVEL_THRESHOLD) {
           heardSpeech = true;
           silenceStart = 0;
+          totalSpeechFrames++;
         } else if (heardSpeech) {
           if (!silenceStart) silenceStart = now;
           if (now - silenceStart >= SILENCE_MS) {
@@ -162,6 +163,10 @@ function createMediaRecorderSTTController(deviceId?: string, langCode?: string):
           resolve('');
           return;
         }
+
+        // Estimate speech duration: if very few speech frames detected
+        // but transcription returns a long sentence, it's likely hallucinated
+        const estimatedSpeechMs = totalSpeechFrames * (1000 / 60); // ~60fps RAF
 
         try {
           const transcript = await transcribeWithAI(blob, langCode);
