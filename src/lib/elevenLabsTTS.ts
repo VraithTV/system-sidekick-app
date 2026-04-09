@@ -49,6 +49,9 @@ export async function speakWithElevenLabs(
   if (!SUPABASE_URL || !SUPABASE_KEY) return false;
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
     const response = await fetch(
       `${SUPABASE_URL}/functions/v1/elevenlabs-tts`,
       {
@@ -59,8 +62,10 @@ export async function speakWithElevenLabs(
           Authorization: `Bearer ${SUPABASE_KEY}`,
         },
         body: JSON.stringify({ text, voiceId: voiceId || 'onwK4e9ZLuTAKqWW03F9' }),
+        signal: controller.signal,
       }
     );
+    clearTimeout(timeout);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
