@@ -439,7 +439,6 @@ const translations: Record<string, Record<string, string>> = {
     'themes.currentRecipe': 'Recette actuelle',
     'themes.recipeText': 'Surfaces {preset}, couleur de signal {accent}, et typographie {font}.',
     'themes.pangram': 'Le vif renard brun saute par-dessus le chien paresseux.',
-  ,
     'lang.tr': 'Turkish',
     'lang.ro': 'Romanian',
     'lang.nl': 'Dutch',
