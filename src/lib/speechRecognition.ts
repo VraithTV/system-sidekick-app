@@ -461,6 +461,16 @@ export function startSpeechRecognition(
 
         if (stopped) return '';
 
+        // Cache browser STT network failures so we skip straight to cloud next time
+        if (
+          attempt.label === 'browser speech recognition' &&
+          error instanceof SpeechRecognitionUnavailableError &&
+          (error as any).code === 'browser-network'
+        ) {
+          browserSTTFailed = true;
+          console.info('[Jarvis] Browser speech recognition unavailable, will use cloud transcription going forward.');
+        }
+
         if (index < attempts.length - 1) {
           console.warn(`[Jarvis] ${attempt.label} failed, trying fallback:`, error);
         }
