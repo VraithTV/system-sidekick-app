@@ -264,6 +264,7 @@ function stopAutoUpdateSchedule() {
 
 module.exports = {
   checkForUpdates,
+  downloadFile,
   downloadUpdate,
   installAndRestart,
   dismissVersion,
