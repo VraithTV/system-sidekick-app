@@ -22,18 +22,18 @@ if (!gotTheLock) {
 }
 
 // ─── Fresh-install detection ─────────────────────────────────
-// When the user uninstalls and reinstalls, the exe path changes.
-// We store the exe path in a stamp file; if it differs we wipe
-// localStorage so onboarding runs again.
+// Use a unique install ID; if the app is uninstalled and reinstalled,
+// the installer creates a new directory or clears the old one, so
+// the stamp file won't exist and we wipe localStorage.
 const STAMP_FILE = path.join(app.getPath('userData'), '.install-stamp');
+const APP_VERSION = getCurrentVersion();
 function checkFreshInstall() {
-  const currentExe = app.getPath('exe');
   try {
     const saved = fs.readFileSync(STAMP_FILE, 'utf-8').trim();
-    if (saved === currentExe) return; // same install, do nothing
+    if (saved === APP_VERSION) return; // same version, same install
   } catch {}
-  // New install or first run: write stamp and clear session data on window load
-  fs.writeFileSync(STAMP_FILE, currentExe, 'utf-8');
+  // New install or version change: write stamp and clear session data on window load
+  fs.writeFileSync(STAMP_FILE, APP_VERSION, 'utf-8');
   global.__jarvisFreshInstall = true;
 }
 checkFreshInstall();

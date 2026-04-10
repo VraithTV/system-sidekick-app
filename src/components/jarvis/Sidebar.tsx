@@ -14,9 +14,14 @@ const navKeys = [
   { id: 'settings', key: 'nav.settings', icon: Settings },
 ];
 
-export const Sidebar = () => {
+export const Sidebar = ({ onNavClick }: { onNavClick?: () => void }) => {
   const { activeView, setActiveView, systemStatus, settings } = useJarvisStore();
   const t = createT(settings.language || 'en');
+
+  const handleNav = (id: string) => {
+    setActiveView(id);
+    onNavClick?.();
+  };
 
   return (
     <aside className="w-52 h-screen bg-card border-r border-border flex flex-col shrink-0 select-none">
@@ -34,7 +39,7 @@ export const Sidebar = () => {
         {navKeys.map(({ id, key, icon: Icon }) => (
           <button
             key={id}
-            onClick={() => setActiveView(id)}
+            onClick={() => handleNav(id)}
             className={`relative flex items-center gap-2.5 w-full px-2.5 py-[7px] rounded transition-all duration-150 text-left ${
               activeView === id
                 ? 'bg-primary/12 text-primary'
