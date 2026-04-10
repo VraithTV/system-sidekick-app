@@ -406,18 +406,17 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      // TTS priority: Kokoro → browser (ElevenLabs removed)
+      // TTS: Always use Kokoro for the selected voice
       const selectedVoice = getVoiceById(settings.voice);
-      const browserUtterance = prepareBrowserUtterance(response, settings.voice);
       let spoken = false;
 
-      // Try Kokoro first if a Kokoro voice is selected AND Kokoro is online
-      if (selectedVoice.kokoroId && isKokoroAvailable()) {
+      if (selectedVoice.kokoroId) {
         spoken = await speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined);
       }
 
-      // Fallback: browser TTS using pre-created utterance (no delay)
+      // Only use browser TTS if voice has no Kokoro ID at all
       if (!spoken) {
+        const browserUtterance = prepareBrowserUtterance(response, settings.voice);
         await speakBrowserPrepared(browserUtterance, settings.outputDeviceId);
       }
 
@@ -564,11 +563,11 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     // Pre-create browser utterance NOW (in user gesture context) so fallback is instant
     const browserUtterance = prepareBrowserUtterance(previewText, localId);
 
-    // Try Kokoro with enough time for cold starts (10s)
-    if (voice?.kokoroId && isKokoroAvailable()) {
+    // Always use Kokoro for preview - no fallback skipping
+    if (voice?.kokoroId) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000);
+        const timeout = setTimeout(() => controller.abort(), 15000);
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 

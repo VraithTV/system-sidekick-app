@@ -1,6 +1,6 @@
 /**
  * Kokoro TTS client - speaks text using a self-hosted Kokoro server via edge function.
- * Falls back gracefully so callers can try the next TTS provider.
+ * Always attempts Kokoro - no backoff or fallback skipping.
  */
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -8,11 +8,9 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 let currentAudio: HTMLAudioElement | null = null;
 
-/** Session flag: if Kokoro is unreachable, skip it for 60s */
-let kokoroOfflineUntil = 0;
-
+/** Always available - no offline tracking */
 export function isKokoroAvailable(): boolean {
-  return Date.now() >= kokoroOfflineUntil;
+  return true;
 }
 
 export function stopKokoroTTS() {
@@ -28,12 +26,11 @@ export async function speakWithKokoro(
   voice?: string,
   outputDeviceId?: string,
 ): Promise<boolean> {
-  if (!isKokoroAvailable()) return false;
   if (!SUPABASE_URL || !SUPABASE_KEY) return false;
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
     const response = await fetch(
       `${SUPABASE_URL}/functions/v1/kokoro-tts`,
@@ -53,10 +50,6 @@ export async function speakWithKokoro(
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
       console.warn('[Jarvis] Kokoro TTS error:', response.status, errorData);
-
-      // If server is down or not configured, back off for 30s then retry
-      kokoroOfflineUntil = Date.now() + 30_000;
-
       return false;
     }
 
@@ -90,7 +83,6 @@ export async function speakWithKokoro(
     });
   } catch (err) {
     console.warn('[Jarvis] Kokoro TTS failed:', err);
-    kokoroOfflineUntil = Date.now() + 30_000;
     return false;
   }
 }
