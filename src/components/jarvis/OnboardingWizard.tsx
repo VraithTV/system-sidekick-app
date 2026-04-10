@@ -565,13 +565,13 @@ const VoiceStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void 
     <div className="flex flex-col items-center justify-center h-full animate-fade-in-up">
       <h2 className="font-display text-lg tracking-[0.12em] text-foreground mb-2">Choose a Voice</h2>
       <p className="text-xs text-muted-foreground mb-6 text-center max-w-xs">
-        Pick how Jarvis sounds. Chris is selected by default.
+        Choose the voice you want Jarvis to use.
       </p>
       <div className="w-full max-w-sm space-y-1.5 mb-8 max-h-[320px] overflow-y-auto pr-1">
         {voiceOptions.map((v) => (
           <button
             key={v.id}
-            onClick={() => { playTick(); updateSettings({ voice: v.id, voiceId: v.elevenLabsId }); }}
+            onClick={() => { playTick(); updateSettings({ voice: v.id, voiceId: v.elevenLabsId || '' }); }}
             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left ${
               settings.voice === v.id
                 ? 'bg-primary/10 border border-primary/25'
@@ -587,7 +587,7 @@ const VoiceStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void 
             </div>
             <button
               className="w-8 h-8 rounded-lg flex items-center justify-center text-primary/40 hover:text-primary hover:bg-primary/10 transition-colors shrink-0"
-              onClick={(e) => { e.stopPropagation(); handlePreview(v.id, v.elevenLabsId); }}
+              onClick={(e) => { e.stopPropagation(); handlePreview(v.id, v.elevenLabsId || v.id); }}
               disabled={previewing !== null}
             >
               {previewing === v.id ? (

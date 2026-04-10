@@ -555,7 +555,10 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
 
   const previewVoice = useCallback(async (voiceIdOrElevenLabsId: string) => {
     const { voiceOptions } = await import('@/lib/voices');
-    const voice = voiceOptions.find(v => v.id === voiceIdOrElevenLabsId || v.elevenLabsId === voiceIdOrElevenLabsId);
+    const voice = voiceOptions.find((v) => v.id === voiceIdOrElevenLabsId)
+      ?? (voiceIdOrElevenLabsId
+        ? voiceOptions.find((v) => v.elevenLabsId === voiceIdOrElevenLabsId)
+        : undefined);
     const previewText = 'At your service. How can I help you today?';
 
     // Try Kokoro if voice has a kokoroId
@@ -565,7 +568,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     }
 
     // Browser fallback
-    const localId = voice?.id || 'daniel';
+    const localId = voice?.id || voiceOptions[0]?.id || 'kokoro_bella';
     await speakBrowser(previewText, settings.outputDeviceId || undefined, localId);
   }, [settings.outputDeviceId]);
 

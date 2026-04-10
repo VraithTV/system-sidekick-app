@@ -5,6 +5,7 @@ import { MaintenanceScreen, useMaintenanceMode } from '@/components/jarvis/Maint
 import { ForceUpdateScreen, useForceUpdate } from '@/components/jarvis/ForceUpdateScreen';
 import { VoiceAssistantManager } from '@/components/jarvis/VoiceAssistantManager';
 import { DashboardView } from '@/components/jarvis/views/DashboardView';
+import { ChatView } from '@/components/jarvis/views/ChatView';
 import { AppsView } from '@/components/jarvis/views/AppsView';
 import { ClipsView } from '@/components/jarvis/views/ClipsView';
 import { RoutinesView } from '@/components/jarvis/views/RoutinesView';
@@ -16,6 +17,7 @@ import { useGlobalShortcuts } from '@/hooks/useGlobalShortcuts';
 
 const views: Record<string, React.ComponentType> = {
   dashboard: DashboardView,
+  chat: ChatView,
   apps: AppsView,
   clips: ClipsView,
   themes: ThemesView,
