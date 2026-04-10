@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AssistantOrb } from '../AssistantOrb';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { Mic, MicOff } from 'lucide-react';
@@ -6,11 +6,14 @@ import { requestVoiceAssistantStart, requestVoiceAssistantStop } from '@/hooks/u
 import { primeMicStream } from '@/lib/speechRecognition';
 import { createT } from '@/lib/i18n';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { startClapDetector, type ClapDetectorController } from '@/lib/clapDetector';
 
 export const DashboardView = () => {
-  const { settings, systemStatus, state } = useJarvisStore();
+  const { settings, systemStatus, state, setSystemStatus } = useJarvisStore();
   const micOn = systemStatus.micActive;
   const [time, setTime] = useState(new Date());
+  const [clapActive, setClapActive] = useState(false);
+  const clapRef = useRef<ClapDetectorController | null>(null);
   const t = createT(settings.language || 'en');
   const isMobile = useIsMobile();
 
@@ -18,6 +21,46 @@ export const DashboardView = () => {
     const interval = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Clean up clap detector when mic becomes active (clap detector handed off)
+  // or on unmount
+  useEffect(() => {
+    if (micOn && clapRef.current) {
+      clapRef.current.stop();
+      clapRef.current = null;
+      setClapActive(false);
+    }
+    return () => {
+      clapRef.current?.stop();
+      clapRef.current = null;
+    };
+  }, [micOn]);
+
+  const enableClapDetection = async () => {
+    if (clapRef.current) return; // already running
+    try {
+      const controller = await startClapDetector({
+        onDoubleClap: async () => {
+          console.log('[Jarvis] Double clap detected! Enabling mic...');
+          // Stop clap detector before starting voice assistant
+          controller.stop();
+          clapRef.current = null;
+          setClapActive(false);
+          // Prime the mic stream and start listening
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            primeMicStream(stream);
+          } catch { /* mic permission already granted via clap detector */ }
+          setSystemStatus({ micActive: true });
+          requestVoiceAssistantStart();
+        },
+      });
+      clapRef.current = controller;
+      setClapActive(true);
+    } catch (err) {
+      console.warn('[Jarvis] Clap detector failed to start:', err);
+    }
+  };
 
   const toggleMic = async () => {
     if (micOn) {
@@ -31,6 +74,7 @@ export const DashboardView = () => {
         console.warn('[Jarvis] Mic permission denied:', err);
         return;
       }
+      setSystemStatus({ micActive: true });
       requestVoiceAssistantStart();
     }
   };
