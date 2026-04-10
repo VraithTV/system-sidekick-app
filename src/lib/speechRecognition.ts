@@ -442,6 +442,14 @@ export function startSpeechRecognition(
   const attempts: { label: string; create: () => SpeechRecognitionController }[] = [];
 
   if (isElectron) {
+    // Electron is Chromium-based, so browser speech recognition works
+    // and is much faster than cloud transcription
+    if (SpeechRecognitionCtor && !browserSTTFailed) {
+      attempts.push({
+        label: 'browser speech recognition',
+        create: () => createBrowserSpeechRecognitionController(langCode),
+      });
+    }
     attempts.push({
       label: 'cloud transcription (AI)',
       create: () => createMediaRecorderSTTController(_deviceId, langCode),
