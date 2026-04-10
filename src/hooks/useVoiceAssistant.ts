@@ -7,10 +7,10 @@ import { processAppCommand } from '@/lib/appCommands';
 import { processVoiceCommand } from '@/lib/voiceCommands';
 
 import { getModeSystemPromptAddition } from '@/lib/modes';
-import { commonApps } from '@/lib/commonApps';
+import { matchCommonApp } from '@/lib/commonApps';
 import { isOllamaAvailable, chatWithOllama, getOllamaModel } from '@/lib/ollamaClient';
 import { getLanguage } from '@/lib/languages';
-import { speakWithKokoro, stopKokoroTTS, isKokoroAvailable, createCancelToken, cancelToken } from '@/lib/kokoroTTS';
+import { speakWithKokoro, stopKokoroTTS, isKokoroAvailable, createCancelToken, cancelToken, warmKokoroVoice } from '@/lib/kokoroTTS';
 import { getVoiceById, voiceOptions } from '@/lib/voices';
 import { toast } from 'sonner';
 
@@ -35,9 +35,7 @@ function tryLaunchApp(userText: string): void {
   if (!target) return;
 
   // Match against known app aliases for the correct ID
-  const matched = commonApps.find((app) =>
-    app.aliases.some((alias) => target === alias || target.includes(alias))
-  );
+  const matched = matchCommonApp(target);
 
   const appId = matched?.id || target;
   console.log('[Jarvis] Launching app:', appId, matched ? `(matched: ${matched.name})` : '(raw)');
@@ -188,9 +186,21 @@ function ensureSpeechSynthesisActive() {
 
 /** Pre-create a SpeechSynthesisUtterance so it's ready to play instantly */
 function prepareBrowserUtterance(text: string, voiceId?: string, _langCode?: string): SpeechSynthesisUtterance {
-  // Always use English voices for TTS output — the UI language setting is for the interface, not speech
+  // Always use English voices for TTS output - the UI language setting is for the interface, not speech
   const utterance = new SpeechSynthesisUtterance(text);
-  const allVoices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith('en'));
+  const scoreVoice = (voice: SpeechSynthesisVoice) => {
+    const name = voice.name.toLowerCase();
+    let score = 0;
+    if (voice.localService) score += 4;
+    if (/google|microsoft|samantha|alex|daniel|hazel|zira|aria|ava|guy|jenny|mark|david/.test(name)) score += 5;
+    if (/desktop/.test(name)) score += 1;
+    if (/fred|whisper|espeak|novelty|bad news|boing|bubbles|cellos|good news|trinoids|zarvox/.test(name)) score -= 20;
+    return score;
+  };
+  const allVoices = speechSynthesis
+    .getVoices()
+    .filter((v) => v.lang.startsWith('en'))
+    .sort((a, b) => scoreVoice(b) - scoreVoice(a));
   const prefs = browserVoiceMap[voiceId || 'daniel'] || browserVoiceMap.daniel;
 
   utterance.rate = prefs.rate;
@@ -203,14 +213,14 @@ function prepareBrowserUtterance(text: string, voiceId?: string, _langCode?: str
     matched = allVoices.find((v) => v.name.toLowerCase().includes(kw.toLowerCase()));
     if (matched) break;
   }
+
   if (!matched) {
-    const genderKw = prefs.gender === 'female' ? 'Female' : 'Male';
+    const genderKw = prefs.gender === 'female' ? 'female' : 'male';
     matched =
-      allVoices.find((v) => v.name.includes(genderKw)) ||
-      allVoices.find((v) => v.name.includes('Google')) ||
-      allVoices.find((v) => v.name.includes('Microsoft')) ||
+      allVoices.find((v) => v.name.toLowerCase().includes(genderKw)) ||
       allVoices[0];
   }
+
   if (matched) utterance.voice = matched;
 
   return utterance;
@@ -358,6 +368,18 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
   const wakeWordHeard = useRef(false);
   const conversationActive = useRef(false);
   const captureStopRef = useRef<(() => void) | null>(null);
+  const lastKokoroWarmAtRef = useRef(0);
+
+  const warmSelectedKokoroVoice = useCallback(() => {
+    const selectedVoice = getVoiceById(settings.voice);
+    if (!selectedVoice.kokoroId) return;
+
+    const now = Date.now();
+    if (now - lastKokoroWarmAtRef.current < 45000) return;
+
+    lastKokoroWarmAtRef.current = now;
+    void warmKokoroVoice(selectedVoice.kokoroId);
+  }, [settings.voice]);
 
   const processCommand = useCallback(
     async (text: string) => {
@@ -385,7 +407,6 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
           } else {
             response = appResult.response || 'Done.';
           }
-          tryLaunchApp(cleanedText);
         } else {
           addToHistory('user', cleanedText);
           response = await getAIResponse(cleanedText, mode, settings.language);
@@ -417,7 +438,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
       if (selectedVoice.kokoroId) {
         const token = createCancelToken();
         const kokoroPromise = speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined, token);
-        const timeoutPromise = new Promise<'timeout'>(resolve => setTimeout(() => resolve('timeout'), 2500));
+        const timeoutPromise = new Promise<'timeout'>(resolve => setTimeout(() => resolve('timeout'), 4000));
 
         const result = await Promise.race([kokoroPromise, timeoutPromise]);
 
@@ -470,6 +491,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     conversationActive.current = false;
     setState('standby');
     setSystemStatus({ micActive: true });
+    warmSelectedKokoroVoice();
 
     const runCaptureLoop = async () => {
       if (isCaptureLoopActiveRef.current) {
@@ -557,7 +579,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     };
 
     void runCaptureLoop();
-  }, [settings.inputDeviceId, settings.wakeAliases, settings.wakeName, settings.wakeSensitivity, setState, setSystemStatus, processCommand]);
+  }, [settings.inputDeviceId, settings.wakeAliases, settings.wakeName, settings.wakeSensitivity, setState, setSystemStatus, processCommand, warmSelectedKokoroVoice]);
 
   const stopListening = useCallback(() => {
     isListeningRef.current = false;

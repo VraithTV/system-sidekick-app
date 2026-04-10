@@ -3,7 +3,7 @@
  * These run in Electron via IPC or fall back to shell commands.
  */
 
-import { commonApps } from '@/lib/commonApps';
+import { matchCommonApp } from '@/lib/commonApps';
 
 import {
   isSpotifyConnected,
@@ -81,9 +81,7 @@ function handleCloseCommand(text: string): AppCommandResult {
   if (!target) return { handled: false };
 
   // Match against known app aliases
-  const matched = commonApps.find((app) =>
-    app.aliases.some((alias) => target === alias || target.includes(alias))
-  );
+  const matched = matchCommonApp(target);
 
   if (matched) {
     // For web apps, we can't close them
@@ -347,9 +345,7 @@ function handleUrlCommand(text: string): AppCommandResult {
     // Try desktop apps via Electron IPC
     if (isElectron && (window as any).electronAPI?.openApp) {
       const cleanTarget = target.replace(/\s+and\s+.*/i, '').trim();
-      const matched = commonApps.find((app) =>
-        app.aliases.some((alias) => cleanTarget === alias || cleanTarget.includes(alias))
-      );
+      const matched = matchCommonApp(cleanTarget);
       if (matched) {
         (window as any).electronAPI.openApp(matched.id);
         return { handled: true, response: `Opening ${matched.name} for you.` };

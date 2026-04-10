@@ -47,6 +47,7 @@ export const commonApps: CommonApp[] = [
   { id: 'fivem', name: 'FiveM', aliases: ['fivem', 'five m', '5m'], icon: '🏙️', launchCmd: 'start fivem:', category: 'gaming' },
   { id: 'valorant', name: 'Valorant', aliases: ['valorant', 'val'], icon: '🔫', launchCmd: 'start valorant:', category: 'gaming' },
   { id: 'league', name: 'League of Legends', aliases: ['league', 'league of legends', 'lol'], icon: '⚔️', launchCmd: 'start leagueoflegends:', category: 'gaming' },
+  { id: 'riot-client', name: 'Riot Client', aliases: ['riot', 'riot client'], icon: '🛡️', launchCmd: 'start riotclient:', category: 'gaming' },
   { id: 'apex', name: 'Apex Legends', aliases: ['apex', 'apex legends'], icon: '🎯', launchCmd: 'start steam://rungameid/1172470', category: 'gaming' },
   { id: 'csgo', name: 'CS2', aliases: ['cs2', 'csgo', 'counter strike', 'cs go'], icon: '💣', launchCmd: 'start steam://rungameid/730', category: 'gaming' },
   { id: 'roblox', name: 'Roblox', aliases: ['roblox'], icon: '🧱', launchCmd: 'start roblox:', category: 'gaming' },
@@ -58,6 +59,11 @@ export const commonApps: CommonApp[] = [
   { id: 'ubisoft', name: 'Ubisoft Connect', aliases: ['ubisoft', 'ubisoft connect', 'uplay'], icon: '🔵', launchCmd: 'start uplay:', category: 'gaming' },
   { id: 'xbox', name: 'Xbox App', aliases: ['xbox', 'xbox app'], icon: '🟢', launchCmd: 'start xbox:', category: 'gaming' },
   { id: 'geforce-now', name: 'GeForce NOW', aliases: ['geforce now', 'gfn'], icon: '🟩', launchCmd: 'start geforcenow:', category: 'gaming' },
+  { id: 'dota2', name: 'Dota 2', aliases: ['dota', 'dota 2'], icon: '🧿', launchCmd: 'start steam://rungameid/570', category: 'gaming' },
+  { id: 'pubg', name: 'PUBG: Battlegrounds', aliases: ['pubg', 'pub g', 'playerunknown battlegrounds'], icon: '🪂', launchCmd: 'start steam://rungameid/578080', category: 'gaming' },
+  { id: 'destiny2', name: 'Destiny 2', aliases: ['destiny', 'destiny 2'], icon: '🌌', launchCmd: 'start steam://rungameid/1085660', category: 'gaming' },
+  { id: 'helldivers2', name: 'Helldivers 2', aliases: ['helldivers', 'helldivers 2'], icon: '💥', launchCmd: 'start steam://rungameid/553850', category: 'gaming' },
+  { id: 'rainbow-six-siege', name: 'Rainbow Six Siege', aliases: ['rainbow six', 'rainbow six siege', 'r6', 'r6 siege'], icon: '🚪', launchCmd: 'start steam://rungameid/359550', category: 'gaming' },
 
   // Productivity
   { id: 'vscode', name: 'Visual Studio Code', aliases: ['vscode', 'vs code', 'code'], icon: '💻', launchCmd: 'start code', category: 'productivity' },
@@ -117,4 +123,22 @@ export function getDefaultApps(): AppShortcut[] {
   return commonApps
     .filter((ca) => defaultAppIds.includes(ca.id))
     .map(toAppShortcut);
+}
+
+function normalizeAppTarget(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function matchCommonApp(target: string): CommonApp | undefined {
+  const normalizedTarget = normalizeAppTarget(target);
+
+  return commonApps
+    .flatMap((app) => app.aliases.map((alias) => ({ app, alias: normalizeAppTarget(alias) })))
+    .sort((a, b) => b.alias.length - a.alias.length)
+    .find(({ alias }) => normalizedTarget === alias || normalizedTarget.includes(alias))
+    ?.app;
 }
