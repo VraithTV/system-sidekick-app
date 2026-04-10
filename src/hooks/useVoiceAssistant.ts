@@ -10,36 +10,42 @@ import { getModeSystemPromptAddition } from '@/lib/modes';
 import { matchCommonApp } from '@/lib/commonApps';
 import { isOllamaAvailable, chatWithOllama, getOllamaModel } from '@/lib/ollamaClient';
 import { getLanguage } from '@/lib/languages';
-import { speakWithKokoro, stopKokoroTTS } from '@/lib/kokoroTTS';
+import { speakWithKokoro, stopKokoroTTS, createCancelToken } from '@/lib/kokoroTTS';
 import { getVoiceById, voiceOptions } from '@/lib/voices';
 import { toast } from 'sonner';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
 
 
-/** Try to detect an "open app" intent and actually launch it via Electron */
+/** Try to detect an "open app" intent and actually launch it via Electron.
+ *  Only launches apps the user has added on the Applications page. */
 function tryLaunchApp(userText: string): void {
   if (!isElectron) return;
   const api = (window as any).electronAPI;
   if (!api?.openApp) return;
 
-  // Match patterns like "open chrome", "launch spotify", "start obs", "open up discord"
   const openMatch = userText.match(/(?:open|launch|start|run|fire up|open up|pull up)\s+(.+)/i);
   if (!openMatch) return;
 
   const target = openMatch[1]
     .replace(/^(the|my|up)\s+/i, '')
-    .replace(/\s+and\s+.*/i, '') // strip "and play ..." etc.
+    .replace(/\s+and\s+.*/i, '')
     .trim()
     .toLowerCase();
   if (!target) return;
 
-  // Match against known app aliases for the correct ID
   const matched = matchCommonApp(target);
+  if (!matched) return;
 
-  const appId = matched?.id || target;
-  console.log('[Jarvis] Launching app:', appId, matched ? `(matched: ${matched.name})` : '(raw)');
-  api.openApp(appId);
+  // Only launch if the app is on the user's Applications page
+  const apps = useJarvisStore.getState().apps;
+  if (!apps.some((a) => a.id === matched.id)) {
+    console.log('[Jarvis] App not added, skipping launch:', matched.id);
+    return;
+  }
+
+  console.log('[Jarvis] Launching app:', matched.id, `(matched: ${matched.name})`);
+  api.openApp(matched.id);
 }
 
 const FATAL_CAPTURE_ERRORS = new Set([
@@ -472,31 +478,36 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
       }
 
       const selectedVoice = getVoiceById(settings.voice);
-      const utterance = prepareBrowserUtterance(
-        spokenResponse,
-        selectedVoice.id,
-        settings.language
-      );
 
-      utterance.onstart = () => {
-        logVoiceTiming(activeTrace, 'tts:audio:playing', {
-          engine: 'browser',
-          voice: selectedVoice.id,
+      if (selectedVoice.kokoroId) {
+        const token = createCancelToken();
+        logVoiceTiming(activeTrace, 'tts:start', {
+          voice: selectedVoice.kokoroId,
+          spokenText: spokenResponse,
         });
-      };
-
-      logVoiceTiming(activeTrace, 'tts:start', {
-        engine: 'browser',
-        voice: selectedVoice.id,
-        spokenText: spokenResponse,
-      });
-
-      await speakBrowserPrepared(utterance, settings.outputDeviceId || undefined);
-      logVoiceTiming(activeTrace, 'tts:complete', {
-        ok: true,
-        engine: 'browser',
-        voice: selectedVoice.id,
-      });
+        const ok = await speakWithKokoro(
+          spokenResponse,
+          selectedVoice.kokoroId,
+          settings.outputDeviceId || undefined,
+          token,
+          {
+            traceId: activeTrace.id,
+            pipelineStartedAt: activeTrace.startedAt,
+            speakingStartedAt: getTimingNow(),
+          }
+        );
+        logVoiceTiming(activeTrace, 'tts:complete', {
+          ok,
+          voice: selectedVoice.kokoroId,
+        });
+        if (!ok) {
+          // Kokoro failed, fall back to instant browser voice
+          console.warn('[Jarvis] Kokoro TTS failed, using browser voice fallback');
+          await speakBrowser(spokenResponse, settings.outputDeviceId || undefined, selectedVoice.id, settings.language);
+        }
+      } else {
+        await speakBrowser(spokenResponse, settings.outputDeviceId || undefined, selectedVoice.id, settings.language);
+      }
 
       const isQuestion = response.trim().endsWith('?');
       conversationActive.current = isQuestion;

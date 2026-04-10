@@ -1,9 +1,20 @@
 /**
  * Voice command handlers for app control (Spotify, URLs, desktop apps, etc.)
  * These run in Electron via IPC or fall back to shell commands.
+ * 
+ * IMPORTANT: Desktop app launching is restricted to apps the user has added
+ * on the Applications page. If an app isn't added there, Jarvis tells the
+ * user to add it first.
  */
 
 import { matchCommonApp } from '@/lib/commonApps';
+import { useJarvisStore } from '@/store/jarvisStore';
+
+/** Check whether an app ID exists in the user's added apps list */
+function isAppAdded(appId: string): boolean {
+  const apps = useJarvisStore.getState().apps;
+  return apps.some((a) => a.id === appId);
+}
 
 import {
   isSpotifyConnected,
@@ -342,11 +353,17 @@ function handleUrlCommand(text: string): AppCommandResult {
       }
     }
 
-    // Try desktop apps via Electron IPC
+    // Try desktop apps via Electron IPC - only if the app is on the user's Applications page
     if (isElectron && (window as any).electronAPI?.openApp) {
       const cleanTarget = target.replace(/\s+and\s+.*/i, '').trim();
       const matched = matchCommonApp(cleanTarget);
       if (matched) {
+        if (!isAppAdded(matched.id)) {
+          return {
+            handled: true,
+            response: `${matched.name} isn't added to your applications yet. Head over to the Applications page and add it first, then I'll be able to open it for you.`,
+          };
+        }
         (window as any).electronAPI.openApp(matched.id);
         return { handled: true, response: `Opening ${matched.name} for you.` };
       }

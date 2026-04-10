@@ -208,6 +208,9 @@ export const DashboardView = () => {
               : `Try: "${wake}, open Chrome" · "${wake}, what's the weather?"`}
           </p>
 
+          <p className="mt-3 text-center font-mono text-[10px] text-muted-foreground/30 max-w-xs leading-relaxed">
+            Voice responses may take a few seconds. Improvements coming soon.
+          </p>
           {!micOn && (
             <button
               onClick={toggleClapDetection}
