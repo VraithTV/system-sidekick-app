@@ -18,10 +18,19 @@ export const DashboardView = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const toggleMic = () => {
+  const toggleMic = async () => {
     if (micOn) {
       requestVoiceAssistantStop();
     } else {
+      // Prime mic permission directly from user gesture (required by mobile browsers)
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Keep the stream alive so the capture loop can reuse it
+        stream.getTracks(); // don't stop - let the cached stream logic pick it up
+      } catch (err) {
+        console.warn('[Jarvis] Mic permission denied:', err);
+        return; // Don't start listening if permission was denied
+      }
       requestVoiceAssistantStart();
     }
   };
