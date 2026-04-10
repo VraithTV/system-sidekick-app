@@ -360,6 +360,33 @@ function parseAIReply(fullReply: string): string {
   return reply || "I didn't catch that. Could you say it again?";
 }
 
+function getTimingNow() {
+  return typeof performance !== 'undefined' ? performance.now() : Date.now();
+}
+
+interface VoiceTimingTrace {
+  id: string;
+  startedAt: number;
+}
+
+function createVoiceTimingTrace(startedAt = getTimingNow()): VoiceTimingTrace {
+  return {
+    id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+    startedAt,
+  };
+}
+
+function logVoiceTiming(trace: VoiceTimingTrace, stage: string, details?: Record<string, unknown>) {
+  const elapsedMs = Math.round(getTimingNow() - trace.startedAt);
+
+  if (details && Object.keys(details).length > 0) {
+    console.log(`[Jarvis][Timing ${trace.id}] ${stage} +${elapsedMs}ms`, details);
+    return;
+  }
+
+  console.log(`[Jarvis][Timing ${trace.id}] ${stage} +${elapsedMs}ms`);
+}
+
 export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
   const previewOnly = options.previewOnly ?? false;
   const { setState, addCommand, settings, setSystemStatus, mode } = useJarvisStore();
@@ -374,23 +401,27 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
   }, []);
 
   const processCommand = useCallback(
-    async (text: string) => {
+    async (text: string, trace?: VoiceTimingTrace) => {
       const cleanedText = text.trim();
       if (!cleanedText) {
         if (isListeningRef.current) setState('standby');
         return;
       }
 
+      const activeTrace = trace ?? createVoiceTimingTrace();
+      logVoiceTiming(activeTrace, 'command:start', { text: cleanedText });
       setState('thinking');
+      logVoiceTiming(activeTrace, 'ui:thinking');
 
-      // Check built-in voice commands first (timer, time, math, etc.)
       const voiceResult = processVoiceCommand(cleanedText);
       let response: string;
 
       if (voiceResult.handled) {
         response = voiceResult.response || 'Done.';
+        logVoiceTiming(activeTrace, 'command:voice-handled', {
+          responseLength: response.length,
+        });
       } else {
-        // Check for app-specific commands (Spotify, URLs, etc.)
         const appResult = processAppCommand(cleanedText);
 
         if (appResult.handled) {
@@ -399,18 +430,38 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
           } else {
             response = appResult.response || 'Done.';
           }
+
+          logVoiceTiming(activeTrace, 'command:app-handled', {
+            async: !!appResult.async,
+            responseLength: response.length,
+          });
         } else {
           addToHistory('user', cleanedText);
+          logVoiceTiming(activeTrace, 'ai:request:start', {
+            language: settings.language,
+            mode,
+          });
           response = await getAIResponse(cleanedText, mode, settings.language);
+          logVoiceTiming(activeTrace, 'ai:request:done', {
+            responseLength: response.length,
+          });
           addToHistory('assistant', response);
           tryLaunchApp(cleanedText);
         }
       }
 
-      // Set state to speaking immediately so the UI transitions fast
-      setState('speaking');
+      const spokenResponse = response
+        .replace(/\s+/g, ' ')
+        .split(/(?<=[.!?])\s+/)[0]
+        ?.trim() || response;
 
-      // In private mode, don't log commands
+      setState('speaking');
+      const speakingStartedAt = getTimingNow();
+      logVoiceTiming(activeTrace, 'ui:speaking', {
+        responseLength: response.length,
+        spokenLength: spokenResponse.length,
+      });
+
       if (mode !== 'private') {
         addCommand({
           id: Date.now().toString(),
@@ -421,42 +472,56 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      // TTS: Kokoro only — no browser voice fallback
       const selectedVoice = getVoiceById(settings.voice);
-      const spokenResponse = response
-        .replace(/\s+/g, ' ')
-        .split(/(?<=[.!?])\s+/)[0]
-        ?.trim() || response;
 
       if (selectedVoice.kokoroId) {
         const token = createCancelToken();
-        const ok = await speakWithKokoro(spokenResponse, selectedVoice.kokoroId, settings.outputDeviceId || undefined, token);
+        logVoiceTiming(activeTrace, 'tts:start', {
+          voice: selectedVoice.kokoroId,
+          spokenText: spokenResponse,
+        });
+        const ok = await speakWithKokoro(
+          spokenResponse,
+          selectedVoice.kokoroId,
+          settings.outputDeviceId || undefined,
+          token,
+          {
+            traceId: activeTrace.id,
+            pipelineStartedAt: activeTrace.startedAt,
+            speakingStartedAt,
+          }
+        );
+        logVoiceTiming(activeTrace, 'tts:complete', {
+          ok,
+          voice: selectedVoice.kokoroId,
+        });
         if (!ok) {
-          console.warn('[Jarvis] Kokoro TTS failed — no fallback voice');
+          console.warn('[Jarvis] Kokoro TTS failed - no fallback voice');
         }
       } else {
         console.warn('[Jarvis] Selected voice has no kokoroId, skipping TTS');
       }
 
-      // If the response ends with a question mark, stay in conversation mode
-      // so the user doesn't need the wake word for their reply
       const isQuestion = response.trim().endsWith('?');
       conversationActive.current = isQuestion;
       wakeWordHeard.current = false;
 
       if (!isListeningRef.current) {
         setState('idle');
+        logVoiceTiming(activeTrace, 'ui:idle');
         return;
       }
 
       if (isQuestion) {
         setState('listening');
-        console.log('[Jarvis] Response was a question — staying in conversation mode');
+        logVoiceTiming(activeTrace, 'ui:listening-follow-up');
+        console.log('[Jarvis] Response was a question, staying in conversation mode');
       } else {
         setState('standby');
+        logVoiceTiming(activeTrace, 'ui:standby');
       }
     },
-    [setState, addCommand, settings.outputDeviceId, settings.voice, settings.voiceId, settings.language, mode]
+    [setState, addCommand, settings.outputDeviceId, settings.voice, settings.language, mode]
   );
 
   const startListening = useCallback(() => {
@@ -484,13 +549,21 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
 
           try {
             console.log('[Jarvis] Listening for speech...');
+            const captureStartedAt = getTimingNow();
             const sttLang = getLanguage(settings.language).sttCode;
             const recognition = startSpeechRecognition(settings.inputDeviceId || undefined, sttLang);
             captureStopRef.current = recognition.stop;
             const transcript = await recognition.promise;
             captureStopRef.current = null;
 
+            const trace = createVoiceTimingTrace(captureStartedAt);
             console.log('[Jarvis] Transcript:', JSON.stringify(transcript));
+            logVoiceTiming(trace, 'stt:complete', {
+              sttMs: Math.round(getTimingNow() - captureStartedAt),
+              transcript,
+              bypassWakeWord: shouldBypassWakeWord,
+            });
+
             if (!isListeningRef.current) continue;
             if (!transcript) {
               await pause(100);
@@ -506,25 +579,33 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
               );
 
               if (!wakeMatch.matched) {
+                logVoiceTiming(trace, 'wake:not-matched');
                 continue;
               }
 
               if (wakeMatch.command && wakeMatch.command.length > 1) {
                 wakeWordHeard.current = false;
                 conversationActive.current = false;
-                await processCommand(wakeMatch.command);
+                logVoiceTiming(trace, 'wake:matched-inline-command', {
+                  command: wakeMatch.command,
+                });
+                await processCommand(wakeMatch.command, trace);
                 continue;
               }
 
               wakeWordHeard.current = true;
               conversationActive.current = false;
               setState('listening');
+              logVoiceTiming(trace, 'wake:armed');
               continue;
             }
 
             wakeWordHeard.current = false;
             conversationActive.current = false;
-            await processCommand(transcript);
+            logVoiceTiming(trace, 'conversation:processing-command', {
+              transcript,
+            });
+            await processCommand(transcript, trace);
           } catch (error) {
             console.warn('[Jarvis] Voice capture loop error:', error);
             captureStopRef.current = null;
@@ -557,7 +638,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     };
 
     void runCaptureLoop();
-  }, [settings.inputDeviceId, settings.wakeAliases, settings.wakeName, settings.wakeSensitivity, setState, setSystemStatus, processCommand, warmSelectedKokoroVoice]);
+  }, [settings.inputDeviceId, settings.wakeAliases, settings.wakeName, settings.wakeSensitivity, settings.language, setState, setSystemStatus, processCommand, warmSelectedKokoroVoice]);
 
   const stopListening = useCallback(() => {
     isListeningRef.current = false;
@@ -578,8 +659,21 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         : undefined);
     const previewText = 'At your service.';
     const kokoroId = voice?.kokoroId || 'af_bella';
+    const trace = createVoiceTimingTrace();
 
-    const ok = await speakWithKokoro(previewText, kokoroId, settings.outputDeviceId || undefined);
+    logVoiceTiming(trace, 'preview:start', { voice: kokoroId });
+    const ok = await speakWithKokoro(
+      previewText,
+      kokoroId,
+      settings.outputDeviceId || undefined,
+      undefined,
+      {
+        traceId: trace.id,
+        pipelineStartedAt: trace.startedAt,
+        speakingStartedAt: trace.startedAt,
+      }
+    );
+    logVoiceTiming(trace, 'preview:complete', { ok, voice: kokoroId });
     if (!ok) {
       console.warn('[Jarvis] Voice preview failed');
     }
