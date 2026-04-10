@@ -3,6 +3,7 @@ import { AssistantOrb } from '../AssistantOrb';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { Mic, MicOff } from 'lucide-react';
 import { requestVoiceAssistantStart, requestVoiceAssistantStop } from '@/hooks/useVoiceAssistant';
+import { primeMicStream } from '@/lib/speechRecognition';
 import { createT } from '@/lib/i18n';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -18,10 +19,18 @@ export const DashboardView = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const toggleMic = () => {
+  const toggleMic = async () => {
     if (micOn) {
       requestVoiceAssistantStop();
     } else {
+      // Prime mic permission directly from user gesture (required by mobile browsers)
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        primeMicStream(stream);
+      } catch (err) {
+        console.warn('[Jarvis] Mic permission denied:', err);
+        return;
+      }
       requestVoiceAssistantStart();
     }
   };

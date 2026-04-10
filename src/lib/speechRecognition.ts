@@ -56,6 +56,12 @@ export function isElevenLabsSTTExhausted(): boolean { return false; }
 
 let cachedMicStream: MediaStream | null = null;
 
+/** Prime the mic stream from a user gesture so subsequent calls don't need one */
+export function primeMicStream(stream: MediaStream) {
+  cachedMicStream = stream;
+  markElectronMicPrimed();
+}
+
 async function getMicStream(deviceId?: string): Promise<MediaStream> {
   if (cachedMicStream && cachedMicStream.getAudioTracks().every(t => t.readyState === 'live')) {
     return cachedMicStream;
