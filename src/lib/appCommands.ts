@@ -353,11 +353,17 @@ function handleUrlCommand(text: string): AppCommandResult {
       }
     }
 
-    // Try desktop apps via Electron IPC
+    // Try desktop apps via Electron IPC - only if the app is on the user's Applications page
     if (isElectron && (window as any).electronAPI?.openApp) {
       const cleanTarget = target.replace(/\s+and\s+.*/i, '').trim();
       const matched = matchCommonApp(cleanTarget);
       if (matched) {
+        if (!isAppAdded(matched.id)) {
+          return {
+            handled: true,
+            response: `${matched.name} isn't added to your applications yet. Head over to the Applications page and add it first, then I'll be able to open it for you.`,
+          };
+        }
         (window as any).electronAPI.openApp(matched.id);
         return { handled: true, response: `Opening ${matched.name} for you.` };
       }
