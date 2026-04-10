@@ -563,11 +563,11 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     // Pre-create browser utterance NOW (in user gesture context) so fallback is instant
     const browserUtterance = prepareBrowserUtterance(previewText, localId);
 
-    // Try Kokoro with enough time for cold starts (10s)
-    if (voice?.kokoroId && isKokoroAvailable()) {
+    // Always use Kokoro for preview - no fallback skipping
+    if (voice?.kokoroId) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000);
+        const timeout = setTimeout(() => controller.abort(), 15000);
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
