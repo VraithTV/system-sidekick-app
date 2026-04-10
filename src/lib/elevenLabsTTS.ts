@@ -50,7 +50,7 @@ export async function speakWithElevenLabs(
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), 5000);
 
     const response = await fetch(
       `${SUPABASE_URL}/functions/v1/elevenlabs-tts`,
