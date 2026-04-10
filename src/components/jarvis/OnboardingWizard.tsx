@@ -12,7 +12,7 @@ import { themePresets, accentOptions, applyTheme } from '@/lib/themes';
 import { t } from '@/lib/i18n';
 import { Mic, Volume2, Play, ChevronRight, ChevronLeft, Check, AppWindow, Cpu, ExternalLink, RefreshCw, Globe, Palette } from 'lucide-react';
 import { playClick, playTick } from '@/lib/sounds';
-import { isOllamaAvailable, resetOllamaStatus, getOllamaModel, listOllamaModels } from '@/lib/ollamaClient';
+
 
 const ONBOARDING_KEY = 'jarvis_onboarding_complete';
 
@@ -223,112 +223,6 @@ const ThemeStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void 
   );
 };
 
-// ── Step 3: Ollama Detection ──
-const OllamaStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
-  const [status, setStatus] = useState<'checking' | 'found' | 'not-found'>('checking');
-  const [model, setModel] = useState('');
-  const [modelCount, setModelCount] = useState(0);
-
-  const check = useCallback(async () => {
-    setStatus('checking');
-    resetOllamaStatus();
-    const available = await isOllamaAvailable();
-    if (available) {
-      setStatus('found');
-      setModel(getOllamaModel());
-      const models = await listOllamaModels();
-      setModelCount(models.length);
-    } else {
-      setStatus('not-found');
-    }
-  }, []);
-
-  useEffect(() => { check(); }, [check]);
-
-  const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
-
-  return (
-    <div className="flex flex-col items-center justify-center h-full animate-fade-in-up">
-      <div className="w-16 h-16 rounded-full border border-primary/25 flex items-center justify-center bg-primary/5 mb-6">
-        <Cpu className="w-7 h-7 text-primary" />
-      </div>
-      <h2 className="font-display text-lg tracking-[0.12em] text-foreground mb-2">AI Engine</h2>
-      <p className="text-xs text-muted-foreground mb-6 text-center max-w-xs">
-        Jarvis works out of the box with cloud AI. You can optionally add a local AI engine for offline use.
-      </p>
-
-      {/* Status card */}
-      <div className="w-full max-w-sm rounded-xl border border-border bg-card p-5 mb-6">
-        {status === 'checking' && (
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 border-2 border-primary/60 border-t-transparent rounded-full animate-spin" />
-            <p className="text-[13px] text-foreground/70">Checking for local AI engine...</p>
-          </div>
-        )}
-        {status === 'found' && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-              <p className="text-[13px] text-foreground/85 font-medium">Ollama is running</p>
-            </div>
-            <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-              <p className="text-[11px] text-muted-foreground font-mono">Active model: <span className="text-primary">{model}</span></p>
-              <p className="text-[11px] text-muted-foreground font-mono">{modelCount} model{modelCount !== 1 ? 's' : ''} installed</p>
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              Jarvis will use your local AI. Free, private, no internet needed.
-            </p>
-          </div>
-        )}
-        {status === 'not-found' && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-primary/40" />
-              <p className="text-[13px] text-foreground/85">Using cloud AI (default)</p>
-            </div>
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Jarvis is ready to go. Cloud AI handles all your requests over the internet.
-            </p>
-
-            <div className="border-t border-border/50 pt-3 space-y-3">
-              <p className="text-[10px] text-primary/70 font-display tracking-wider uppercase">Optional: enable offline AI</p>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Want responses without internet? Follow these steps:
-              </p>
-              <ol className="text-[11px] text-muted-foreground leading-relaxed space-y-2 list-decimal list-inside">
-                <li>Download and install <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Ollama</a></li>
-                <li>Run the installer and <strong className="text-foreground/70">wait for it to finish completely</strong></li>
-                <li>Open a terminal and run: <code className="text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded text-[9px]">ollama pull llama3</code></li>
-                <li>Click "Check again" below once Ollama is running</li>
-              </ol>
-              <button
-                onClick={() => { playClick(); check(); }}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-border text-muted-foreground text-[11px] hover:text-foreground hover:bg-muted/40 transition-colors"
-              >
-                <RefreshCw className="w-3.5 h-3.5" /> Check again
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => { playClick(); onBack(); }}
-          className="flex items-center gap-2 px-6 py-3 rounded-full border border-muted-foreground/20 text-muted-foreground font-display text-xs tracking-[0.15em] uppercase hover:bg-muted/40 transition-all duration-300"
-        >
-          <ChevronLeft className="w-4 h-4" /> Back
-        </button>
-        <button
-          onClick={() => { playClick(); onNext(); }}
-          className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 transition-all duration-300"
-        >
-          Continue <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-};
 
 // ── Step 4: Microphone ──
 const MicStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void }) => {
@@ -620,7 +514,7 @@ const VoiceStep = ({ onNext, onBack }: { onNext: () => void; onBack: () => void 
 // ── Main Wizard ──
 export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
-  const totalSteps = 8;
+  const totalSteps = 7;
 
   const next = () => {
     if (step < totalSteps - 1) setStep(step + 1);
@@ -646,11 +540,10 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
           {step === 0 && <WelcomeStep onNext={next} />}
           {step === 1 && <LanguageStep onNext={next} onBack={back} />}
           {step === 2 && <ThemeStep onNext={next} onBack={back} />}
-          {step === 3 && <OllamaStep onNext={next} onBack={back} />}
-          {step === 4 && <MicStep onNext={next} onBack={back} />}
-          {step === 5 && <OutputStep onNext={next} onBack={back} />}
-          {step === 6 && <AppsStep onNext={next} onBack={back} />}
-          {step === 7 && <VoiceStep onNext={next} onBack={back} />}
+          {step === 3 && <MicStep onNext={next} onBack={back} />}
+          {step === 4 && <OutputStep onNext={next} onBack={back} />}
+          {step === 5 && <AppsStep onNext={next} onBack={back} />}
+          {step === 6 && <VoiceStep onNext={next} onBack={back} />}
         </div>
 
         {/* Step dots */}
