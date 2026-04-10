@@ -397,6 +397,14 @@ ipcMain.on('media-key', (_event, _key) => {
   // Media key simulation removed - use Spotify API for playback control instead
 });
 
+// Run arbitrary command (used by close-app fallback)
+ipcMain.handle('run-command', (_event, cmd) => {
+  if (process.platform === 'win32' && typeof cmd === 'string') {
+    exec(cmd, { shell: 'cmd.exe' }, () => {});
+  }
+  return null;
+});
+
 // Clips folder
 ipcMain.on('open-clips-folder', () => {
   shell.openPath(CLIPS_FOLDER);
