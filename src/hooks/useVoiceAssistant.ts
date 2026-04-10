@@ -429,35 +429,17 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      // TTS: Race Kokoro against a short timer. If Kokoro hasn't returned
-      // audio within 2.5s, fall back to instant browser TTS so the user
-      // doesn't sit in silence.
+      // TTS: Kokoro only — no browser voice fallback
       const selectedVoice = getVoiceById(settings.voice);
-      let spoken = false;
 
       if (selectedVoice.kokoroId) {
         const token = createCancelToken();
-        const kokoroPromise = speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined, token);
-        const timeoutPromise = new Promise<'timeout'>(resolve => setTimeout(() => resolve('timeout'), 4000));
-
-        const result = await Promise.race([kokoroPromise, timeoutPromise]);
-
-        if (result === 'timeout') {
-          // Cancel the in-flight Kokoro request so it won't play later
-          cancelToken(token);
-          stopKokoroTTS();
-          console.log('[Jarvis] Kokoro TTS too slow, using browser TTS');
-          const browserUtterance = prepareBrowserUtterance(response, settings.voice);
-          await speakBrowserPrepared(browserUtterance, settings.outputDeviceId);
-          spoken = true;
-        } else {
-          spoken = result;
+        const ok = await speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined, token);
+        if (!ok) {
+          console.warn('[Jarvis] Kokoro TTS failed — no fallback voice');
         }
-      }
-
-      if (!spoken) {
-        const browserUtterance = prepareBrowserUtterance(response, settings.voice);
-        await speakBrowserPrepared(browserUtterance, settings.outputDeviceId);
+      } else {
+        console.warn('[Jarvis] Selected voice has no kokoroId, skipping TTS');
       }
 
       // If the response ends with a question mark, stay in conversation mode
