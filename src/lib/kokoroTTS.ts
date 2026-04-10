@@ -33,7 +33,7 @@ export async function speakWithKokoro(
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
+    const timeout = setTimeout(() => controller.abort(), 3000);
 
     const response = await fetch(
       `${SUPABASE_URL}/functions/v1/kokoro-tts`,
@@ -55,9 +55,8 @@ export async function speakWithKokoro(
       console.warn('[Jarvis] Kokoro TTS error:', response.status, errorData);
 
       // If server is down or not configured, back off for 60s
-      if (response.status >= 500 || response.status === 504) {
-        kokoroOfflineUntil = Date.now() + 60_000;
-      }
+      // Back off for 5 minutes so we don't keep waiting on a dead server
+      kokoroOfflineUntil = Date.now() + 300_000;
 
       return false;
     }
@@ -92,7 +91,7 @@ export async function speakWithKokoro(
     });
   } catch (err) {
     console.warn('[Jarvis] Kokoro TTS failed:', err);
-    kokoroOfflineUntil = Date.now() + 60_000;
+    kokoroOfflineUntil = Date.now() + 300_000;
     return false;
   }
 }

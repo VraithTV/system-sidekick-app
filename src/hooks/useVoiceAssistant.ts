@@ -156,6 +156,7 @@ function notifyVoiceCaptureError(error: unknown) {
 }
 
 const browserVoiceMap: Record<string, { keywords: string[]; gender: 'male' | 'female'; pitch: number; rate: number }> = {
+  // Legacy named voices
   jarvis:  { keywords: ['Daniel', 'Microsoft Mark', 'Google UK English Male'], gender: 'male', pitch: 0.85, rate: 0.92 },
   daniel:  { keywords: ['Daniel', 'Microsoft Mark', 'Google UK English Male'], gender: 'male', pitch: 0.88, rate: 0.94 },
   george:  { keywords: ['George', 'Microsoft George', 'Google UK English Male'], gender: 'male', pitch: 0.92, rate: 0.96 },
@@ -165,6 +166,13 @@ const browserVoiceMap: Record<string, { keywords: string[]; gender: 'male' | 'fe
   eric:    { keywords: ['Google US English', 'Fred', 'Microsoft Eric'], gender: 'male', pitch: 0.9, rate: 0.95 },
   alice:   { keywords: ['Google UK English Female', 'Microsoft Hazel', 'Alice'], gender: 'female', pitch: 1.05, rate: 0.94 },
   sarah:   { keywords: ['Google US English Female', 'Samantha', 'Microsoft Zira'], gender: 'female', pitch: 1.0, rate: 0.93 },
+  // Kokoro voice IDs mapped to distinct browser voices
+  kokoro_bella:    { keywords: ['Samantha', 'Google US English Female', 'Microsoft Zira'], gender: 'female', pitch: 1.0, rate: 0.94 },
+  kokoro_adam:     { keywords: ['Alex', 'Google US English', 'Microsoft David'], gender: 'male', pitch: 0.92, rate: 0.96 },
+  kokoro_emma:     { keywords: ['Google UK English Female', 'Microsoft Hazel', 'Kate'], gender: 'female', pitch: 1.08, rate: 0.92 },
+  kokoro_george:   { keywords: ['George', 'Microsoft George', 'Google UK English Male'], gender: 'male', pitch: 0.88, rate: 0.94 },
+  kokoro_nicole:   { keywords: ['Google US English Female', 'Microsoft Zira', 'Samantha'], gender: 'female', pitch: 0.95, rate: 0.98 },
+  kokoro_michael:  { keywords: ['Daniel', 'Microsoft Mark', 'Google UK English Male'], gender: 'male', pitch: 0.82, rate: 0.90 },
 };
 
 // Workaround for Chrome bug where speechSynthesis stops working after ~15s of inactivity
@@ -179,62 +187,61 @@ function ensureSpeechSynthesisActive() {
   }, 10000);
 }
 
-function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string, langCode?: string): Promise<void> {
+/** Pre-create a SpeechSynthesisUtterance so it's ready to play instantly */
+function prepareBrowserUtterance(text: string, voiceId?: string, langCode?: string): SpeechSynthesisUtterance {
+  const lang = langCode || 'en';
+  const utterance = new SpeechSynthesisUtterance(text);
+  const allVoices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith(lang));
+  const prefs = browserVoiceMap[voiceId || 'daniel'] || browserVoiceMap.daniel;
+
+  utterance.rate = prefs.rate;
+  utterance.pitch = prefs.pitch;
+  utterance.volume = 1;
+
+  let matched: SpeechSynthesisVoice | undefined;
+  for (const kw of prefs.keywords) {
+    matched = allVoices.find((v) => v.name.toLowerCase().includes(kw.toLowerCase()));
+    if (matched) break;
+  }
+  if (!matched) {
+    const genderKw = prefs.gender === 'female' ? 'Female' : 'Male';
+    matched =
+      allVoices.find((v) => v.name.includes(genderKw)) ||
+      allVoices.find((v) => v.name.includes('Google')) ||
+      allVoices.find((v) => v.name.includes('Microsoft')) ||
+      allVoices[0];
+  }
+  if (!matched && lang !== 'en') {
+    const anyVoices = speechSynthesis.getVoices();
+    matched = anyVoices.find((v) => v.lang.startsWith(lang)) || anyVoices[0];
+  }
+  if (matched) utterance.voice = matched;
+
+  return utterance;
+}
+
+/** Speak a pre-created utterance immediately (no async delay) */
+function speakBrowserPrepared(utterance: SpeechSynthesisUtterance, outputDeviceId?: string): Promise<void> {
   return new Promise((resolve) => {
-    // Cancel any ongoing speech first
     speechSynthesis.cancel();
     ensureSpeechSynthesisActive();
 
-    const lang = langCode || 'en';
-    const utterance = new SpeechSynthesisUtterance(text);
-    const allVoices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith(lang));
-    const prefs = browserVoiceMap[voiceId || 'daniel'] || browserVoiceMap.daniel;
-
-    utterance.rate = prefs.rate;
-    utterance.pitch = prefs.pitch;
-    utterance.volume = 1;
-
-    // Try to find a matching voice by keyword
-    let matched: SpeechSynthesisVoice | undefined;
-    for (const kw of prefs.keywords) {
-      matched = allVoices.find((v) => v.name.toLowerCase().includes(kw.toLowerCase()));
-      if (matched) break;
-    }
-    // Fallback: pick any voice in the target language, preferring the right gender
-    if (!matched) {
-      const genderKw = prefs.gender === 'female' ? 'Female' : 'Male';
-      matched =
-        allVoices.find((v) => v.name.includes(genderKw)) ||
-        allVoices.find((v) => v.name.includes('Google')) ||
-        allVoices.find((v) => v.name.includes('Microsoft')) ||
-        allVoices[0];
-    }
-    // Last resort: any voice at all if no language-specific voice found
-    if (!matched && lang !== 'en') {
-      const anyVoices = speechSynthesis.getVoices();
-      matched = anyVoices.find((v) => v.lang.startsWith(lang)) || anyVoices[0];
-    }
-    if (matched) utterance.voice = matched;
-
-    // Safety timeout in case onend never fires (known Chrome bug)
     const safetyTimeout = setTimeout(() => {
       console.warn('[Jarvis] TTS safety timeout reached, resolving.');
       resolve();
-    }, Math.max(text.length * 120, 8000));
+    }, Math.max(utterance.text.length * 120, 8000));
 
-    utterance.onend = () => {
-      clearTimeout(safetyTimeout);
-      resolve();
-    };
-    utterance.onerror = (e) => {
-      clearTimeout(safetyTimeout);
-      console.warn('[Jarvis] TTS error:', e);
-      resolve();
-    };
+    utterance.onend = () => { clearTimeout(safetyTimeout); resolve(); };
+    utterance.onerror = (e) => { clearTimeout(safetyTimeout); console.warn('[Jarvis] TTS error:', e); resolve(); };
 
-    // Minimal delay for Chrome speech engine init
-    setTimeout(() => speechSynthesis.speak(utterance), 10);
+    speechSynthesis.speak(utterance);
   });
+}
+
+/** Legacy speakBrowser for voice preview and other direct calls */
+function speakBrowser(text: string, _outputDeviceId?: string, voiceId?: string, langCode?: string): Promise<void> {
+  const utterance = prepareBrowserUtterance(text, voiceId, langCode);
+  return speakBrowserPrepared(utterance, _outputDeviceId);
 }
 
 // Keep a rolling conversation history for context
@@ -404,22 +411,24 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
       }
 
       // TTS priority: Kokoro → ElevenLabs → browser
+      // Pre-create browser utterance NOW (in gesture context) to avoid Chrome delay
       const selectedVoice = getVoiceById(settings.voice);
+      const browserUtterance = prepareBrowserUtterance(response, settings.voice, settings.language);
       let spoken = false;
 
-      // Try Kokoro first if a Kokoro voice is selected or Kokoro is available
+      // Try Kokoro first if a Kokoro voice is selected AND Kokoro is online
       if (selectedVoice.kokoroId && isKokoroAvailable()) {
         spoken = await speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined);
       }
 
-      // Fall back to ElevenLabs
+      // Fall back to ElevenLabs only if it has a valid voice ID and credits remain
       if (!spoken && selectedVoice.elevenLabsId) {
         spoken = await speakWithElevenLabs(response, settings.voiceId || undefined, settings.outputDeviceId || undefined);
       }
 
-      // Final fallback: browser TTS
+      // Final fallback: browser TTS using pre-created utterance (no delay)
       if (!spoken) {
-        await speakBrowser(response, settings.outputDeviceId || undefined, settings.voice, settings.language);
+        await speakBrowserPrepared(browserUtterance, settings.outputDeviceId);
       }
 
       // If the response ends with a question mark, stay in conversation mode
