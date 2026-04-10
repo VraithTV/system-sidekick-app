@@ -21,12 +21,21 @@ export function isKokoroAvailable(): boolean {
   return true;
 }
 
-export function stopKokoroTTS() {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.src = '';
+function clearCurrentAudio(audio?: HTMLAudioElement) {
+  const target = audio ?? currentAudio;
+  if (!target) return;
+
+  target.pause();
+  target.src = '';
+  target.load();
+
+  if (!audio || currentAudio === audio) {
     currentAudio = null;
   }
+}
+
+export function stopKokoroTTS() {
+  clearCurrentAudio();
 }
 
 /** Create a cancellation token that can be passed to speakWithKokoro */
@@ -87,75 +96,71 @@ export async function warmKokoroVoice(voice = 'af_bella'): Promise<void> {
   await warmupPromise;
 }
 
+function createKokoroStreamUrl(text: string, voice: string) {
+  if (!SUPABASE_URL) return '';
+
+  const url = new URL(`${SUPABASE_URL}/functions/v1/kokoro-tts`);
+  url.searchParams.set('text', text);
+  url.searchParams.set('voice', voice || 'af_bella');
+  return url.toString();
+}
+
 export async function speakWithKokoro(
   text: string,
   voice?: string,
   outputDeviceId?: string,
   token?: KokoroCancelToken,
 ): Promise<boolean> {
-  if (!SUPABASE_URL || !SUPABASE_KEY) return false;
+  if (!SUPABASE_URL) return false;
+  if (token?.cancelled) return false;
 
   try {
-    const controller = new AbortController();
-    if (token) token.controller = controller;
-    const timeout = setTimeout(() => controller.abort(), 12000);
-
-    const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/kokoro-tts`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-        },
-        body: JSON.stringify({ text, voice: voice || 'af_bella' }),
-        signal: controller.signal,
-      }
-    );
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      console.warn('[Jarvis] Kokoro TTS error:', response.status, errorData);
-      return false;
-    }
-
-    if (token?.cancelled) return false;
-
-    const audioBlob = await response.blob();
-    const audioUrl = URL.createObjectURL(audioBlob);
-
-    if (token?.cancelled) {
-      URL.revokeObjectURL(audioUrl);
-      return false;
-    }
+    const audioUrl = createKokoroStreamUrl(text, voice || 'af_bella');
+    if (!audioUrl) return false;
 
     return await new Promise<boolean>((resolve) => {
+      const controller = new AbortController();
+      if (token) token.controller = controller;
+
       const audio = new Audio();
       currentAudio = audio;
+      audio.preload = 'auto';
+
+      let settled = false;
+      const startTimeout = setTimeout(() => controller.abort(), 8000);
+
+      const finish = (result: boolean) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(startTimeout);
+        controller.signal.removeEventListener('abort', handleAbort);
+        audio.onplaying = null;
+        audio.onended = null;
+        audio.onerror = null;
+        clearCurrentAudio(audio);
+        resolve(result);
+      };
+
+      const handleAbort = () => finish(false);
+      controller.signal.addEventListener('abort', handleAbort, { once: true });
 
       if (outputDeviceId && 'setSinkId' in audio) {
         (audio as any).setSinkId(outputDeviceId).catch(() => {});
       }
 
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-        currentAudio = null;
-        resolve(true);
+      audio.onplaying = () => {
+        clearTimeout(startTimeout);
       };
-      audio.onerror = () => {
-        URL.revokeObjectURL(audioUrl);
-        currentAudio = null;
-        resolve(false);
-      };
+      audio.onended = () => finish(true);
+      audio.onerror = () => finish(false);
+
+      if (token?.cancelled) {
+        controller.abort();
+        return;
+      }
 
       audio.src = audioUrl;
-      audio.play().catch(() => {
-        URL.revokeObjectURL(audioUrl);
-        currentAudio = null;
-        resolve(false);
-      });
+      audio.play().catch(() => finish(false));
     });
   } catch (err) {
     if (token?.cancelled || (err instanceof DOMException && err.name === 'AbortError')) {
