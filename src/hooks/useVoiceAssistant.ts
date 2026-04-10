@@ -394,6 +394,16 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         }
       }
 
+      // Start TTS fetch immediately BEFORE setting state to 'speaking'
+      // This overlaps audio download with state transitions
+      const selectedVoice = getVoiceById(settings.voice);
+      let ttsPromise: Promise<boolean> | null = null;
+
+      if (selectedVoice.kokoroId) {
+        // Fire off TTS request immediately, don't wait
+        ttsPromise = speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined);
+      }
+
       setState('speaking');
       // In private mode, don't log commands
       if (mode !== 'private') {
@@ -406,15 +416,13 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      // TTS: Always use Kokoro for the selected voice
-      const selectedVoice = getVoiceById(settings.voice);
+      // Now await the TTS that was already fetching
       let spoken = false;
-
-      if (selectedVoice.kokoroId) {
-        spoken = await speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined);
+      if (ttsPromise) {
+        spoken = await ttsPromise;
       }
 
-      // Only use browser TTS if voice has no Kokoro ID at all
+      // Only use browser TTS if Kokoro failed or voice has no Kokoro ID
       if (!spoken) {
         const browserUtterance = prepareBrowserUtterance(response, settings.voice);
         await speakBrowserPrepared(browserUtterance, settings.outputDeviceId);

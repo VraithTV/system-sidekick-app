@@ -30,7 +30,7 @@ export async function speakWithKokoro(
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const timeout = setTimeout(() => controller.abort(), 20000);
 
     const response = await fetch(
       `${SUPABASE_URL}/functions/v1/kokoro-tts`,
@@ -53,11 +53,12 @@ export async function speakWithKokoro(
       return false;
     }
 
+    // Use blob approach for immediate playback
     const audioBlob = await response.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
 
     return await new Promise<boolean>((resolve) => {
-      const audio = new Audio(audioUrl);
+      const audio = new Audio();
       currentAudio = audio;
 
       if (outputDeviceId && 'setSinkId' in audio) {
@@ -75,6 +76,8 @@ export async function speakWithKokoro(
         resolve(false);
       };
 
+      // Set src and play as fast as possible
+      audio.src = audioUrl;
       audio.play().catch(() => {
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
