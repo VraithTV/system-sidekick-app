@@ -620,6 +620,72 @@ function execPromise(cmd) {
   });
 }
 
+// ─── Discord Rich Presence ───────────────────────────────────
+const DiscordRPC = require('discord-rpc');
+
+const DISCORD_CLIENT_ID = '1360649218653225131';
+let rpcClient = null;
+let rpcReady = false;
+const rpcStartTimestamp = new Date();
+
+function initDiscordRPC() {
+  try {
+    rpcClient = new DiscordRPC.Client({ transport: 'ipc' });
+
+    rpcClient.on('ready', () => {
+      rpcReady = true;
+      console.log('[Discord RPC] Connected as', rpcClient.user?.username);
+      updateDiscordPresence();
+    });
+
+    rpcClient.on('disconnected', () => {
+      rpcReady = false;
+      console.log('[Discord RPC] Disconnected, retrying in 30s...');
+      setTimeout(initDiscordRPC, 30000);
+    });
+
+    rpcClient.login({ clientId: DISCORD_CLIENT_ID }).catch((err) => {
+      console.log('[Discord RPC] Could not connect:', err.message || err);
+      rpcReady = false;
+      setTimeout(initDiscordRPC, 30000);
+    });
+  } catch (err) {
+    console.log('[Discord RPC] Init error:', err.message || err);
+    setTimeout(initDiscordRPC, 30000);
+  }
+}
+
+function updateDiscordPresence(details, state) {
+  if (!rpcClient || !rpcReady) return;
+  try {
+    rpcClient.setActivity({
+      details: details || 'Using Jarvis AI',
+      state: state || `v${APP_VERSION} BETA`,
+      startTimestamp: rpcStartTimestamp,
+      largeImageKey: 'jarvis_logo',
+      largeImageText: `Jarvis AI BETA ${APP_VERSION}`,
+      smallImageKey: 'status_online',
+      smallImageText: 'Online',
+      instance: false,
+    });
+  } catch (err) {
+    console.log('[Discord RPC] Activity error:', err.message);
+  }
+}
+
+function destroyDiscordRPC() {
+  if (rpcClient) {
+    try { rpcClient.destroy(); } catch {}
+    rpcClient = null;
+    rpcReady = false;
+  }
+}
+
+// Allow renderer to update presence details
+ipcMain.on('discord-presence-update', (_event, { details, state }) => {
+  updateDiscordPresence(details, state);
+});
+
 // ─── App Lifecycle ───────────────────────────────────────────
 
 app.on('before-quit', () => { forceQuit = true; });
@@ -630,11 +696,13 @@ app.whenReady().then(() => {
   createWindow();
   registerShortcuts();
   startAutoUpdateSchedule();
+  initDiscordRPC();
 });
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   stopAutoUpdateSchedule();
+  destroyDiscordRPC();
 });
 
 app.on('window-all-closed', () => {
