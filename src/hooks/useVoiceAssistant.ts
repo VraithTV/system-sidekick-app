@@ -187,15 +187,16 @@ function ensureSpeechSynthesisActive() {
 }
 
 /** Pre-create a SpeechSynthesisUtterance so it's ready to play instantly */
-function prepareBrowserUtterance(text: string, voiceId?: string, langCode?: string): SpeechSynthesisUtterance {
-  const lang = langCode || 'en';
+function prepareBrowserUtterance(text: string, voiceId?: string, _langCode?: string): SpeechSynthesisUtterance {
+  // Always use English voices for TTS output — the UI language setting is for the interface, not speech
   const utterance = new SpeechSynthesisUtterance(text);
-  const allVoices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith(lang));
+  const allVoices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith('en'));
   const prefs = browserVoiceMap[voiceId || 'daniel'] || browserVoiceMap.daniel;
 
   utterance.rate = prefs.rate;
   utterance.pitch = prefs.pitch;
   utterance.volume = 1;
+  utterance.lang = 'en-US';
 
   let matched: SpeechSynthesisVoice | undefined;
   for (const kw of prefs.keywords) {
@@ -209,10 +210,6 @@ function prepareBrowserUtterance(text: string, voiceId?: string, langCode?: stri
       allVoices.find((v) => v.name.includes('Google')) ||
       allVoices.find((v) => v.name.includes('Microsoft')) ||
       allVoices[0];
-  }
-  if (!matched && lang !== 'en') {
-    const anyVoices = speechSynthesis.getVoices();
-    matched = anyVoices.find((v) => v.lang.startsWith(lang)) || anyVoices[0];
   }
   if (matched) utterance.voice = matched;
 
@@ -409,10 +406,9 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      // TTS priority: Kokoro → ElevenLabs → browser
-      // Pre-create browser utterance NOW (in gesture context) to avoid Chrome delay
+      // TTS priority: Kokoro → browser (ElevenLabs removed)
       const selectedVoice = getVoiceById(settings.voice);
-      const browserUtterance = prepareBrowserUtterance(response, settings.voice, settings.language);
+      const browserUtterance = prepareBrowserUtterance(response, settings.voice);
       let spoken = false;
 
       // Try Kokoro first if a Kokoro voice is selected AND Kokoro is online
@@ -420,12 +416,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         spoken = await speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined);
       }
 
-      // Fall back to ElevenLabs only if it has a valid voice ID and credits remain
-      if (!spoken && selectedVoice.elevenLabsId) {
-        spoken = await speakWithElevenLabs(response, selectedVoice.elevenLabsId || undefined, settings.outputDeviceId || undefined);
-      }
-
-      // Final fallback: browser TTS using pre-created utterance (no delay)
+      // Fallback: browser TTS using pre-created utterance (no delay)
       if (!spoken) {
         await speakBrowserPrepared(browserUtterance, settings.outputDeviceId);
       }
@@ -557,7 +548,6 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     captureStopRef.current?.();
     captureStopRef.current = null;
     stopKokoroTTS();
-    stopElevenLabsTTS();
     speechSynthesis.cancel();
     setSystemStatus({ micActive: false });
     setState('idle');
@@ -571,13 +561,6 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     // Try Kokoro if voice has a kokoroId
     if (voice?.kokoroId) {
       const ok = await speakWithKokoro(previewText, voice.kokoroId, settings.outputDeviceId || undefined);
-      if (ok) return;
-    }
-
-    // Try ElevenLabs
-    const elevenLabsId = voice?.elevenLabsId || voiceIdOrElevenLabsId;
-    if (elevenLabsId) {
-      const ok = await speakWithElevenLabs(previewText, elevenLabsId, settings.outputDeviceId || undefined);
       if (ok) return;
     }
 
