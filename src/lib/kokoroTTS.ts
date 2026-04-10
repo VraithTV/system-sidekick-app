@@ -13,6 +13,33 @@ export interface KokoroCancelToken {
   controller: AbortController | null;
 }
 
+export interface KokoroTimingTrace {
+  traceId: string;
+  pipelineStartedAt: number;
+  speakingStartedAt: number;
+}
+
+function getTimingNow() {
+  return typeof performance !== 'undefined' ? performance.now() : Date.now();
+}
+
+function logKokoroTiming(
+  trace: KokoroTimingTrace | undefined,
+  stage: string,
+  details?: Record<string, unknown>,
+) {
+  if (!trace) return;
+
+  const now = getTimingNow();
+  const payload: Record<string, unknown> = {
+    ...(details || {}),
+    totalMs: Math.round(now - trace.pipelineStartedAt),
+    speakingMs: Math.round(now - trace.speakingStartedAt),
+  };
+
+  console.log(`[Jarvis][Timing ${trace.traceId}] ${stage}`, payload);
+}
+
 export function isKokoroAvailable(): boolean {
   return true;
 }
@@ -39,8 +66,15 @@ export async function speakWithKokoro(
   voice?: string,
   outputDeviceId?: string,
   token?: KokoroCancelToken,
+  trace?: KokoroTimingTrace,
 ): Promise<boolean> {
   if (!SUPABASE_URL || !SUPABASE_KEY) return false;
+
+  const requestStartedAt = getTimingNow();
+  logKokoroTiming(trace, 'tts:request:start', {
+    voice: voice || 'af_bella',
+    textLength: text.length,
+  });
 
   try {
     const controller = new AbortController();
@@ -62,19 +96,38 @@ export async function speakWithKokoro(
     );
     clearTimeout(timeout);
 
+    logKokoroTiming(trace, 'tts:response:headers', {
+      status: response.status,
+      requestMs: Math.round(getTimingNow() - requestStartedAt),
+    });
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
+      logKokoroTiming(trace, 'tts:response:error', {
+        status: response.status,
+        requestMs: Math.round(getTimingNow() - requestStartedAt),
+        errorData,
+      });
       console.warn('[Jarvis] Kokoro TTS error:', response.status, errorData);
       return false;
     }
 
-    if (token?.cancelled) return false;
+    if (token?.cancelled) {
+      logKokoroTiming(trace, 'tts:cancelled-before-blob');
+      return false;
+    }
 
     const audioBlob = await response.blob();
+    logKokoroTiming(trace, 'tts:response:blob', {
+      requestMs: Math.round(getTimingNow() - requestStartedAt),
+      blobBytes: audioBlob.size,
+    });
+
     const audioUrl = URL.createObjectURL(audioBlob);
 
     if (token?.cancelled) {
       URL.revokeObjectURL(audioUrl);
+      logKokoroTiming(trace, 'tts:cancelled-before-play');
       return false;
     }
 
@@ -86,28 +139,55 @@ export async function speakWithKokoro(
         (audio as any).setSinkId(outputDeviceId).catch(() => {});
       }
 
+      audio.onplaying = () => {
+        logKokoroTiming(trace, 'tts:audio:playing', {
+          requestMs: Math.round(getTimingNow() - requestStartedAt),
+        });
+      };
       audio.onended = () => {
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
+        logKokoroTiming(trace, 'tts:audio:ended', {
+          requestMs: Math.round(getTimingNow() - requestStartedAt),
+        });
         resolve(true);
       };
       audio.onerror = () => {
         URL.revokeObjectURL(audioUrl);
         currentAudio = null;
+        logKokoroTiming(trace, 'tts:audio:error', {
+          requestMs: Math.round(getTimingNow() - requestStartedAt),
+        });
         resolve(false);
       };
 
       audio.src = audioUrl;
-      audio.play().catch(() => {
-        URL.revokeObjectURL(audioUrl);
-        currentAudio = null;
-        resolve(false);
-      });
+      audio.play()
+        .then(() => {
+          logKokoroTiming(trace, 'tts:audio:play-resolved', {
+            requestMs: Math.round(getTimingNow() - requestStartedAt),
+          });
+        })
+        .catch(() => {
+          URL.revokeObjectURL(audioUrl);
+          currentAudio = null;
+          logKokoroTiming(trace, 'tts:audio:play-rejected', {
+            requestMs: Math.round(getTimingNow() - requestStartedAt),
+          });
+          resolve(false);
+        });
     });
   } catch (err) {
     if (token?.cancelled || (err instanceof DOMException && err.name === 'AbortError')) {
+      logKokoroTiming(trace, 'tts:aborted', {
+        requestMs: Math.round(getTimingNow() - requestStartedAt),
+      });
       return false;
     }
+    logKokoroTiming(trace, 'tts:exception', {
+      requestMs: Math.round(getTimingNow() - requestStartedAt),
+      error: err instanceof Error ? err.message : String(err),
+    });
     console.warn('[Jarvis] Kokoro TTS failed:', err);
     return false;
   } finally {
