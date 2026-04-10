@@ -290,11 +290,16 @@ ipcMain.handle('open-app', (_event, appId) => {
     edge: 'msedge',
     firefox: 'firefox',
     brave: 'brave',
+    'opera-gx': null, // handled separately below
+    opera: null,
     explorer: 'explorer',
     notepad: 'notepad',
     'task-manager': 'taskmgr',
     obs: 'obs64',
     terminal: 'wt',
+    vivaldi: 'vivaldi',
+    blender: 'blender',
+    vlc: 'vlc',
   };
 
   const urlLaunchMap = {
@@ -307,6 +312,7 @@ ipcMain.handle('open-app', (_event, appId) => {
     whatsapp: 'whatsapp:',
     word: 'ms-word:',
     excel: 'ms-excel:',
+    powerpoint: 'ms-powerpoint:',
     youtube: 'https://youtube.com',
     netflix: 'https://netflix.com',
     twitch: 'https://twitch.tv',
@@ -314,7 +320,36 @@ ipcMain.handle('open-app', (_event, appId) => {
     github: 'https://github.com',
     chatgpt: 'https://chat.openai.com',
     calculator: 'calculator:',
+    notion: 'notion:',
+    figma: 'https://figma.com',
+    teams: 'msteams:',
+    zoom: 'zoommtg:',
+    minecraft: 'minecraft:',
+    'epic-games': 'com.epicgames.launcher:',
+    fortnite: 'com.epicgames.launcher://apps/fn',
+    valorant: 'valorant:',
+    roblox: 'roblox:',
+    battlenet: 'battlenet:',
+    xbox: 'xbox:',
   };
+
+  // Opera GX needs special handling - it installs in AppData, not PATH
+  if (process.platform === 'win32' && (appId === 'opera-gx' || appId === 'opera' || appId === 'operagx')) {
+    const localAppData = process.env.LOCALAPPDATA || '';
+    const operaGxPaths = [
+      path.join(localAppData, 'Programs', 'Opera GX', 'opera.exe'),
+      path.join(localAppData, 'Programs', 'Opera GX', 'launcher.exe'),
+    ];
+    for (const p of operaGxPaths) {
+      if (fs.existsSync(p)) {
+        exec(`"${p}"`, { shell: 'cmd.exe' }, () => {});
+        return null;
+      }
+    }
+    // Fallback: try start command
+    exec('start "" "opera"', { shell: 'cmd.exe' }, () => {});
+    return null;
+  }
 
   const command = windowsCommandMap[appId];
   if (process.platform === 'win32' && command) {
@@ -326,6 +361,34 @@ ipcMain.handle('open-app', (_event, appId) => {
   if (uri) {
     shell.openExternal(uri).catch(() => {});
   }
+  return null;
+});
+
+// Close app by ID or process name
+ipcMain.handle('close-app', (_event, appId) => {
+  if (process.platform !== 'win32') return null;
+  
+  const processNameMap = {
+    chrome: 'chrome.exe',
+    edge: 'msedge.exe',
+    firefox: 'firefox.exe',
+    brave: 'brave.exe',
+    'opera-gx': 'opera.exe',
+    opera: 'opera.exe',
+    discord: 'Discord.exe',
+    spotify: 'Spotify.exe',
+    steam: 'steam.exe',
+    obs: 'obs64.exe',
+    vscode: 'Code.exe',
+    notepad: 'notepad.exe',
+    slack: 'slack.exe',
+    vlc: 'vlc.exe',
+    blender: 'blender.exe',
+    explorer: 'explorer.exe',
+  };
+
+  const processName = processNameMap[appId] || `${appId}.exe`;
+  exec(`taskkill /im "${processName}" /f`, { shell: 'cmd.exe' }, () => {});
   return null;
 });
 
