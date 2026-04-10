@@ -148,7 +148,7 @@ export const DashboardView = () => {
 
           {!micOn && (
             <button
-              onClick={enableClapDetection}
+              onClick={toggleClapDetection}
               className={`mt-4 flex items-center gap-2 rounded-full px-5 py-2 font-display text-[10px] tracking-[0.15em] uppercase transition-all duration-300 ${
                 clapActive
                   ? 'bg-primary/10 text-primary border border-primary/30'
@@ -210,7 +210,7 @@ export const DashboardView = () => {
 
           {!micOn && (
             <button
-              onClick={enableClapDetection}
+              onClick={toggleClapDetection}
               className={`mt-5 flex items-center gap-2 rounded-full px-6 py-2.5 font-display text-[10px] tracking-[0.15em] uppercase transition-all duration-300 ${
                 clapActive
                   ? 'bg-primary/10 text-primary border border-primary/30'
