@@ -423,10 +423,14 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
 
       // TTS: Kokoro only — no browser voice fallback
       const selectedVoice = getVoiceById(settings.voice);
+      const spokenResponse = response
+        .replace(/\s+/g, ' ')
+        .split(/(?<=[.!?])\s+/)[0]
+        ?.trim() || response;
 
       if (selectedVoice.kokoroId) {
         const token = createCancelToken();
-        const ok = await speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined, token);
+        const ok = await speakWithKokoro(spokenResponse, selectedVoice.kokoroId, settings.outputDeviceId || undefined, token);
         if (!ok) {
           console.warn('[Jarvis] Kokoro TTS failed — no fallback voice');
         }
