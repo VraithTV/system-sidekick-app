@@ -29,7 +29,10 @@ export const VoiceAssistantManager = () => {
 
   useEffect(() => {
     if (!settings.alwaysListening) return;
-    if (isElectron && !hasElectronMicPrimed()) return;
+    // In browser (non-Electron), don't auto-start mic - it requires a user gesture.
+    // The user must click the "Enable Microphone" button on the dashboard.
+    if (!isElectron) return;
+    if (!hasElectronMicPrimed()) return;
     setSystemStatus({ micActive: true });
   }, [settings.alwaysListening, setSystemStatus]);
 

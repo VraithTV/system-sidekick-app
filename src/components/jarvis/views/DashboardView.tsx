@@ -4,12 +4,14 @@ import { useJarvisStore } from '@/store/jarvisStore';
 import { Mic, MicOff } from 'lucide-react';
 import { requestVoiceAssistantStart, requestVoiceAssistantStop } from '@/hooks/useVoiceAssistant';
 import { createT } from '@/lib/i18n';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const DashboardView = () => {
   const { settings, systemStatus, state } = useJarvisStore();
   const micOn = systemStatus.micActive;
   const [time, setTime] = useState(new Date());
   const t = createT(settings.language || 'en');
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
@@ -44,6 +46,60 @@ export const DashboardView = () => {
             ? t('dash.responding')
             : t('dash.sayToActivate', { wake })
     : t('dash.tapToStart', { wake });
+
+  if (isMobile) {
+    return (
+      <div className="flex-1 flex flex-col bg-background overflow-y-auto">
+        {/* Clock at top */}
+        <div className="text-center pt-6 pb-4">
+          <p className="font-display text-3xl tracking-[0.08em] text-primary glow-text">{timeStr}</p>
+          <p className="font-mono text-[10px] text-muted-foreground/40 mt-1.5 tracking-[0.25em] uppercase">{dateStr}</p>
+        </div>
+
+        {/* Orb centered */}
+        <div className="flex-1 flex flex-col items-center justify-center px-6">
+          <div className="relative">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.06)_0%,transparent_50%)] scale-[2]" />
+            <AssistantOrb />
+          </div>
+
+          <button
+            onClick={toggleMic}
+            className={`mt-8 flex items-center gap-3 rounded-full px-7 py-3 font-display text-xs tracking-[0.18em] uppercase transition-all duration-300 ${
+              micOn
+                ? 'bg-primary/15 text-primary border border-primary/30 shadow-[0_0_28px_hsl(var(--primary)/0.15)]'
+                : 'text-primary border border-primary/25 hover:bg-primary/8 hover:border-primary/40'
+            }`}
+          >
+            {micOn ? <Mic className="h-4 w-4 animate-pulse" /> : <MicOff className="h-4 w-4" />}
+            {statusLabel}
+          </button>
+
+          <p className="mt-4 text-center text-sm text-foreground/50">{hintLabel}</p>
+          <p className="mt-1 text-center font-mono text-[10px] text-muted-foreground/40 px-4">
+            {micOn
+              ? `Try: "Hey ${wake}, what time is it?"`
+              : `Try: "${wake}, open Chrome"`}
+          </p>
+        </div>
+
+        {/* Session info at bottom */}
+        <div className="px-6 pb-6 pt-2">
+          <div className="rounded-xl border border-border/40 bg-card/30 p-4">
+            <p className="font-display text-[9px] tracking-[0.25em] text-primary/60 uppercase mb-2">{t('dash.session')}</p>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className={`w-1.5 h-1.5 rounded-full ${micOn ? 'bg-success shadow-[0_0_6px_hsl(var(--success)/0.5)]' : 'bg-muted-foreground/30'}`} />
+                <span className="font-mono text-[10px] text-muted-foreground">{micOn ? t('dash.active') : t('dash.idle')}</span>
+              </div>
+              <span className="font-mono text-[10px] text-primary/70">{t('status.online')}</span>
+              <span className="font-mono text-[10px] text-muted-foreground">~120ms</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex bg-background overflow-hidden">
