@@ -554,22 +554,60 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
   }, [setState, setSystemStatus]);
 
   const previewVoice = useCallback(async (voiceIdOrElevenLabsId: string) => {
-    const { voiceOptions } = await import('@/lib/voices');
     const voice = voiceOptions.find((v) => v.id === voiceIdOrElevenLabsId)
       ?? (voiceIdOrElevenLabsId
         ? voiceOptions.find((v) => v.elevenLabsId === voiceIdOrElevenLabsId)
         : undefined);
     const previewText = 'At your service. How can I help you today?';
+    const localId = voice?.id || voiceOptions[0]?.id || 'kokoro_bella';
 
-    // Try Kokoro if voice has a kokoroId
-    if (voice?.kokoroId) {
-      const ok = await speakWithKokoro(previewText, voice.kokoroId, settings.outputDeviceId || undefined);
-      if (ok) return;
+    // Pre-create browser utterance NOW (in user gesture context) so fallback is instant
+    const browserUtterance = prepareBrowserUtterance(previewText, localId);
+
+    // Try Kokoro with a short timeout for preview (3s) to avoid long waits
+    if (voice?.kokoroId && isKokoroAvailable()) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+        const response = await fetch(
+          `${supabaseUrl}/functions/v1/kokoro-tts`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: supabaseKey,
+              Authorization: `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({ text: previewText, voice: voice.kokoroId }),
+            signal: controller.signal,
+          }
+        );
+        clearTimeout(timeout);
+
+        if (response.ok) {
+          const audioBlob = await response.blob();
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+          if (settings.outputDeviceId && 'setSinkId' in audio) {
+            (audio as any).setSinkId(settings.outputDeviceId).catch(() => {});
+          }
+          await new Promise<void>((resolve) => {
+            audio.onended = () => { URL.revokeObjectURL(audioUrl); resolve(); };
+            audio.onerror = () => { URL.revokeObjectURL(audioUrl); resolve(); };
+            audio.play().catch(() => { URL.revokeObjectURL(audioUrl); resolve(); });
+          });
+          return;
+        }
+      } catch {
+        // Timed out or failed, fall through to browser TTS instantly
+      }
     }
 
-    // Browser fallback
-    const localId = voice?.id || voiceOptions[0]?.id || 'kokoro_bella';
-    await speakBrowser(previewText, settings.outputDeviceId || undefined, localId);
+    // Instant browser fallback using pre-created utterance
+    await speakBrowserPrepared(browserUtterance, settings.outputDeviceId);
   }, [settings.outputDeviceId]);
 
   useEffect(() => {
