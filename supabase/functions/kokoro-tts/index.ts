@@ -13,37 +13,21 @@ function jsonResponse(body: Record<string, unknown>, status: number) {
   });
 }
 
-async function getPayload(req: Request) {
-  if (req.method === "GET") {
-    const url = new URL(req.url);
-    return {
-      text: url.searchParams.get("text") ?? "",
-      voice: url.searchParams.get("voice") ?? "",
-    };
-  }
-
-  const body = await req.json().catch(() => ({}));
-  return {
-    text: typeof body.text === "string" ? body.text : "",
-    voice: typeof body.voice === "string" ? body.voice : "",
-  };
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { text, voice } = await getPayload(req);
+    const { text, voice } = await req.json();
 
-    if (!text.trim()) {
+    if (typeof text !== "string" || !text.trim()) {
       return jsonResponse({ error: "Text is required." }, 400);
     }
 
     const kokoroUrl = Deno.env.get("KOKORO_TTS_URL");
     if (!kokoroUrl) {
-      return jsonResponse({ error: "KOKORO_TTS_URL is not configured.", fallback: "elevenlabs" }, 500);
+      return jsonResponse({ error: "KOKORO_TTS_URL is not configured.", fallback: true }, 500);
     }
 
     const baseUrl = kokoroUrl.replace(/\/+$/, "").replace(/\/(docs|v1)(\/.*)?$/, "");
@@ -52,45 +36,36 @@ serve(async (req) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
 
-    let response: Response;
-    try {
-      response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          input: text.trim(),
-          voice: voice || "af_bella",
-          model: "kokoro",
-          response_format: "mp3",
-          speed: 1.0,
-        }),
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        input: text.trim(),
+        voice: voice || "af_bella",
+        model: "kokoro",
+        response_format: "mp3",
+        speed: 1.0,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
 
     if (!response.ok) {
       const rawError = await response.text();
       console.error("Kokoro TTS error:", response.status, rawError);
       return jsonResponse(
-        {
-          error: "Kokoro TTS server returned an error.",
-          details: rawError,
-          fallback: "elevenlabs",
-        },
-        502,
+        { error: "Kokoro TTS server returned an error.", details: rawError, fallback: true },
+        502
       );
     }
 
-    if (!response.body) {
-      return jsonResponse({ error: "Kokoro TTS server returned no audio stream.", fallback: "elevenlabs" }, 502);
-    }
+    const audioBuffer = await response.arrayBuffer();
 
-    return new Response(response.body, {
+    return new Response(audioBuffer, {
       headers: {
         ...corsHeaders,
-        "Content-Type": response.headers.get("Content-Type") ?? "audio/mpeg",
+        "Content-Type": "audio/mpeg",
         "Cache-Control": "no-store",
       },
     });
@@ -101,9 +76,9 @@ serve(async (req) => {
     return jsonResponse(
       {
         error: isTimeout ? "Kokoro TTS server timed out." : (error instanceof Error ? error.message : "Unknown error"),
-        fallback: "elevenlabs",
+        fallback: true,
       },
-      isTimeout ? 504 : 500,
+      isTimeout ? 504 : 500
     );
   }
 });
