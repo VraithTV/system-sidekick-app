@@ -1,10 +1,11 @@
 import { useJarvisStore } from '@/store/jarvisStore';
-import { LayoutDashboard, AppWindow, Film, Zap, Settings, Circle, Activity, Palette } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, AppWindow, Film, Zap, Settings, Circle, Activity, Palette } from 'lucide-react';
 import { JarvisLogo } from '@/components/jarvis/JarvisLogo';
 import { createT } from '@/lib/i18n';
 
 const navKeys = [
   { id: 'dashboard', key: 'nav.dashboard', icon: LayoutDashboard },
+  { id: 'chat', key: 'nav.chat', icon: MessageSquare },
   { id: 'apps', key: 'nav.apps', icon: AppWindow },
   { id: 'clips', key: 'nav.clips', icon: Film },
   { id: 'routines', key: 'nav.routines', icon: Zap },

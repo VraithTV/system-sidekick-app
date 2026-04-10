@@ -6,6 +6,7 @@ const translations: Record<string, Record<string, string>> = {
   en: {
     // Sidebar
     'nav.dashboard': 'Dashboard',
+    'nav.chat': 'Chat',
     'nav.apps': 'Apps',
     'nav.clips': 'Clips',
     'nav.routines': 'Routines',
@@ -15,6 +16,12 @@ const translations: Record<string, Record<string, string>> = {
     'status.micOn': 'MIC ON',
     'status.micOff': 'MIC OFF',
     'status.online': 'ONLINE',
+    // Chat
+    'chat.title': 'CHAT',
+    'chat.subtitle': 'Send quiet prompts to Jarvis without using your microphone.',
+    'chat.empty': 'Type a message to chat with Jarvis',
+    'chat.thinking': 'Thinking...',
+    'chat.placeholder': 'Message {wake}...',
     // Dashboard
     'dash.enableMic': 'Enable Microphone',
     'dash.standby': 'Standby',

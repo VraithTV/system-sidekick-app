@@ -1,18 +1,20 @@
 import { create } from 'zustand';
 import type { AssistantState, Command, AppShortcut, Routine, Clip, SystemStatus, JarvisSettings, JarvisMode } from '@/types/jarvis';
 import { getDefaultApps } from '@/lib/commonApps';
+import { voiceOptions } from '@/lib/voices';
 
 const APPS_KEY = 'jarvis_apps';
 const APPS_VERSION_KEY = 'jarvis_apps_version';
 const CURRENT_APPS_VERSION = 3; // bump to force re-seed defaults with new gaming apps
 const SETTINGS_KEY = 'jarvis_settings';
+const DEFAULT_VOICE_ID = voiceOptions[0]?.id || 'kokoro_bella';
 
 const defaultSettings: JarvisSettings = {
   wakeName: 'Jarvis',
   wakeAliases: [],
   wakeSensitivity: 0.55,
-  voice: 'daniel',
-  voiceId: 'onwK4e9ZLuTAKqWW03F9',
+  voice: DEFAULT_VOICE_ID,
+  voiceId: '',
   language: 'en',
   startOnBoot: true,
   alwaysListening: true,
@@ -48,9 +50,13 @@ function loadSettings(): JarvisSettings {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return defaultSettings;
     const parsed = JSON.parse(raw) as Partial<JarvisSettings>;
+    const hasValidVoice = typeof parsed.voice === 'string' && voiceOptions.some((voice) => voice.id === parsed.voice);
+
     return {
       ...defaultSettings,
       ...parsed,
+      voice: hasValidVoice ? (parsed.voice as string) : defaultSettings.voice,
+      voiceId: hasValidVoice ? (typeof parsed.voiceId === 'string' ? parsed.voiceId : defaultSettings.voiceId) : defaultSettings.voiceId,
       wakeAliases: Array.isArray(parsed.wakeAliases) ? parsed.wakeAliases : defaultSettings.wakeAliases,
     };
   } catch {

@@ -86,13 +86,13 @@ export function ChatInput() {
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-0">
         {messages.length === 0 && (
           <p className="text-center text-muted-foreground/40 text-xs mt-8 font-mono">
-            Type a message to chat with Jarvis
+            {t('chat.empty')}
           </p>
         )}
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-[85%] rounded-xl px-3 py-2 text-xs ${
+              className={`max-w-[85%] whitespace-pre-wrap rounded-xl px-3 py-2 text-xs ${
                 msg.role === 'user'
                   ? 'bg-primary/20 text-primary border border-primary/20'
                   : 'bg-card/60 text-foreground/80 border border-border/30'
@@ -106,7 +106,7 @@ export function ChatInput() {
           <div className="flex justify-start">
             <div className="bg-card/60 border border-border/30 rounded-xl px-3 py-2 flex items-center gap-2">
               <Loader2 className="w-3 h-3 animate-spin text-primary/60" />
-              <span className="text-xs text-muted-foreground/60">Thinking...</span>
+              <span className="text-xs text-muted-foreground/60">{t('chat.thinking')}</span>
             </div>
           </div>
         )}
@@ -124,7 +124,7 @@ export function ChatInput() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={`Message ${settings.wakeName}...`}
+            placeholder={t('chat.placeholder', { wake: settings.wakeName })}
             disabled={loading}
             className="flex-1 bg-card/40 border border-border/30 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
           />
