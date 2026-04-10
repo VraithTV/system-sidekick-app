@@ -1,22 +1,18 @@
 import { useState, useEffect } from 'react';
+import { JarvisLogo } from './JarvisLogo';
 
 const DOWNLOAD_MESSAGES = [
-  'Downloading update package...',
-  'Downloading update package...',
-  'Verifying file integrity...',
-  'Extracting new modules...',
-  'Applying system patches...',
-];
-
-const INSTALL_MESSAGES = [
-  'Launching installer...',
-  'Finalizing installation...',
+  'Downloading update...',
+  'Downloading update...',
+  'Verifying integrity...',
+  'Extracting modules...',
+  'Applying patches...',
 ];
 
 type UpdateProgressScreenProps = {
   open: boolean;
   newVersion: string;
-  downloadProgress: number; // 0-100 real progress from Electron
+  downloadProgress: number;
   installState: 'downloading' | 'installing' | 'failed' | 'done';
   onOpenFolder?: () => void;
   onDismiss?: () => void;
@@ -32,7 +28,6 @@ export const UpdateProgressScreen = ({
 }: UpdateProgressScreenProps) => {
   const [displayProgress, setDisplayProgress] = useState(0);
 
-  // Smooth out the progress display
   useEffect(() => {
     if (!open) { setDisplayProgress(0); return; }
     if (installState === 'installing' || installState === 'done') {
@@ -45,10 +40,9 @@ export const UpdateProgressScreen = ({
   if (!open) return null;
 
   const getMessage = () => {
-    if (installState === 'failed') return 'Install could not launch automatically. Please run the installer manually.';
+    if (installState === 'failed') return 'Install could not launch. Please run the installer manually.';
     if (installState === 'done') return 'Update complete. Restarting...';
     if (installState === 'installing') return 'Launching installer...';
-    // downloading
     const idx = Math.min(
       Math.floor((downloadProgress / 100) * DOWNLOAD_MESSAGES.length),
       DOWNLOAD_MESSAGES.length - 1
@@ -57,76 +51,59 @@ export const UpdateProgressScreen = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center"
-      style={{ background: '#0e1117' }}
-    >
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-background">
       <div className="flex flex-col items-center">
-        {/* Orb */}
-        <div className="relative w-[120px] h-[120px] mb-8">
-          <div
-            className="w-[120px] h-[120px] rounded-full"
-            style={{
-              background: installState === 'failed'
-                ? 'radial-gradient(circle at 35% 35%, #f87171, #ef4444, #b91c1c, #7f1d1d)'
-                : 'radial-gradient(circle at 35% 35%, #38bdf8, #0ea5e9, #0369a1, #0c4a6e)',
-              boxShadow: installState === 'failed'
-                ? '0 0 40px rgba(239,68,68,0.4), 0 0 80px rgba(239,68,68,0.2)'
-                : '0 0 40px rgba(14,165,233,0.4), 0 0 80px rgba(14,165,233,0.2), inset 0 0 30px rgba(56,189,248,0.3)',
-              animation: 'update-orb-pulse 2s ease-in-out infinite',
-            }}
-          />
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140px] h-[140px] rounded-full border border-primary/20"
-            style={{ animation: 'update-ring-pulse 2s ease-in-out infinite 0.5s' }}
-          />
+        {/* Reuse the Jarvis logo orb */}
+        <div className="relative mb-6">
+          <div className="absolute inset-0 bg-[radial-gradient(circle,hsl(var(--primary)/0.15)_0%,transparent_70%)] scale-[3]" />
+          <JarvisLogo size={80} className="text-primary" static={false} />
         </div>
 
         {/* Title */}
-        <p className="font-display text-lg tracking-[0.3em] uppercase text-primary font-semibold mb-2">
-          Jarvis AI
+        <p className="font-display text-sm tracking-[0.3em] uppercase text-primary/70 mb-1">
+          Updating Jarvis
         </p>
 
-        {/* Status message */}
+        {/* Status */}
         <p
-          className="text-[11px] tracking-[0.15em] uppercase font-mono transition-opacity duration-300 text-center max-w-[280px]"
-          style={{ color: installState === 'failed' ? 'rgba(248,113,113,0.8)' : 'rgba(148,163,184,0.6)' }}
+          className="text-[10px] tracking-[0.12em] uppercase font-mono mb-6 text-center max-w-[260px]"
+          style={{ color: installState === 'failed' ? 'hsl(0 84% 60%)' : 'hsl(var(--muted-foreground) / 0.5)' }}
         >
           {getMessage()}
         </p>
 
-        {/* Progress bar */}
-        <div className="mt-8 w-[200px] h-[2px] rounded-[1px] overflow-hidden" style={{ background: 'rgba(14,165,233,0.1)' }}>
+        {/* Progress bar - same minimal style as splash */}
+        <div className="w-[180px] h-[2px] rounded-full overflow-hidden bg-primary/10">
           <div
-            className="h-full rounded-[1px] transition-all duration-300"
+            className="h-full rounded-full transition-all duration-500"
             style={{
               width: `${displayProgress}%`,
               background: installState === 'failed'
-                ? 'linear-gradient(90deg, #ef4444, #ef4444aa)'
-                : 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary) / 0.6))',
+                ? 'hsl(0 84% 60%)'
+                : 'hsl(var(--primary))',
             }}
           />
         </div>
 
-        {/* Percentage */}
-        <p className="mt-3 text-[10px] font-mono text-muted-foreground/50">
+        <p className="mt-2 text-[9px] font-mono text-muted-foreground/30">
           {Math.round(displayProgress)}%
         </p>
 
         {/* Failure actions */}
         {installState === 'failed' && (
-          <div className="mt-6 flex gap-3">
+          <div className="mt-5 flex gap-3">
             {onOpenFolder && (
               <button
                 onClick={onOpenFolder}
-                className="text-[11px] font-mono px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg border border-primary/30 transition-colors"
+                className="text-[10px] font-mono px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg border border-primary/30 transition-colors"
               >
-                Open Download Folder
+                Open Folder
               </button>
             )}
             {onDismiss && (
               <button
                 onClick={onDismiss}
-                className="text-[11px] font-mono px-4 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg border border-border transition-colors"
+                className="text-[10px] font-mono px-4 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg border border-border transition-colors"
               >
                 Close
               </button>
@@ -134,25 +111,11 @@ export const UpdateProgressScreen = ({
           </div>
         )}
 
-        {/* Version badge */}
-        <p
-          className="fixed bottom-3 right-4 text-[10px] tracking-[0.1em] font-mono"
-          style={{ color: 'rgba(148,163,184,0.3)' }}
-        >
+        {/* Version */}
+        <p className="fixed bottom-3 right-4 text-[9px] tracking-[0.1em] font-mono text-muted-foreground/20">
           v{newVersion}
         </p>
       </div>
-
-      <style>{`
-        @keyframes update-orb-pulse {
-          0%, 100% { transform: scale(1); opacity: 0.9; }
-          50% { transform: scale(1.05); opacity: 1; }
-        }
-        @keyframes update-ring-pulse {
-          0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
-          50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.05); }
-        }
-      `}</style>
     </div>
   );
 };
