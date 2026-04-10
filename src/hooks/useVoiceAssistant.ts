@@ -473,34 +473,31 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
       }
 
       const selectedVoice = getVoiceById(settings.voice);
+      const utterance = prepareBrowserUtterance(
+        spokenResponse,
+        selectedVoice.id,
+        settings.language
+      );
 
-      if (selectedVoice.kokoroId) {
-        const token = createCancelToken();
-        logVoiceTiming(activeTrace, 'tts:start', {
-          voice: selectedVoice.kokoroId,
-          spokenText: spokenResponse,
+      utterance.onstart = () => {
+        logVoiceTiming(activeTrace, 'tts:audio:playing', {
+          engine: 'browser',
+          voice: selectedVoice.id,
         });
-        const ok = await speakWithKokoro(
-          spokenResponse,
-          selectedVoice.kokoroId,
-          settings.outputDeviceId || undefined,
-          token,
-          {
-            traceId: activeTrace.id,
-            pipelineStartedAt: activeTrace.startedAt,
-            speakingStartedAt,
-          }
-        );
-        logVoiceTiming(activeTrace, 'tts:complete', {
-          ok,
-          voice: selectedVoice.kokoroId,
-        });
-        if (!ok) {
-          console.warn('[Jarvis] Kokoro TTS failed - no fallback voice');
-        }
-      } else {
-        console.warn('[Jarvis] Selected voice has no kokoroId, skipping TTS');
-      }
+      };
+
+      logVoiceTiming(activeTrace, 'tts:start', {
+        engine: 'browser',
+        voice: selectedVoice.id,
+        spokenText: spokenResponse,
+      });
+
+      await speakBrowserPrepared(utterance, settings.outputDeviceId || undefined);
+      logVoiceTiming(activeTrace, 'tts:complete', {
+        ok: true,
+        engine: 'browser',
+        voice: selectedVoice.id,
+      });
 
       const isQuestion = response.trim().endsWith('?');
       conversationActive.current = isQuestion;
