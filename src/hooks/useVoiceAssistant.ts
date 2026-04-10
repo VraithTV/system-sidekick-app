@@ -390,6 +390,8 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
       }
 
       setState('thinking');
+      // Warm Kokoro connection NOW so the server is ready when we need TTS
+      warmSelectedKokoroVoice();
 
       // Check built-in voice commands first (timer, time, math, etc.)
       const voiceResult = processVoiceCommand(cleanedText);

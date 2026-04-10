@@ -98,7 +98,7 @@ export async function speakWithKokoro(
   try {
     const controller = new AbortController();
     if (token) token.controller = controller;
-    const timeout = setTimeout(() => controller.abort(), 20000);
+    const timeout = setTimeout(() => controller.abort(), 12000);
 
     const response = await fetch(
       `${SUPABASE_URL}/functions/v1/kokoro-tts`,
