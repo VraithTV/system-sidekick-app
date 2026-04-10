@@ -368,19 +368,10 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
   const wakeWordHeard = useRef(false);
   const conversationActive = useRef(false);
   const captureStopRef = useRef<(() => void) | null>(null);
-  const lastKokoroWarmAtRef = useRef(0);
 
   const warmSelectedKokoroVoice = useCallback(() => {
-    const selectedVoice = getVoiceById(settings.voice);
-    if (!selectedVoice.kokoroId) return;
-
-    const now = Date.now();
-    if (now - lastKokoroWarmAtRef.current < 20000) return;
-
-    lastKokoroWarmAtRef.current = now;
-    console.log('[Jarvis] Warming Kokoro voice:', selectedVoice.kokoroId);
-    void warmKokoroVoice(selectedVoice.kokoroId);
-  }, [settings.voice]);
+    // Disabled: background warmup was competing with the real reply and increasing latency.
+  }, []);
 
   const processCommand = useCallback(
     async (text: string) => {
@@ -391,8 +382,6 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
       }
 
       setState('thinking');
-      // Warm Kokoro connection NOW so the server is ready when we need TTS
-      warmSelectedKokoroVoice();
 
       // Check built-in voice commands first (timer, time, math, etc.)
       const voiceResult = processVoiceCommand(cleanedText);
