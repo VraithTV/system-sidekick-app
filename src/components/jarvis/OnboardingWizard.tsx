@@ -47,18 +47,19 @@ const StepDots = ({ current, total }: { current: number; total: number }) => (
 
 // ── Step 0: Welcome ──
 const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
-  <div className="flex flex-col items-center justify-center h-full animate-fade-in-up">
-    <div className="relative mb-8">
+  <div className="flex flex-col items-center justify-center h-full animate-fade-in-up py-8">
+    <div className="relative mb-6 sm:mb-8">
       <div className="absolute inset-0 bg-[radial-gradient(circle,hsl(var(--primary)/0.2)_0%,transparent_70%)] scale-[2.5]" />
-      <div className="relative w-28 h-28 rounded-full border border-primary/30 flex items-center justify-center bg-primary/5 shadow-[0_0_40px_hsl(var(--primary)/0.15)] overflow-hidden">
-        <JarvisLogo size={72} className="text-primary rounded-full" />
+      <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full border border-primary/30 flex items-center justify-center bg-primary/5 shadow-[0_0_40px_hsl(var(--primary)/0.15)] overflow-hidden">
+        <JarvisLogo size={60} className="text-primary rounded-full sm:hidden" />
+        <JarvisLogo size={72} className="text-primary rounded-full hidden sm:block" />
       </div>
     </div>
-    <h1 className="font-display text-2xl tracking-[0.15em] text-foreground mb-2">
+    <h1 className="font-display text-xl sm:text-2xl tracking-[0.15em] text-foreground mb-2 text-center px-4">
       Welcome to <span className="text-primary glow-text">Jarvis AI</span>
     </h1>
     <p className="text-sm text-muted-foreground mb-1">Your intelligent desktop assistant</p>
-    <span className="text-[10px] font-mono text-primary/50 tracking-widest mb-10">BETA</span>
+    <span className="text-[10px] font-mono text-primary/50 tracking-widest mb-8 sm:mb-10">BETA</span>
     <button
       onClick={() => { playClick(); onNext(); }}
       className="flex items-center gap-2 px-8 py-3 rounded-full border border-primary/30 text-primary font-display text-xs tracking-[0.15em] uppercase hover:bg-primary/10 hover:border-primary/50 hover:shadow-[0_0_20px_hsl(var(--primary)/0.15)] transition-all duration-300"
@@ -535,8 +536,8 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
       <div className="absolute inset-0 grid-bg opacity-30" />
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-md px-6 flex-1 flex flex-col mx-auto items-center justify-center">
-        <div className="flex-1 flex flex-col">
+      <div className="relative z-10 w-full max-w-md px-4 sm:px-6 flex-1 flex flex-col mx-auto items-center justify-center overflow-y-auto">
+        <div className="flex-1 flex flex-col w-full min-h-0">
           {step === 0 && <WelcomeStep onNext={next} />}
           {step === 1 && <LanguageStep onNext={next} onBack={back} />}
           {step === 2 && <ThemeStep onNext={next} onBack={back} />}
@@ -547,7 +548,7 @@ export const OnboardingWizard = ({ onComplete }: { onComplete: () => void }) => 
         </div>
 
         {/* Step dots */}
-        <div className="flex justify-center pb-8">
+        <div className="flex justify-center py-4 sm:pb-8 shrink-0">
           <StepDots current={step} total={totalSteps} />
         </div>
       </div>
