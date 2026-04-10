@@ -37,12 +37,18 @@ export const DashboardView = () => {
   }, [micOn]);
 
   const enableClapDetection = async () => {
-    if (clapRef.current) return; // already running
+  const toggleClapDetection = async () => {
+    // Toggle off if already running
+    if (clapRef.current) {
+      clapRef.current.stop();
+      clapRef.current = null;
+      setClapActive(false);
+      return;
+    }
     try {
       const controller = await startClapDetector({
         onDoubleClap: async () => {
           console.log('[Jarvis] Double clap detected! Enabling mic...');
-          // Stop clap detector before starting voice assistant
           controller.stop();
           clapRef.current = null;
           setClapActive(false);
@@ -66,6 +72,12 @@ export const DashboardView = () => {
     if (micOn) {
       requestVoiceAssistantStop();
     } else {
+      // Stop clap detector first so it releases the mic stream
+      if (clapRef.current) {
+        clapRef.current.stop();
+        clapRef.current = null;
+        setClapActive(false);
+      }
       // Prime mic permission directly from user gesture (required by mobile browsers)
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
