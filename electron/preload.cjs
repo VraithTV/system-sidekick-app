@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openApp: (appId) => ipcRenderer.invoke('open-app', appId),
   closeApp: (appId) => ipcRenderer.invoke('close-app', appId),
   runCommand: (cmd) => ipcRenderer.invoke('run-command', cmd),
+  spotifyAuth: (url) => ipcRenderer.invoke('spotify-auth-flow', url),
 
   // Clips
   clipNow: (duration) => ipcRenderer.send('clip-now', duration),
