@@ -48,7 +48,7 @@ export async function warmKokoroVoice(voice = 'af_bella'): Promise<void> {
   const now = Date.now();
 
   if (warmupPromise && lastWarmVoice === voiceId) return warmupPromise;
-  if (lastWarmVoice === voiceId && now - lastWarmAt < 45000) return;
+  if (lastWarmVoice === voiceId && now - lastWarmAt < 20000) return;
 
   lastWarmVoice = voiceId;
   lastWarmAt = now;

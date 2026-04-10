@@ -375,9 +375,10 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     if (!selectedVoice.kokoroId) return;
 
     const now = Date.now();
-    if (now - lastKokoroWarmAtRef.current < 45000) return;
+    if (now - lastKokoroWarmAtRef.current < 20000) return;
 
     lastKokoroWarmAtRef.current = now;
+    console.log('[Jarvis] Warming Kokoro voice:', selectedVoice.kokoroId);
     void warmKokoroVoice(selectedVoice.kokoroId);
   }, [settings.voice]);
 
