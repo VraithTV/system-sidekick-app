@@ -36,7 +36,7 @@ serve(async (req) => {
     const endpoint = `${baseUrl}/v1/audio/speech`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
     const response = await fetch(endpoint, {
       method: "POST",
