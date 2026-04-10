@@ -423,7 +423,7 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
 
       // Fall back to ElevenLabs only if it has a valid voice ID and credits remain
       if (!spoken && selectedVoice.elevenLabsId) {
-        spoken = await speakWithElevenLabs(response, settings.voiceId || undefined, settings.outputDeviceId || undefined);
+        spoken = await speakWithElevenLabs(response, selectedVoice.elevenLabsId || undefined, settings.outputDeviceId || undefined);
       }
 
       // Final fallback: browser TTS using pre-created utterance (no delay)
