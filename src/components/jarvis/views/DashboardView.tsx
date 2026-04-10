@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { AssistantOrb } from '../AssistantOrb';
 import { CommandHistory } from '../CommandHistory';
+import { ChatInput } from '../ChatInput';
 import { useJarvisStore } from '@/store/jarvisStore';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, MessageSquare } from 'lucide-react';
 import { requestVoiceAssistantStart, requestVoiceAssistantStop } from '@/hooks/useVoiceAssistant';
 import { createT } from '@/lib/i18n';
 
@@ -10,6 +11,7 @@ export const DashboardView = () => {
   const { commands, settings, systemStatus, state } = useJarvisStore();
   const micOn = systemStatus.micActive;
   const [time, setTime] = useState(new Date());
+  const [chatOpen, setChatOpen] = useState(false);
   const t = createT(settings.language || 'en');
 
   useEffect(() => {
@@ -78,7 +80,26 @@ export const DashboardView = () => {
 
         <div className="absolute bottom-5 left-5 right-5 flex items-end gap-3">
           <div className="flex-1 min-w-0">
-            {commands.length > 0 && <CommandHistory />}
+            {chatOpen ? (
+              <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl h-72 flex flex-col">
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/20">
+                  <span className="font-display text-[9px] tracking-[0.2em] text-primary/60 uppercase">Chat</span>
+                  <button onClick={() => setChatOpen(false)} className="text-muted-foreground/40 hover:text-foreground/60 text-xs">✕</button>
+                </div>
+                <ChatInput />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setChatOpen(true)}
+                  className="flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-mono tracking-wider text-muted-foreground/60 border border-border/20 hover:border-primary/30 hover:text-primary/60 transition-all"
+                >
+                  <MessageSquare className="w-3 h-3" />
+                  Type to chat
+                </button>
+                {commands.length > 0 && <div className="flex-1 min-w-0"><CommandHistory /></div>}
+              </div>
+            )}
           </div>
         </div>
       </div>
