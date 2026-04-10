@@ -134,6 +134,20 @@ export const DashboardView = () => {
               ? `Try: "Hey ${wake}, what time is it?"`
               : `Try: "${wake}, open Chrome"`}
           </p>
+
+          {!micOn && (
+            <button
+              onClick={enableClapDetection}
+              className={`mt-4 flex items-center gap-2 rounded-full px-5 py-2 font-display text-[10px] tracking-[0.15em] uppercase transition-all duration-300 ${
+                clapActive
+                  ? 'bg-primary/10 text-primary border border-primary/30'
+                  : 'text-muted-foreground border border-border/40 hover:text-primary hover:border-primary/30'
+              }`}
+            >
+              <span className="text-sm">👏</span>
+              {clapActive ? 'Clap detection active' : 'Enable clap to activate'}
+            </button>
+          )}
         </div>
 
         {/* Session info at bottom */}
@@ -182,6 +196,20 @@ export const DashboardView = () => {
               ? `Try: "Hey ${wake}, what time is it?"`
               : `Try: "${wake}, open Chrome" · "${wake}, what's the weather?"`}
           </p>
+
+          {!micOn && (
+            <button
+              onClick={enableClapDetection}
+              className={`mt-5 flex items-center gap-2 rounded-full px-6 py-2.5 font-display text-[10px] tracking-[0.15em] uppercase transition-all duration-300 ${
+                clapActive
+                  ? 'bg-primary/10 text-primary border border-primary/30'
+                  : 'text-muted-foreground border border-border/40 hover:text-primary hover:border-primary/30'
+              }`}
+            >
+              <span className="text-sm">👏</span>
+              {clapActive ? 'Clap detection active' : 'Enable clap to activate'}
+            </button>
+          )}
         </div>
 
       </div>
