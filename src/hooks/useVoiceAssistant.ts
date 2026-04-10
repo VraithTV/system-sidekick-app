@@ -580,56 +580,13 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
       ?? (voiceIdOrElevenLabsId
         ? voiceOptions.find((v) => v.elevenLabsId === voiceIdOrElevenLabsId)
         : undefined);
-    const previewText = 'At your service. How can I help you today?';
-    const localId = voice?.id || voiceOptions[0]?.id || 'kokoro_bella';
+    const previewText = 'At your service.';
+    const kokoroId = voice?.kokoroId || 'af_bella';
 
-    // Pre-create browser utterance NOW (in user gesture context) so fallback is instant
-    const browserUtterance = prepareBrowserUtterance(previewText, localId);
-
-    // Always use Kokoro for preview - no fallback skipping
-    if (voice?.kokoroId) {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 15000);
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-        const response = await fetch(
-          `${supabaseUrl}/functions/v1/kokoro-tts`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              apikey: supabaseKey,
-              Authorization: `Bearer ${supabaseKey}`,
-            },
-            body: JSON.stringify({ text: previewText, voice: voice.kokoroId }),
-            signal: controller.signal,
-          }
-        );
-        clearTimeout(timeout);
-
-        if (response.ok) {
-          const audioBlob = await response.blob();
-          const audioUrl = URL.createObjectURL(audioBlob);
-          const audio = new Audio(audioUrl);
-          if (settings.outputDeviceId && 'setSinkId' in audio) {
-            (audio as any).setSinkId(settings.outputDeviceId).catch(() => {});
-          }
-          await new Promise<void>((resolve) => {
-            audio.onended = () => { URL.revokeObjectURL(audioUrl); resolve(); };
-            audio.onerror = () => { URL.revokeObjectURL(audioUrl); resolve(); };
-            audio.play().catch(() => { URL.revokeObjectURL(audioUrl); resolve(); });
-          });
-          return;
-        }
-      } catch {
-        // Timed out or failed, fall through to browser TTS instantly
-      }
+    const ok = await speakWithKokoro(previewText, kokoroId, settings.outputDeviceId || undefined);
+    if (!ok) {
+      console.warn('[Jarvis] Voice preview failed');
     }
-
-    // Instant browser fallback using pre-created utterance
-    await speakBrowserPrepared(browserUtterance, settings.outputDeviceId);
   }, [settings.outputDeviceId]);
 
   useEffect(() => {
