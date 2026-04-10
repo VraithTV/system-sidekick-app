@@ -10,7 +10,6 @@ import { getModeSystemPromptAddition } from '@/lib/modes';
 import { commonApps } from '@/lib/commonApps';
 import { isOllamaAvailable, chatWithOllama, getOllamaModel } from '@/lib/ollamaClient';
 import { getLanguage } from '@/lib/languages';
-import { speakWithElevenLabs, stopElevenLabsTTS } from '@/lib/elevenLabsTTS';
 import { speakWithKokoro, stopKokoroTTS, isKokoroAvailable } from '@/lib/kokoroTTS';
 import { getVoiceById } from '@/lib/voices';
 import { toast } from 'sonner';
