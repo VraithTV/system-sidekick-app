@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, Plus, Mic, AudioLines, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useJarvisStore } from '@/store/jarvisStore';
+import { useChatHistoryStore } from '@/store/chatHistoryStore';
 import { createT } from '@/lib/i18n';
 
 interface ChatMessage {
@@ -18,13 +19,28 @@ export function ChatInput() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { settings, addCommand } = useJarvisStore();
+  const { activeConversationId, conversations, createConversation, updateConversation } = useChatHistoryStore();
   const t = createT(settings.language || 'en');
+  const currentConvoIdRef = useRef<string | null>(null);
+
+  // Load messages when switching conversations
+  useEffect(() => {
+    if (activeConversationId) {
+      const convo = conversations.find(c => c.id === activeConversationId);
+      if (convo) {
+        setMessages(convo.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
+      }
+      currentConvoIdRef.current = activeConversationId;
+    } else {
+      setMessages([]);
+      currentConvoIdRef.current = null;
+    }
+  }, [activeConversationId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Auto-resize textarea
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
@@ -38,14 +54,32 @@ export function ChatInput() {
     setTimeout(() => setCopiedIdx(null), 2000);
   };
 
+  const saveToHistory = (msgs: ChatMessage[], convoId: string) => {
+    const serialized = msgs.map(m => ({
+      role: m.role,
+      content: m.content,
+      timestamp: m.timestamp.toISOString(),
+    }));
+    const title = msgs.find(m => m.role === 'user')?.content.slice(0, 40) || 'New chat';
+    updateConversation(convoId, { messages: serialized, title });
+  };
+
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || loading) return;
 
     const userMsg: ChatMessage = { role: 'user', content: text, timestamp: new Date() };
-    setMessages(prev => [...prev, userMsg]);
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
     setInput('');
     setLoading(true);
+
+    // Create conversation if this is a new chat
+    let convoId = currentConvoIdRef.current;
+    if (!convoId) {
+      convoId = createConversation(text.slice(0, 40));
+      currentConvoIdRef.current = convoId;
+    }
 
     try {
       const { supabase } = await import('@/integrations/supabase/client');
@@ -70,7 +104,9 @@ export function ChatInput() {
 
       const reply = data?.reply || "I didn't catch that.";
       const assistantMsg: ChatMessage = { role: 'assistant', content: reply, timestamp: new Date() };
-      setMessages(prev => [...prev, assistantMsg]);
+      const allMessages = [...newMessages, assistantMsg];
+      setMessages(allMessages);
+      saveToHistory(allMessages, convoId);
 
       if (data?.newMemories?.length) {
         addMemories(data.newMemories);
@@ -89,7 +125,9 @@ export function ChatInput() {
         content: "I'm having trouble connecting right now. Try again in a moment.",
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errMsg]);
+      const allMessages = [...newMessages, errMsg];
+      setMessages(allMessages);
+      saveToHistory(allMessages, convoId);
     } finally {
       setLoading(false);
       inputRef.current?.focus();
@@ -151,7 +189,7 @@ export function ChatInput() {
       </div>
 
       {/* Bottom input bar */}
-      <div className={`w-full ${hasMessages ? '' : ''} px-4 pb-4`}>
+      <div className="w-full px-4 pb-4">
         <div className="max-w-3xl mx-auto">
           <form
             onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
