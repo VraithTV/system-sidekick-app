@@ -67,4 +67,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   // System info
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
+
+  // Discord Rich Presence
+  updateDiscordPresence: (details, state) => ipcRenderer.send('discord-presence-update', { details, state }),
 });
