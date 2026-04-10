@@ -11,7 +11,7 @@ import { commonApps } from '@/lib/commonApps';
 import { isOllamaAvailable, chatWithOllama, getOllamaModel } from '@/lib/ollamaClient';
 import { getLanguage } from '@/lib/languages';
 import { speakWithKokoro, stopKokoroTTS, isKokoroAvailable } from '@/lib/kokoroTTS';
-import { getVoiceById } from '@/lib/voices';
+import { getVoiceById, voiceOptions } from '@/lib/voices';
 import { toast } from 'sonner';
 
 const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI;
