@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Plus, Mic, AudioLines, Copy, Check } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { createT } from '@/lib/i18n';
 
@@ -13,14 +14,29 @@ export function ChatInput() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const { settings, addCommand } = useJarvisStore();
   const t = createT(settings.language || 'en');
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 160) + 'px';
+    }
+  }, [input]);
+
+  const copyToClipboard = (text: string, idx: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 2000);
+  };
 
   const sendMessage = async () => {
     const text = input.trim();
@@ -80,62 +96,121 @@ export function ChatInput() {
     }
   };
 
+  const hasMessages = messages.length > 0;
+
   return (
     <div className="flex flex-col h-full">
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-0">
-        {messages.length === 0 && (
-          <p className="text-center text-muted-foreground/40 text-xs mt-8 font-mono">
-            {t('chat.empty')}
-          </p>
-        )}
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className={`max-w-[85%] whitespace-pre-wrap rounded-xl px-3 py-2 text-xs ${
-                msg.role === 'user'
-                  ? 'bg-primary/20 text-primary border border-primary/20'
-                  : 'bg-card/60 text-foreground/80 border border-border/30'
-              }`}
-            >
-              {msg.content}
-            </div>
+      {/* Messages area */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {!hasMessages ? (
+          <div className="flex flex-col items-center justify-center h-full px-4">
+            <h1 className="text-2xl font-semibold text-foreground/90 mb-1">
+              What's on the agenda today?
+            </h1>
           </div>
-        ))}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-card/60 border border-border/30 rounded-xl px-3 py-2 flex items-center gap-2">
-              <Loader2 className="w-3 h-3 animate-spin text-primary/60" />
-              <span className="text-xs text-muted-foreground/60">{t('chat.thinking')}</span>
-            </div>
+        ) : (
+          <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role === 'user' ? (
+                  <div className="max-w-[80%] bg-muted/50 rounded-2xl px-4 py-3 text-sm text-foreground">
+                    {msg.content}
+                  </div>
+                ) : (
+                  <div className="max-w-[85%] space-y-2">
+                    <div className="prose prose-sm prose-invert max-w-none text-sm text-foreground/90 leading-relaxed">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                    <div className="flex items-center gap-1 pt-1">
+                      <button
+                        onClick={() => copyToClipboard(msg.content, i)}
+                        className="p-1.5 rounded-md text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/30 transition-colors"
+                        title="Copy"
+                      >
+                        {copiedIdx === i ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="flex items-center gap-2 px-1 py-2">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div className="border-t border-border/30 p-2">
-        <form
-          onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
-          className="flex items-center gap-2"
-        >
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={t('chat.placeholder', { wake: settings.wakeName })}
-            disabled={loading}
-            className="flex-1 bg-card/40 border border-border/30 rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || loading}
-            className="p-2 rounded-lg bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+      {/* Bottom input bar */}
+      <div className={`w-full ${hasMessages ? '' : ''} px-4 pb-4`}>
+        <div className="max-w-3xl mx-auto">
+          <form
+            onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
+            className="relative flex items-end bg-muted/40 border border-border/40 rounded-2xl px-3 py-2 shadow-lg"
           >
-            <Send className="w-3.5 h-3.5" />
-          </button>
-        </form>
+            <button
+              type="button"
+              className="p-2 rounded-full text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted/40 transition-colors shrink-0 self-end mb-0.5"
+              title="Attach"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+              placeholder="Ask anything"
+              disabled={loading}
+              rows={1}
+              className="flex-1 bg-transparent border-none resize-none px-2 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none disabled:opacity-50 max-h-40"
+            />
+
+            <div className="flex items-center gap-1 shrink-0 self-end mb-0.5">
+              {input.trim() ? (
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="p-2 rounded-full bg-foreground text-background hover:bg-foreground/80 transition-colors disabled:opacity-30"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="p-2 rounded-full text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted/40 transition-colors"
+                    title="Voice input"
+                  >
+                    <Mic className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="p-2 rounded-full bg-foreground text-background hover:bg-foreground/80 transition-colors"
+                    title="Voice chat"
+                  >
+                    <AudioLines className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
