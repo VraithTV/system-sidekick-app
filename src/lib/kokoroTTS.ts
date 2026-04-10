@@ -7,6 +7,13 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 let currentAudio: HTMLAudioElement | null = null;
+let cancelledToken: object | null = null;
+
+/** Create a cancellation token that can be passed to speakWithKokoro */
+export function createCancelToken(): object { return {}; }
+
+/** Mark a token as cancelled so in-flight speakWithKokoro calls abort before playing */
+export function cancelToken(token: object) { cancelledToken = token; }
 
 /** Always available - no offline tracking */
 export function isKokoroAvailable(): boolean {
@@ -25,6 +32,7 @@ export async function speakWithKokoro(
   text: string,
   voice?: string,
   outputDeviceId?: string,
+  token?: object,
 ): Promise<boolean> {
   if (!SUPABASE_URL || !SUPABASE_KEY) return false;
 
@@ -53,9 +61,18 @@ export async function speakWithKokoro(
       return false;
     }
 
+    // Check if cancelled before decoding audio
+    if (token && token === cancelledToken) return false;
+
     // Use blob approach for immediate playback
     const audioBlob = await response.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
+
+    // Check again after blob decode
+    if (token && token === cancelledToken) {
+      URL.revokeObjectURL(audioUrl);
+      return false;
+    }
 
     return await new Promise<boolean>((resolve) => {
       const audio = new Audio();
