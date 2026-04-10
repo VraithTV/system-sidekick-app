@@ -10,7 +10,7 @@ import { getModeSystemPromptAddition } from '@/lib/modes';
 import { matchCommonApp } from '@/lib/commonApps';
 import { isOllamaAvailable, chatWithOllama, getOllamaModel } from '@/lib/ollamaClient';
 import { getLanguage } from '@/lib/languages';
-import { speakWithKokoro, stopKokoroTTS, isKokoroAvailable, createCancelToken, cancelToken } from '@/lib/kokoroTTS';
+import { speakWithKokoro, stopKokoroTTS } from '@/lib/kokoroTTS';
 import { getVoiceById, voiceOptions } from '@/lib/voices';
 import { toast } from 'sonner';
 
@@ -456,7 +456,6 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         ?.trim() || response;
 
       setState('speaking');
-      const speakingStartedAt = getTimingNow();
       logVoiceTiming(activeTrace, 'ui:speaking', {
         responseLength: response.length,
         spokenLength: spokenResponse.length,
@@ -473,34 +472,31 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
       }
 
       const selectedVoice = getVoiceById(settings.voice);
+      const utterance = prepareBrowserUtterance(
+        spokenResponse,
+        selectedVoice.id,
+        settings.language
+      );
 
-      if (selectedVoice.kokoroId) {
-        const token = createCancelToken();
-        logVoiceTiming(activeTrace, 'tts:start', {
-          voice: selectedVoice.kokoroId,
-          spokenText: spokenResponse,
+      utterance.onstart = () => {
+        logVoiceTiming(activeTrace, 'tts:audio:playing', {
+          engine: 'browser',
+          voice: selectedVoice.id,
         });
-        const ok = await speakWithKokoro(
-          spokenResponse,
-          selectedVoice.kokoroId,
-          settings.outputDeviceId || undefined,
-          token,
-          {
-            traceId: activeTrace.id,
-            pipelineStartedAt: activeTrace.startedAt,
-            speakingStartedAt,
-          }
-        );
-        logVoiceTiming(activeTrace, 'tts:complete', {
-          ok,
-          voice: selectedVoice.kokoroId,
-        });
-        if (!ok) {
-          console.warn('[Jarvis] Kokoro TTS failed - no fallback voice');
-        }
-      } else {
-        console.warn('[Jarvis] Selected voice has no kokoroId, skipping TTS');
-      }
+      };
+
+      logVoiceTiming(activeTrace, 'tts:start', {
+        engine: 'browser',
+        voice: selectedVoice.id,
+        spokenText: spokenResponse,
+      });
+
+      await speakBrowserPrepared(utterance, settings.outputDeviceId || undefined);
+      logVoiceTiming(activeTrace, 'tts:complete', {
+        ok: true,
+        engine: 'browser',
+        voice: selectedVoice.id,
+      });
 
       const isQuestion = response.trim().endsWith('?');
       conversationActive.current = isQuestion;
