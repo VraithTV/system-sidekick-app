@@ -406,18 +406,17 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      // TTS priority: Kokoro → browser (ElevenLabs removed)
+      // TTS: Always use Kokoro for the selected voice
       const selectedVoice = getVoiceById(settings.voice);
-      const browserUtterance = prepareBrowserUtterance(response, settings.voice);
       let spoken = false;
 
-      // Try Kokoro first if a Kokoro voice is selected AND Kokoro is online
-      if (selectedVoice.kokoroId && isKokoroAvailable()) {
+      if (selectedVoice.kokoroId) {
         spoken = await speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined);
       }
 
-      // Fallback: browser TTS using pre-created utterance (no delay)
+      // Only use browser TTS if voice has no Kokoro ID at all
       if (!spoken) {
+        const browserUtterance = prepareBrowserUtterance(response, settings.voice);
         await speakBrowserPrepared(browserUtterance, settings.outputDeviceId);
       }
 
