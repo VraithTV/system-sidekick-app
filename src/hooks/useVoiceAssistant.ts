@@ -375,9 +375,10 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
     if (!selectedVoice.kokoroId) return;
 
     const now = Date.now();
-    if (now - lastKokoroWarmAtRef.current < 45000) return;
+    if (now - lastKokoroWarmAtRef.current < 20000) return;
 
     lastKokoroWarmAtRef.current = now;
+    console.log('[Jarvis] Warming Kokoro voice:', selectedVoice.kokoroId);
     void warmKokoroVoice(selectedVoice.kokoroId);
   }, [settings.voice]);
 
@@ -390,6 +391,8 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
       }
 
       setState('thinking');
+      // Warm Kokoro connection NOW so the server is ready when we need TTS
+      warmSelectedKokoroVoice();
 
       // Check built-in voice commands first (timer, time, math, etc.)
       const voiceResult = processVoiceCommand(cleanedText);

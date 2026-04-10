@@ -48,7 +48,7 @@ export async function warmKokoroVoice(voice = 'af_bella'): Promise<void> {
   const now = Date.now();
 
   if (warmupPromise && lastWarmVoice === voiceId) return warmupPromise;
-  if (lastWarmVoice === voiceId && now - lastWarmAt < 45000) return;
+  if (lastWarmVoice === voiceId && now - lastWarmAt < 20000) return;
 
   lastWarmVoice = voiceId;
   lastWarmAt = now;
@@ -98,7 +98,7 @@ export async function speakWithKokoro(
   try {
     const controller = new AbortController();
     if (token) token.controller = controller;
-    const timeout = setTimeout(() => controller.abort(), 20000);
+    const timeout = setTimeout(() => controller.abort(), 12000);
 
     const response = await fetch(
       `${SUPABASE_URL}/functions/v1/kokoro-tts`,
