@@ -283,85 +283,113 @@ ipcMain.on('open-url', (_event, url) => {
   }
 });
 
-// Launch app by ID using shell.openExternal (no child_process needed)
+// Launch app by ID using a single registry so every listed app has an actual launcher target
 ipcMain.handle('open-app', (_event, appId) => {
-  const windowsCommandMap = {
+  if (process.platform !== 'win32' || typeof appId !== 'string') return false;
+
+  const normalizedId = appId.trim().toLowerCase();
+  const commandLaunchMap = {
     chrome: 'chrome',
     edge: 'msedge',
-    firefox: 'firefox',
-    brave: 'brave',
-    'opera-gx': null, // handled separately below
+    'opera-gx': null,
     opera: null,
+    brave: 'brave',
+    firefox: 'firefox',
+    vivaldi: 'vivaldi',
+    vlc: 'vlc',
+    obs: 'obs64',
+    streamlabs: 'streamlabs',
     explorer: 'explorer',
     notepad: 'notepad',
-    'task-manager': 'taskmgr',
-    obs: 'obs64',
-    terminal: 'wt',
-    vivaldi: 'vivaldi',
+    photoshop: 'photoshop',
+    'premiere-pro': 'premierepro',
+    'after-effects': 'afterfx',
     blender: 'blender',
-    vlc: 'vlc',
+    davinci: 'resolve',
+    capcut: 'capcut',
+    'task-manager': 'taskmgr',
+    terminal: 'wt',
   };
 
-  const urlLaunchMap = {
-    spotify: 'spotify:',
+  const externalLaunchMap = {
     discord: 'discord:',
-    steam: 'steam://',
-    vscode: 'vscode:',
     slack: 'slack:',
     telegram: 'tg:',
     whatsapp: 'whatsapp:',
-    word: 'ms-word:',
-    excel: 'ms-excel:',
-    powerpoint: 'ms-powerpoint:',
+    teams: 'msteams:',
+    zoom: 'zoommtg:',
+    spotify: 'spotify:',
+    'spotify-web': 'https://open.spotify.com',
     youtube: 'https://youtube.com',
     netflix: 'https://netflix.com',
     twitch: 'https://twitch.tv',
-    twitter: 'https://x.com',
-    github: 'https://github.com',
-    chatgpt: 'https://chat.openai.com',
-    calculator: 'calculator:',
-    notion: 'notion:',
-    figma: 'https://figma.com',
-    teams: 'msteams:',
-    zoom: 'zoommtg:',
-    minecraft: 'minecraft:',
+    steam: 'steam:',
     'epic-games': 'com.epicgames.launcher:',
     fortnite: 'com.epicgames.launcher://apps/fn',
+    minecraft: 'minecraft:',
+    gta5: 'steam://rungameid/271590',
+    fivem: 'fivem:',
     valorant: 'valorant:',
+    league: 'leagueoflegends:',
+    'riot-client': 'riotclient:',
+    apex: 'steam://rungameid/1172470',
+    csgo: 'steam://rungameid/730',
     roblox: 'roblox:',
+    overwatch: 'battlenet://Pro',
+    'rocket-league': 'com.epicgames.launcher://apps/Sugar',
+    warzone: 'battlenet://ODIN',
     battlenet: 'battlenet:',
+    'ea-app': 'origin:',
+    ubisoft: 'uplay:',
     xbox: 'xbox:',
+    'geforce-now': 'geforcenow:',
+    dota2: 'steam://rungameid/570',
+    pubg: 'steam://rungameid/578080',
+    destiny2: 'steam://rungameid/1085660',
+    helldivers2: 'steam://rungameid/553850',
+    'rainbow-six-siege': 'steam://rungameid/359550',
+    vscode: 'vscode:',
+    word: 'ms-word:',
+    excel: 'ms-excel:',
+    powerpoint: 'ms-powerpoint:',
+    notion: 'notion:',
+    github: 'https://github.com',
+    chatgpt: 'https://chat.openai.com',
+    figma: 'https://figma.com',
+    calculator: 'calculator:',
+    twitter: 'https://x.com',
   };
 
-  // Opera GX needs special handling - it installs in AppData, not PATH
-  if (process.platform === 'win32' && (appId === 'opera-gx' || appId === 'opera' || appId === 'operagx')) {
+  if (normalizedId === 'opera-gx' || normalizedId === 'opera' || normalizedId === 'operagx') {
     const localAppData = process.env.LOCALAPPDATA || '';
     const operaGxPaths = [
       path.join(localAppData, 'Programs', 'Opera GX', 'opera.exe'),
       path.join(localAppData, 'Programs', 'Opera GX', 'launcher.exe'),
     ];
-    for (const p of operaGxPaths) {
-      if (fs.existsSync(p)) {
-        exec(`"${p}"`, { shell: 'cmd.exe' }, () => {});
-        return null;
+    for (const operaPath of operaGxPaths) {
+      if (fs.existsSync(operaPath)) {
+        exec(`"${operaPath}"`, { shell: 'cmd.exe' }, () => {});
+        return true;
       }
     }
-    // Fallback: try start command
     exec('start "" "opera"', { shell: 'cmd.exe' }, () => {});
-    return null;
+    return true;
   }
 
-  const command = windowsCommandMap[appId];
-  if (process.platform === 'win32' && command) {
+  const command = commandLaunchMap[normalizedId];
+  if (command) {
     exec(`start "" ${command}`, { shell: 'cmd.exe' }, () => {});
-    return null;
+    return true;
   }
 
-  const uri = urlLaunchMap[appId];
-  if (uri) {
-    shell.openExternal(uri).catch(() => {});
+  const externalTarget = externalLaunchMap[normalizedId];
+  if (externalTarget) {
+    shell.openExternal(externalTarget).catch(() => {});
+    return true;
   }
-  return null;
+
+  exec(`start "" ${normalizedId}`, { shell: 'cmd.exe' }, () => {});
+  return true;
 });
 
 // Close app by ID or process name
