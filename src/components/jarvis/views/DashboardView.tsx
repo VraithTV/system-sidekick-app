@@ -3,6 +3,7 @@ import { AssistantOrb } from '../AssistantOrb';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { Mic, MicOff } from 'lucide-react';
 import { requestVoiceAssistantStart, requestVoiceAssistantStop } from '@/hooks/useVoiceAssistant';
+import { primeMicStream } from '@/lib/speechRecognition';
 import { createT } from '@/lib/i18n';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -25,11 +26,10 @@ export const DashboardView = () => {
       // Prime mic permission directly from user gesture (required by mobile browsers)
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Keep the stream alive so the capture loop can reuse it
-        stream.getTracks(); // don't stop - let the cached stream logic pick it up
+        primeMicStream(stream);
       } catch (err) {
         console.warn('[Jarvis] Mic permission denied:', err);
-        return; // Don't start listening if permission was denied
+        return;
       }
       requestVoiceAssistantStart();
     }
