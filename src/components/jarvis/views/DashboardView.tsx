@@ -36,13 +36,18 @@ export const DashboardView = () => {
     };
   }, [micOn]);
 
-  const enableClapDetection = async () => {
-    if (clapRef.current) return; // already running
+  const toggleClapDetection = async () => {
+    // Toggle off if already running
+    if (clapRef.current) {
+      clapRef.current.stop();
+      clapRef.current = null;
+      setClapActive(false);
+      return;
+    }
     try {
       const controller = await startClapDetector({
         onDoubleClap: async () => {
           console.log('[Jarvis] Double clap detected! Enabling mic...');
-          // Stop clap detector before starting voice assistant
           controller.stop();
           clapRef.current = null;
           setClapActive(false);
@@ -66,6 +71,12 @@ export const DashboardView = () => {
     if (micOn) {
       requestVoiceAssistantStop();
     } else {
+      // Stop clap detector first so it releases the mic stream
+      if (clapRef.current) {
+        clapRef.current.stop();
+        clapRef.current = null;
+        setClapActive(false);
+      }
       // Prime mic permission directly from user gesture (required by mobile browsers)
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -137,7 +148,7 @@ export const DashboardView = () => {
 
           {!micOn && (
             <button
-              onClick={enableClapDetection}
+              onClick={toggleClapDetection}
               className={`mt-4 flex items-center gap-2 rounded-full px-5 py-2 font-display text-[10px] tracking-[0.15em] uppercase transition-all duration-300 ${
                 clapActive
                   ? 'bg-primary/10 text-primary border border-primary/30'
@@ -199,7 +210,7 @@ export const DashboardView = () => {
 
           {!micOn && (
             <button
-              onClick={enableClapDetection}
+              onClick={toggleClapDetection}
               className={`mt-5 flex items-center gap-2 rounded-full px-6 py-2.5 font-display text-[10px] tracking-[0.15em] uppercase transition-all duration-300 ${
                 clapActive
                   ? 'bg-primary/10 text-primary border border-primary/30'
