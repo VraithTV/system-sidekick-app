@@ -415,15 +415,17 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
       let spoken = false;
 
       if (selectedVoice.kokoroId) {
-        const kokoroPromise = speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined);
+        const token = createCancelToken();
+        const kokoroPromise = speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined, token);
         const timeoutPromise = new Promise<'timeout'>(resolve => setTimeout(() => resolve('timeout'), 2500));
 
         const result = await Promise.race([kokoroPromise, timeoutPromise]);
 
         if (result === 'timeout') {
-          // Kokoro is too slow, use browser TTS immediately
+          // Cancel the in-flight Kokoro request so it won't play later
+          cancelToken(token);
+          stopKokoroTTS();
           console.log('[Jarvis] Kokoro TTS too slow, using browser TTS');
-          stopKokoroTTS(); // cancel the in-flight Kokoro request playback
           const browserUtterance = prepareBrowserUtterance(response, settings.voice);
           await speakBrowserPrepared(browserUtterance, settings.outputDeviceId);
           spoken = true;
