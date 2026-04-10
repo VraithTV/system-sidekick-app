@@ -36,7 +36,6 @@ export const DashboardView = () => {
     };
   }, [micOn]);
 
-  const enableClapDetection = async () => {
   const toggleClapDetection = async () => {
     // Toggle off if already running
     if (clapRef.current) {
