@@ -394,17 +394,9 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         }
       }
 
-      // Start TTS fetch immediately BEFORE setting state to 'speaking'
-      // This overlaps audio download with state transitions
-      const selectedVoice = getVoiceById(settings.voice);
-      let ttsPromise: Promise<boolean> | null = null;
-
-      if (selectedVoice.kokoroId) {
-        // Fire off TTS request immediately, don't wait
-        ttsPromise = speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined);
-      }
-
+      // Set state to speaking immediately so the UI transitions fast
       setState('speaking');
+
       // In private mode, don't log commands
       if (mode !== 'private') {
         addCommand({
@@ -416,13 +408,30 @@ export function useVoiceAssistant(options: { previewOnly?: boolean } = {}) {
         });
       }
 
-      // Now await the TTS that was already fetching
+      // TTS: Race Kokoro against a short timer. If Kokoro hasn't returned
+      // audio within 2.5s, fall back to instant browser TTS so the user
+      // doesn't sit in silence.
+      const selectedVoice = getVoiceById(settings.voice);
       let spoken = false;
-      if (ttsPromise) {
-        spoken = await ttsPromise;
+
+      if (selectedVoice.kokoroId) {
+        const kokoroPromise = speakWithKokoro(response, selectedVoice.kokoroId, settings.outputDeviceId || undefined);
+        const timeoutPromise = new Promise<'timeout'>(resolve => setTimeout(() => resolve('timeout'), 2500));
+
+        const result = await Promise.race([kokoroPromise, timeoutPromise]);
+
+        if (result === 'timeout') {
+          // Kokoro is too slow, use browser TTS immediately
+          console.log('[Jarvis] Kokoro TTS too slow, using browser TTS');
+          stopKokoroTTS(); // cancel the in-flight Kokoro request playback
+          const browserUtterance = prepareBrowserUtterance(response, settings.voice);
+          await speakBrowserPrepared(browserUtterance, settings.outputDeviceId);
+          spoken = true;
+        } else {
+          spoken = result;
+        }
       }
 
-      // Only use browser TTS if Kokoro failed or voice has no Kokoro ID
       if (!spoken) {
         const browserUtterance = prepareBrowserUtterance(response, settings.voice);
         await speakBrowserPrepared(browserUtterance, settings.outputDeviceId);
