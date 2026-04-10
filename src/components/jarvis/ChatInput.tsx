@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Plus, Mic, MicOff, Copy, Check, Image, Brain, Search, MoreHorizontal, ArrowUp } from 'lucide-react';
+import { Plus, Mic, MicOff, Copy, Check, Image, Brain, Search, MoreHorizontal, ArrowUp } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useJarvisStore } from '@/store/jarvisStore';
 import { useChatHistoryStore } from '@/store/chatHistoryStore';
@@ -18,11 +18,12 @@ export function ChatInput() {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [hasEverHadMessages, setHasEverHadMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
   const plusMenuRef = useRef<HTMLDivElement>(null);
-  const { settings, addCommand, setActiveView } = useJarvisStore();
+  const { settings, addCommand } = useJarvisStore();
   const { activeConversationId, conversations, createConversation, updateConversation } = useChatHistoryStore();
   const t = createT(settings.language || 'en');
   const currentConvoIdRef = useRef<string | null>(null);
@@ -32,11 +33,14 @@ export function ChatInput() {
     if (activeConversationId) {
       const convo = conversations.find(c => c.id === activeConversationId);
       if (convo) {
-        setMessages(convo.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
+        const loaded = convo.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) }));
+        setMessages(loaded);
+        if (loaded.length > 0) setHasEverHadMessages(true);
       }
       currentConvoIdRef.current = activeConversationId;
     } else {
       setMessages([]);
+      setHasEverHadMessages(false);
       currentConvoIdRef.current = null;
     }
   }, [activeConversationId]);
@@ -52,7 +56,6 @@ export function ChatInput() {
     }
   }, [input]);
 
-  // Close plus menu on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (plusMenuRef.current && !plusMenuRef.current.contains(e.target as Node)) {
@@ -69,18 +72,41 @@ export function ChatInput() {
     setTimeout(() => setCopiedIdx(null), 2000);
   };
 
-  const saveToHistory = (msgs: ChatMessage[], convoId: string) => {
+  // Generate a short summary title from conversation
+  const generateSummaryTitle = async (userText: string, assistantReply: string): Promise<string> => {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data } = await supabase.functions.invoke('jarvis-chat', {
+        body: {
+          message: `Summarize this conversation in 4-6 words as a title. No quotes, no punctuation at the end. User said: "${userText}" Assistant replied: "${assistantReply.slice(0, 100)}"`,
+          memories: '',
+          timezone: 'UTC',
+          mode: 'action',
+          conversationHistory: [],
+          language: settings.language || 'en',
+        },
+      });
+      const title = data?.reply?.trim();
+      return title && title.length < 60 ? title : userText.slice(0, 40);
+    } catch {
+      return userText.slice(0, 40);
+    }
+  };
+
+  const saveToHistory = (msgs: ChatMessage[], convoId: string, title?: string) => {
     const serialized = msgs.map(m => ({
       role: m.role,
       content: m.content,
       timestamp: m.timestamp.toISOString(),
     }));
-    const title = msgs.find(m => m.role === 'user')?.content.slice(0, 40) || 'New chat';
-    updateConversation(convoId, { messages: serialized, title });
+    updateConversation(convoId, {
+      messages: serialized,
+      ...(title ? { title } : {}),
+    });
   };
 
-  // Speech-to-text transcription
-  const toggleTranscription = useCallback(() => {
+  // Mic: start SpeechRecognition synchronously on click (browser security requirement)
+  const toggleTranscription = () => {
     if (isTranscribing && recognitionRef.current) {
       recognitionRef.current.stop();
       setIsTranscribing(false);
@@ -88,39 +114,51 @@ export function ChatInput() {
     }
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition) {
+      console.warn('SpeechRecognition not supported');
+      return;
+    }
 
+    // Must create and start synchronously within the click handler
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = settings.language === 'en' ? 'en-US' : settings.language || 'en-US';
 
-    let finalTranscript = '';
+    let finalTranscript = input; // preserve existing input
 
     recognition.onresult = (event: any) => {
       let interim = '';
+      let newFinal = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalTranscript += transcript + ' ';
+          newFinal += transcript + ' ';
         } else {
           interim = transcript;
         }
       }
-      setInput(prev => {
-        const base = prev.replace(/\s*🎤.*$/, '');
-        const combined = (finalTranscript + interim).trim();
-        return base ? `${base} ${combined}` : combined;
-      });
+      if (newFinal) {
+        finalTranscript += (finalTranscript ? ' ' : '') + newFinal.trim();
+      }
+      const display = (finalTranscript + (interim ? ' ' + interim : '')).trim();
+      setInput(display);
     };
 
-    recognition.onerror = () => setIsTranscribing(false);
-    recognition.onend = () => setIsTranscribing(false);
+    recognition.onerror = (e: any) => {
+      console.warn('Speech recognition error:', e.error);
+      setIsTranscribing(false);
+    };
+    recognition.onend = () => {
+      setIsTranscribing(false);
+      recognitionRef.current = null;
+    };
 
+    // Start immediately (synchronous with user gesture)
     recognition.start();
     recognitionRef.current = recognition;
     setIsTranscribing(true);
-  }, [isTranscribing, settings.language]);
+  };
 
   const sendMessage = async () => {
     if (isTranscribing && recognitionRef.current) {
@@ -134,6 +172,7 @@ export function ChatInput() {
     const userMsg: ChatMessage = { role: 'user', content: text, timestamp: new Date() };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
+    setHasEverHadMessages(true);
     setInput('');
     setLoading(true);
 
@@ -169,6 +208,11 @@ export function ChatInput() {
       const allMessages = [...newMessages, assistantMsg];
       setMessages(allMessages);
       saveToHistory(allMessages, convoId);
+
+      // Generate a summary title in the background
+      generateSummaryTitle(text, reply).then(title => {
+        saveToHistory(allMessages, convoId!, title);
+      });
 
       if (data?.newMemories?.length) {
         addMemories(data.newMemories);
@@ -207,18 +251,28 @@ export function ChatInput() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Messages area */}
+      {/* Messages area with smooth transition */}
       <div className="flex-1 overflow-y-auto min-h-0">
         {!hasMessages ? (
-          <div className="flex flex-col items-center justify-center h-full px-4">
+          <div
+            className={`flex flex-col items-center justify-center h-full px-4 transition-all duration-500 ease-out ${
+              hasEverHadMessages ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+            }`}
+          >
             <h1 className="text-2xl font-display font-semibold tracking-wide text-primary/90 mb-1">
               What can I help with?
             </h1>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+          <div className={`max-w-3xl mx-auto px-4 py-6 space-y-6 transition-all duration-400 ease-out ${
+            hasEverHadMessages ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}>
             {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div
+                key={i}
+                className={`flex animate-in fade-in slide-in-from-bottom-2 duration-300 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                style={{ animationDelay: `${Math.min(i * 50, 200)}ms` }}
+              >
                 {msg.role === 'user' ? (
                   <div className="max-w-[80%] bg-primary/15 border border-primary/20 rounded-2xl px-4 py-3 text-sm text-foreground shadow-[0_0_12px_hsl(var(--primary)/0.1)]">
                     {msg.content}
@@ -242,7 +296,7 @@ export function ChatInput() {
               </div>
             ))}
             {loading && (
-              <div className="flex justify-start">
+              <div className="flex justify-start animate-in fade-in duration-300">
                 <div className="flex items-center gap-2 px-1 py-2">
                   <div className="flex gap-1.5">
                     <span className="w-2 h-2 bg-primary/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -312,7 +366,7 @@ export function ChatInput() {
             />
 
             <div className="flex items-center gap-1 shrink-0 self-end mb-0.5">
-              {/* Mic button: transcribes to text */}
+              {/* Mic button */}
               <button
                 type="button"
                 onClick={toggleTranscription}
@@ -323,10 +377,10 @@ export function ChatInput() {
                 }`}
                 title={isTranscribing ? 'Stop recording' : 'Voice to text'}
               >
-                {isTranscribing ? <MicOff className="w-4.5 h-4.5" /> : <Mic className="w-4.5 h-4.5" />}
+                {isTranscribing ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
 
-              {/* Send button: always visible */}
+              {/* Send button */}
               <button
                 type="submit"
                 disabled={!input.trim() || loading}
