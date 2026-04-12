@@ -1,9 +1,10 @@
 /**
- * Kokoro TTS client - speaks text using a locally hosted Kokoro server.
- * Calls localhost:8880 directly (no edge function proxy).
+ * Kokoro TTS client - speaks text using a Kokoro server via edge function proxy.
+ * The server URL is stored as a secret (KOKORO_TTS_URL) in the backend.
  */
 
-const KOKORO_LOCAL_URL = 'http://localhost:8880/v1/audio/speech';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 let currentAudio: HTMLAudioElement | null = null;
 
@@ -65,6 +66,8 @@ export async function speakWithKokoro(
   token?: KokoroCancelToken,
   trace?: KokoroTimingTrace,
 ): Promise<boolean> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return false;
+
   const requestStartedAt = getTimingNow();
   logKokoroTiming(trace, 'tts:request:start', {
     voice: voice || 'af_bella',
@@ -76,16 +79,19 @@ export async function speakWithKokoro(
     if (token) token.controller = controller;
     const timeout = setTimeout(() => controller.abort(), 30000);
 
-    const response = await fetch(KOKORO_LOCAL_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'kokoro',
-        input: text.trim(),
-        voice: voice || 'af_bella',
-      }),
-      signal: controller.signal,
-    });
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/kokoro-tts`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({ text, voice: voice || 'af_bella' }),
+        signal: controller.signal,
+      }
+    );
     clearTimeout(timeout);
 
     logKokoroTiming(trace, 'tts:response:headers', {
@@ -94,13 +100,13 @@ export async function speakWithKokoro(
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => 'unknown');
+      const errorData = await response.json().catch(() => null);
       logKokoroTiming(trace, 'tts:response:error', {
         status: response.status,
         requestMs: Math.round(getTimingNow() - requestStartedAt),
-        errorText,
+        errorData,
       });
-      console.warn('[Jarvis] Kokoro TTS error:', response.status, errorText);
+      console.warn('[Jarvis] Kokoro TTS error:', response.status, errorData);
       return false;
     }
 
